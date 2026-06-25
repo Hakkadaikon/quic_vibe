@@ -30,6 +30,7 @@
 #include "x25519_test.c"
 #include "handshake_test.c"
 #include "schedule_test.c"
+#include "endpoint_test.c"
 
 int main(void)
 {
@@ -63,5 +64,6 @@ int main(void)
     test_x25519();
     test_handshake();
     test_schedule();
+    test_endpoint();
     return TEST_REPORT();
 }
