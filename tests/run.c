@@ -16,6 +16,7 @@
 #include "poly1305_test.c"
 #include "aead_test.c"
 #include "initial_test.c"
+#include "hp_test.c"
 
 int main(void)
 {
@@ -35,5 +36,6 @@ int main(void)
     test_poly1305();
     test_aead();
     test_initial();
+    test_hp();
     return TEST_REPORT();
 }
