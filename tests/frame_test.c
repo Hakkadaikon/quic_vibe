@@ -73,6 +73,32 @@ static void test_frame_stream_truncated(void)
     CHECK(quic_frame_put_stream(buf, 2, &in) == 0);
 }
 
+static void test_frame_conn_close(void)
+{
+    const u8 reason[] = "bye";
+    /* transport variant: carries frame_type */
+    quic_conn_close_frame tpt = {.is_app = 0, .error_code = 0x0a,
+                                 .frame_type = QUIC_FRAME_STREAM_BASE,
+                                 .reason_len = 3, .reason = reason};
+    u8 buf[32];
+    usz w = quic_frame_put_conn_close(buf, sizeof(buf), &tpt);
+    CHECK(w != 0 && buf[0] == QUIC_FRAME_CONN_CLOSE_TPT);
+    quic_conn_close_frame out;
+    usz r = quic_frame_get_conn_close(buf, w, &out);
+    CHECK(r == w && out.is_app == 0 && out.error_code == 0x0a);
+    CHECK(out.frame_type == QUIC_FRAME_STREAM_BASE && out.reason_len == 3);
+    CHECK(out.reason[0] == 'b' && out.reason[2] == 'e');
+
+    /* application variant: no frame_type field */
+    quic_conn_close_frame app = {.is_app = 1, .error_code = 0x100,
+                                 .reason_len = 0, .reason = reason};
+    usz wa = quic_frame_put_conn_close(buf, sizeof(buf), &app);
+    CHECK(wa != 0 && buf[0] == QUIC_FRAME_CONN_CLOSE_APP);
+    quic_conn_close_frame outa;
+    CHECK(quic_frame_get_conn_close(buf, wa, &outa) == wa);
+    CHECK(outa.is_app == 1 && outa.error_code == 0x100 && outa.reason_len == 0);
+}
+
 void test_frame(void)
 {
     test_frame_simple();
@@ -80,4 +106,5 @@ void test_frame(void)
     test_frame_crypto_truncated();
     test_frame_stream();
     test_frame_stream_truncated();
+    test_frame_conn_close();
 }
