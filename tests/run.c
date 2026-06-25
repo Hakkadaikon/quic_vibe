@@ -9,6 +9,7 @@
 #include "conn_test.c"
 #include "sha256_test.c"
 #include "hmac_test.c"
+#include "hkdf_test.c"
 
 int main(void)
 {
@@ -21,5 +22,6 @@ int main(void)
     test_conn();
     test_sha256();
     test_hmac();
+    test_hkdf();
     return TEST_REPORT();
 }
