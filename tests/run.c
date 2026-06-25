@@ -25,6 +25,7 @@
 #include "retransmit_test.c"
 #include "ack_test.c"
 #include "ncid_test.c"
+#include "protect_test.c"
 
 int main(void)
 {
@@ -53,5 +54,6 @@ int main(void)
     test_rtx();
     test_ack();
     test_ncid();
+    test_protect();
     return TEST_REPORT();
 }
