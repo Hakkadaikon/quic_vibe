@@ -12,6 +12,7 @@
 #include "hkdf_test.c"
 #include "aes_test.c"
 #include "gcm_test.c"
+#include "chacha20_test.c"
 
 int main(void)
 {
@@ -27,5 +28,6 @@ int main(void)
     test_hkdf();
     test_aes();
     test_gcm();
+    test_chacha20();
     return TEST_REPORT();
 }
