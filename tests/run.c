@@ -19,6 +19,7 @@
 #include "hp_test.c"
 #include "rtt_test.c"
 #include "sent_test.c"
+#include "cc_test.c"
 
 int main(void)
 {
@@ -41,5 +42,6 @@ int main(void)
     test_hp();
     test_rtt();
     test_sent();
+    test_cc();
     return TEST_REPORT();
 }
