@@ -39,7 +39,11 @@ src/
   gcm/      AES-128-GCM AEAD                              (NIST SP 800-38D)
   chacha/   ChaCha20, Poly1305, ChaCha20-Poly1305 AEAD             (RFC 8439)
   hp/       AES header protection                              (RFC 9001 §5.4)
-  tls/      Initial packet protection key derivation           (RFC 9001 §5.2)
+  protect/  packet protection pipeline (nonce, AEAD seal, HP)  (RFC 9001 §5.3)
+  tls/      Initial keys, X25519, handshake codec, key schedule
+            (RFC 9001 §5.2, RFC 7748, RFC 8446)
+  net/      userspace IPv4/UDP + checksum + in-memory link  (RFC 791/768/1071)
+  endpoint/ kernel-free end-to-end handshake driver
   recovery/ RTT estimation, PTO, sent-packet & loss detection      (RFC 9002)
   cc/       NewReno congestion control                            (RFC 9002 §7)
   flow/     flow-control accounting + stream reassembly      (RFC 9000 §2.2/4)
@@ -86,18 +90,34 @@ truncated-input tests:
   byte, which exercises the whole HKDF→AEAD→header-protection stack together.
 - Recovery and congestion control against the RFC 9002 formulas, with the
   packet-loss threshold boundary and the `cwnd >= kMinimumWindow` floor
-  pinned by tests. The UDP layer is verified by a real send/recv round-trip
-  over loopback.
+  pinned by tests.
+- X25519 against the RFC 7748 vectors, with an ECDHE agreement check.
+- The IPv4/UDP stack against the RFC 1071 checksum example, with build/verify
+  round-trips and a full datagram carried across the in-memory link.
+- The packet protection pipeline by the RFC 9001 nonce construction and a
+  seal/open round-trip that decrypts back to the original header and payload.
+
+## End to end, without the kernel
+
+`endpoint/` drives a complete handshake with no sockets and no kernel network
+stack: the client builds a ClientHello, frames it as CRYPTO, protects it as an
+Initial packet, wraps it in UDP/IPv4, and pushes it onto an in-memory link;
+the server reads it back with zero syscalls, recovers the X25519 share, and
+both sides run ECDHE and the TLS key schedule to the same handshake keys. A
+1-RTT STREAM then round-trips under those keys. The data path is verified to
+make no `socket`/`sendto`/`recvfrom` calls (sockets live only in an optional
+`io/udp` that the end-to-end path does not use).
 
 ## Scope
 
-Implemented: the transport wire format (variable-length integers, headers,
-packet numbers, transport parameters, frames) and stream/connection state
-machines; the cryptography (SHA-256, HMAC, HKDF, AES-128, AES-128-GCM,
-ChaCha20-Poly1305, header protection) and RFC 9001 Initial key derivation;
-loss recovery and NewReno congestion control; flow control and reassembly;
-and a direct-syscall UDP layer with a retransmission queue.
+Implemented end to end: the transport wire format and frames (including ACK
+range encoding and NEW_CONNECTION_ID), stream/connection state machines, the
+full cryptography stack (SHA-256, HMAC, HKDF, AES-128-GCM, ChaCha20-Poly1305,
+header protection, X25519), RFC 9001 Initial and handshake key derivation, the
+packet protection pipeline, loss recovery and congestion control, flow control
+and reassembly, a userspace IPv4/UDP stack over an in-memory link, and a
+kernel-free endpoint that establishes a handshake and exchanges 1-RTT data.
 
-Not yet wired into a single driver: the full TLS 1.3 handshake message
-exchange and a top-level event loop tying these layers together end to end.
-The pieces each layer needs are in place and individually verified.
+Simplified deliberately (marked in code): certificate and signature
+verification in the TLS handshake — the endpoint proves the transport key
+agreement and encrypted data exchange rather than full PKI authentication.
