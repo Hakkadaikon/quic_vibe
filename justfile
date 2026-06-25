@@ -2,7 +2,7 @@
 
 cc := "clang"
 cflags := "-target x86_64-linux-gnu -ffreestanding -fno-stack-protector -fno-builtin -nostdlib -static -Wall -Wextra -Werror -O2 -Isrc"
-testflags := "-Wall -Wextra -Werror -O2 -Isrc"
+testflags := "-Wall -Wextra -Werror -O2 -Isrc -Itests"
 
 # build the freestanding static library object
 build:
