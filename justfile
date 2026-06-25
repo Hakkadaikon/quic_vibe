@@ -7,7 +7,7 @@ testflags := "-Wall -Wextra -Werror -O2 -Isrc -Itests"
 # compile every domain freestanding (proves libc independence) into one .o
 build:
     mkdir -p build
-    {{cc}} {{cflags}} -c src/sys/sys.c src/varint/varint.c src/packet/header.c src/packet/pnum.c src/tparam/tparam.c src/frame/frame.c src/stream/stream.c
+    {{cc}} {{cflags}} -c src/sys/sys.c src/varint/varint.c src/packet/header.c src/packet/pnum.c src/tparam/tparam.c src/frame/frame.c src/fsm/fsm.c src/stream/stream.c src/conn/conn.c
     mv *.o build/
 
 # run all tests (hosted, with assertions)
