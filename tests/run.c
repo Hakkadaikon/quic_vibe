@@ -17,6 +17,7 @@
 #include "aead_test.c"
 #include "initial_test.c"
 #include "hp_test.c"
+#include "rtt_test.c"
 
 int main(void)
 {
@@ -37,5 +38,6 @@ int main(void)
     test_aead();
     test_initial();
     test_hp();
+    test_rtt();
     return TEST_REPORT();
 }
