@@ -1,4 +1,5 @@
 #include "gcm/gcm.h"
+#include "util/ct.h"
 
 /* XOR 16 bytes of src into dst. */
 static void xor16(u8 *dst, const u8 *src)
@@ -140,14 +141,6 @@ usz quic_gcm_seal(const quic_aes128 *a, const u8 nonce[QUIC_GCM_NONCE],
     return pt_len;
 }
 
-/* Constant-time 16-byte tag comparison: 0 if equal. */
-static u8 tag_diff(const u8 a[16], const u8 b[16])
-{
-    u8 d = 0;
-    for (usz i = 0; i < 16; i++) d |= a[i] ^ b[i];
-    return d;
-}
-
 int quic_gcm_open(const quic_aes128 *a, const u8 nonce[QUIC_GCM_NONCE],
                   const u8 *aad, usz aad_len,
                   const u8 *ct, usz ct_len,
@@ -156,7 +149,7 @@ int quic_gcm_open(const quic_aes128 *a, const u8 nonce[QUIC_GCM_NONCE],
     u8 h[16], j0[16], ctr[16], want[16];
     gcm_setup(a, nonce, h, j0);
     gcm_tag(a, h, j0, aad, aad_len, ct, ct_len, want);
-    if (tag_diff(want, tag) != 0) return 0; /* reject: leave pt untouched */
+    if (quic_ct_diff16(want, tag) != 0) return 0; /* reject: leave pt untouched */
     for (usz i = 0; i < 16; i++) ctr[i] = j0[i];
     ctr_inc(ctr);
     ctr_xor(a, ctr, ct, ct_len, pt);
