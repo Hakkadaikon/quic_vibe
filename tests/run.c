@@ -7,6 +7,7 @@
 #include "fsm/fsm.c"
 #include "stream_test.c"
 #include "conn_test.c"
+#include "sha256_test.c"
 
 int main(void)
 {
@@ -17,5 +18,6 @@ int main(void)
     test_frame();
     test_stream();
     test_conn();
+    test_sha256();
     return TEST_REPORT();
 }
