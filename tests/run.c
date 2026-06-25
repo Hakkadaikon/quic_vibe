@@ -10,6 +10,7 @@
 #include "sha256_test.c"
 #include "hmac_test.c"
 #include "hkdf_test.c"
+#include "aes_test.c"
 
 int main(void)
 {
@@ -23,5 +24,6 @@ int main(void)
     test_sha256();
     test_hmac();
     test_hkdf();
+    test_aes();
     return TEST_REPORT();
 }
