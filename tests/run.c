@@ -26,6 +26,7 @@
 #include "ack_test.c"
 #include "ncid_test.c"
 #include "protect_test.c"
+#include "net_test.c"
 
 int main(void)
 {
@@ -55,5 +56,6 @@ int main(void)
     test_ack();
     test_ncid();
     test_protect();
+    test_net();
     return TEST_REPORT();
 }
