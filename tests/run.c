@@ -34,6 +34,8 @@
 #include "stream_ctl_test.c"
 #include "connctl_test.c"
 #include "dispatch_test.c"
+#include "error_test.c"
+#include "packet2_test.c"
 #include "flowctl_test.c"
 
 int main(void)
@@ -72,6 +74,7 @@ int main(void)
     test_stream_ctl();
     test_connctl();
     test_dispatch();
+    test_error();
     test_flowctl();
     return TEST_REPORT();
 }
