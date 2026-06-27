@@ -24,6 +24,12 @@ void quic_flow_send_update_max(quic_flow_send *f, u64 max_data)
     f->max_data = quic_u64_max(f->max_data, max_data);
 }
 
+int quic_flow_send_blocked(const quic_flow_send *f, u64 want)
+{
+    if (want == 0) return 0; /* nothing to send, not blocked */
+    return want > quic_flow_send_avail(f); /* limit leaves too little room */
+}
+
 void quic_flow_recv_init(quic_flow_recv *f, u64 window)
 {
     f->consumed = 0;

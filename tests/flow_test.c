@@ -49,10 +49,25 @@ static void test_reasm_idempotent(void)
     CHECK(quic_reasm_deliver(&r) == 5);             /* unchanged */
 }
 
+/* The sender is blocked when it wants more than the limit allows. */
+static void test_flow_blocked(void)
+{
+    quic_flow_send f;
+    quic_flow_send_init(&f, 100);
+    CHECK(quic_flow_send_blocked(&f, 0) == 0);   /* nothing to send */
+    CHECK(quic_flow_send_blocked(&f, 100) == 0); /* exactly fits */
+    CHECK(quic_flow_send_blocked(&f, 101) == 1); /* over the limit: blocked */
+    quic_flow_send_record(&f, 100);              /* limit reached */
+    CHECK(quic_flow_send_blocked(&f, 1) == 1);   /* no room left: blocked */
+    quic_flow_send_update_max(&f, 150);
+    CHECK(quic_flow_send_blocked(&f, 50) == 0);  /* room again */
+}
+
 void test_flow(void)
 {
     test_flow_send();
     test_flow_recv();
+    test_flow_blocked();
     test_reasm_contiguous_only();
     test_reasm_idempotent();
 }
