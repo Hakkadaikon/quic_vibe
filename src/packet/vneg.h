@@ -30,4 +30,13 @@ usz quic_vneg_build(u8 *buf, usz cap, const u8 *dcid, u8 dcid_len,
  * buf. Returns bytes consumed (== n), or 0 if malformed. */
 usz quic_vneg_parse(const u8 *buf, usz n, quic_vneg_packet *v);
 
+/* Build the Version Negotiation response to a received long-header packet,
+ * applying the RFC 8999 6 rule: the response's Destination CID is the
+ * received Source CID and its Source CID is the received Destination CID
+ * (so the peer recognizes its own connection ID). Returns bytes written. */
+usz quic_vneg_respond(u8 *buf, usz cap,
+                      const u8 *recv_dcid, u8 recv_dcid_len,
+                      const u8 *recv_scid, u8 recv_scid_len,
+                      const u32 *versions, usz count);
+
 #endif

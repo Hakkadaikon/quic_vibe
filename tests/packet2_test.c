@@ -100,6 +100,25 @@ static void test_vneg_roundtrip(void)
     CHECK(v.versions[4] == 0x6B && v.versions[7] == 0xCF);
 }
 
+/* The VN response swaps the received DCID/SCID (RFC 8999 6) so the peer sees
+ * its own connection ID as the destination. */
+static void test_vneg_respond_swap(void)
+{
+    const u8 recv_dcid[2] = {0xAA, 0xBB};
+    const u8 recv_scid[3] = {0x11, 0x22, 0x33};
+    const u32 vers[1] = {0x00000001};
+    u8 buf[64];
+    usz w = quic_vneg_respond(buf, sizeof(buf), recv_dcid, 2, recv_scid, 3,
+                              vers, 1);
+    CHECK(w != 0);
+
+    quic_vneg_packet v;
+    CHECK(quic_vneg_parse(buf, w, &v) == w);
+    /* response DCID is the received SCID; response SCID is the received DCID */
+    CHECK(v.dcid_len == 3 && v.dcid[0] == 0x11 && v.dcid[2] == 0x33);
+    CHECK(v.scid_len == 2 && v.scid[0] == 0xAA && v.scid[1] == 0xBB);
+}
+
 static void test_vneg_bad(void)
 {
     const u8 dcid[1] = {0x01};
@@ -124,5 +143,6 @@ void test_packet2(void)
     test_retry_roundtrip();
     test_retry_truncated();
     test_vneg_roundtrip();
+    test_vneg_respond_swap();
     test_vneg_bad();
 }

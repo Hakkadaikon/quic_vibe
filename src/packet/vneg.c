@@ -102,3 +102,13 @@ usz quic_vneg_parse(const u8 *buf, usz n, quic_vneg_packet *v)
     if (!vneg_head_ok(buf, n)) return 0;
     return vneg_parse_after_head(buf, n, v) ? n : 0;
 }
+
+usz quic_vneg_respond(u8 *buf, usz cap,
+                      const u8 *recv_dcid, u8 recv_dcid_len,
+                      const u8 *recv_scid, u8 recv_scid_len,
+                      const u32 *versions, usz count)
+{
+    /* Swap: response DCID = received SCID, response SCID = received DCID. */
+    return quic_vneg_build(buf, cap, recv_scid, recv_scid_len,
+                           recv_dcid, recv_dcid_len, versions, count);
+}
