@@ -38,8 +38,36 @@ static void test_schedule_directions(void)
     CHECK(differ);
 }
 
+/* 0-RTT keys are deterministic for a PSK+ClientHello, change with the PSK,
+ * and differ from the handshake-level keys (distinct label and inputs). */
+static void test_schedule_early(void)
+{
+    u8 psk_a[32], psk_b[32];
+    for (usz i = 0; i < 32; i++) { psk_a[i] = (u8)(i + 7); psk_b[i] = (u8)(i + 8); }
+    const u8 ch[] = "ClientHello";
+
+    quic_initial_keys ka, ka2, kb;
+    quic_tls_early_keys(psk_a, ch, sizeof(ch), &ka);
+    quic_tls_early_keys(psk_a, ch, sizeof(ch), &ka2);
+    quic_tls_early_keys(psk_b, ch, sizeof(ch), &kb);
+
+    for (usz i = 0; i < QUIC_INITIAL_KEY; i++) CHECK(ka.key[i] == ka2.key[i]);
+    int differ = 0;
+    for (usz i = 0; i < QUIC_INITIAL_KEY; i++) differ |= (ka.key[i] != kb.key[i]);
+    CHECK(differ); /* different PSK -> different early keys */
+
+    /* early keys differ from handshake keys built from the same bytes as a
+     * pseudo-secret (distinct label "c e traffic" vs "c hs traffic") */
+    quic_initial_keys hk;
+    quic_tls_handshake_keys(psk_a, ch, sizeof(ch), 0, &hk);
+    differ = 0;
+    for (usz i = 0; i < QUIC_INITIAL_KEY; i++) differ |= (ka.key[i] != hk.key[i]);
+    CHECK(differ);
+}
+
 void test_schedule(void)
 {
     test_schedule_agreement();
     test_schedule_directions();
+    test_schedule_early();
 }

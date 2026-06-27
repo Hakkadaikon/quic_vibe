@@ -24,4 +24,12 @@ void quic_tls_handshake_keys(const u8 hs_secret[QUIC_HKDF_PRK],
                              const u8 *transcript, usz transcript_len,
                              int is_server, quic_initial_keys *out);
 
+/* RFC 9001 4.6 / RFC 8446 7.1: 0-RTT (early data) packet protection keys.
+ * From a pre-shared key, derive client_early_traffic_secret over the
+ * ClientHello transcript and expand the QUIC key/iv/hp. Only the client
+ * direction exists for 0-RTT. */
+void quic_tls_early_keys(const u8 psk[QUIC_HKDF_PRK],
+                         const u8 *client_hello, usz client_hello_len,
+                         quic_initial_keys *out);
+
 #endif
