@@ -1,4 +1,5 @@
 #include "tls/cert.h"
+#include "ed25519/ed25519.h"
 
 /* TLS uses fixed big-endian length prefixes. A small cursor reads them and
  * bounds every access against the message end. */
@@ -66,4 +67,41 @@ int quic_tls_certverify_parse(const u8 *buf, usz n, u16 *scheme,
     *sig = sv;
     *sig_len = (u16)slen;
     return 1;
+}
+
+/* The RFC 8446 4.4.3 server context string, sans terminating NUL. */
+static const char ctx_str[] = "TLS 1.3, server CertificateVerify";
+
+/* Copy len bytes from src to dst. */
+static void copy_bytes(u8 *dst, const u8 *src, usz len)
+{
+    for (usz i = 0; i < len; i++) dst[i] = src[i];
+}
+
+static const u8 pad64[64] = {
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20};
+
+/* Build the 130-byte signed content into out (64 pad + 33 context + 1 sep +
+ * 32 hash). */
+static void build_signed(const u8 transcript_hash[32], u8 out[130])
+{
+    copy_bytes(out, pad64, 64);
+    copy_bytes(out + 64, (const u8 *)ctx_str, 33);
+    out[97] = 0x00;
+    copy_bytes(out + 98, transcript_hash, 32);
+}
+
+int quic_tls_certverify_ed25519(const u8 *sig, u16 sig_len,
+                                const u8 transcript_hash[32],
+                                const u8 pubkey[32])
+{
+    u8 content[130];
+    if (sig_len != QUIC_ED25519_SIG) return 0;
+    build_signed(transcript_hash, content);
+    return quic_ed25519_verify(sig, content, sizeof(content), pubkey);
 }

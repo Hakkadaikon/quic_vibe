@@ -28,4 +28,15 @@ int quic_tls_cert_parse(const u8 *buf, usz n,
 int quic_tls_certverify_parse(const u8 *buf, usz n, u16 *scheme,
                               const u8 **sig, u16 *sig_len);
 
+#define QUIC_TLS_SCHEME_ED25519 0x0807
+
+/* Verify a server's CertificateVerify Ed25519 signature (RFC 8446 4.4.3).
+ * The signed content is 64 octets of 0x20, the context string "TLS 1.3,
+ * server CertificateVerify", a 0x00 separator, then the transcript hash.
+ * pubkey is the server's Ed25519 public key (from its certificate).
+ * Returns 1 if the signature verifies. */
+int quic_tls_certverify_ed25519(const u8 *sig, u16 sig_len,
+                                const u8 transcript_hash[32],
+                                const u8 pubkey[32]);
+
 #endif
