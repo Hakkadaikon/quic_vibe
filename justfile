@@ -15,7 +15,7 @@ build:
 
 # fast incremental/parallel build via ninja (generates build.ninja first)
 ninja:
-    sh scripts/gen_ninja.sh
+    CFLAGS="{{cflags}}" CC="{{cc}}" sh scripts/gen_ninja.sh
     ninja
 
 # run all tests (hosted, with assertions)
