@@ -1,4 +1,6 @@
 /build/
 /build.ninja
+/.ninja_log
+/.ninja_deps
 /result
 tasks/
