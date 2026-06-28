@@ -376,6 +376,15 @@
 #include "kuswitch/derive.c"
 #include "kuswitch/phasebit.c"
 #include "kuswitch/twogen.c"
+#include "hspto/hspto.c"
+#include "hspto/arm.c"
+#include "hspto/probe_space.c"
+#include "h3reqenc/pseudo_encode.c"
+#include "h3reqenc/header_encode.c"
+#include "h3reqenc/request_headers.c"
+#include "tbscert/fields.c"
+#include "tbscert/version_serial.c"
+#include "tbscert/sigalg.c"
 #include "varint_test.c"
 #include "header_test.c"
 #include "pnum_test.c"
@@ -728,6 +737,15 @@
 #include "collect_test.c"
 #include "kuswitch_derive_test.c"
 #include "kuswitch_phasebit_test.c"
+#include "hspto_test.c"
+#include "hspto_arm_test.c"
+#include "hspto_probe_space_test.c"
+#include "pseudo_encode_test.c"
+#include "header_encode_test.c"
+#include "request_headers_test.c"
+#include "fields_test.c"
+#include "version_serial_test.c"
+#include "sigalg_test.c"
 
 int main(void)
 {
@@ -1098,5 +1116,14 @@ int main(void)
     test_collect();
     test_kuswitch_derive();
     test_kuswitch_phasebit();
+    test_hspto();
+    test_hspto_arm();
+    test_hspto_probe_space();
+    test_pseudo_encode();
+    test_header_encode();
+    test_request_headers();
+    test_fields();
+    test_version_serial();
+    test_sigalg();
     return TEST_REPORT();
 }
