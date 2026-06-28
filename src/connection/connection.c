@@ -28,8 +28,9 @@ int quic_connection_send(quic_connection *c, int level,
     usz n;
     if (!quic_keyset_for_level(&c->keys, level, &k)) return 0;
     quic_aes128_init(&hp, k->hp);
-    n = quic_tx_packet(k, &hp, CONN_BYTE0, c->dcid, CONN_DCID_LEN, CONN_PN,
-                       frames, len, out, sizeof(out));
+    n = quic_tx_packet(k, &hp, CONN_BYTE0, c->dcid, CONN_DCID_LEN,
+                       (const u8 *)0, 0, 1, (const u8 *)0, 0, CONN_PN, frames,
+                       len, out, sizeof(out));
     if (n == 0) return 0;
     return quic_memlink_send(c->link, out, n);
 }
@@ -44,8 +45,7 @@ static int recv_open(quic_connection *c, const quic_initial_keys *k,
     usz rn = quic_memlink_recv(c->link, pkt, sizeof(pkt));
     if (rn == 0) return 0;
     quic_aes128_init(&hp, k->hp);
-    return quic_rx_packet(k, &hp, pkt, rn, CONN_DCID_LEN, CONN_PN,
-                          frames, frames_len);
+    return quic_rx_packet(k, &hp, pkt, rn, 1, frames, frames_len);
 }
 
 int quic_connection_recv(quic_connection *c, int level, quic_framewalk *iter)

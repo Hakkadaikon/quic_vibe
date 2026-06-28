@@ -2,7 +2,19 @@
 #include "pipeline/txpacket.h"
 #include "pipeline/rxpacket.h"
 #include "pipeline/framewalk.h"
+#include "keys/keyset.h"
 #include "aes/aes.h"
+
+/* RFC 9000 17.2: the Initial level carries a Token (17.2.2); Handshake and the
+ * long-header pipeline form used for 1-RTT here do not (17.2.4). */
+static int level_is_initial(int level) { return level == QUIC_LEVEL_INITIAL; }
+
+/* RFC 9000 17.2: byte0 long-header form + Initial (0xc3) or Handshake (0xe3)
+ * type bits, with a 4-byte packet number (low bits forced by the builder). */
+static u8 level_byte0(int level)
+{
+    return level_is_initial(level) ? 0xc3 : 0xe3;
+}
 
 void quic_connio_init(quic_connio *io, int is_server, u8 byte0,
                       const u8 *dcid, u8 dcid_len, u64 initial_max_data)
@@ -42,8 +54,9 @@ usz quic_connio_send(quic_connio *io, int level, const u8 *frames,
     usz n;
     if (!send_ready(io, level, frames_len, &keys)) return 0;
     quic_aes128_init(&hp, keys->hp);
-    n = quic_tx_packet(keys, &hp, io->byte0, io->dcid, io->dcid_len,
-                       io->tx_pn, frames, frames_len, out, cap);
+    n = quic_tx_packet(keys, &hp, level_byte0(level), io->dcid, io->dcid_len,
+                       (const u8 *)0, 0, level_is_initial(level), (const u8 *)0,
+                       0, io->tx_pn, frames, frames_len, out, cap);
     io->tx_pn++;
     return n;
 }
@@ -80,7 +93,7 @@ int quic_connio_recv(quic_connio *io, int level, u8 *datagram, usz len)
     usz frames_len;
     if (!recv_ready(io, level, len, &keys)) return 0;
     quic_aes128_init(&hp, keys->hp);
-    if (!quic_rx_packet(keys, &hp, datagram, len, io->dcid_len, io->rx_pn,
+    if (!quic_rx_packet(keys, &hp, datagram, len, level_is_initial(level),
                         &frames, &frames_len))
         return 0;
     io->rx_pn++;
