@@ -8,8 +8,8 @@ static void test_connio_seal_open_roundtrip(void)
 {
     const u8 dcid[8] = {0x83,0x94,0xc8,0xf0,0x3e,0x51,0x57,0x08};
     quic_connio cl, sv;
-    quic_connio_init(&cl, 0, 0x43, dcid, 8, 1u << 20);
-    quic_connio_init(&sv, 1, 0x43, dcid, 8, 1u << 20);
+    quic_connio_init(&cl, 0, 0xc3, dcid, 8, 1u << 20);
+    quic_connio_init(&sv, 1, 0xc3, dcid, 8, 1u << 20);
     cl.loop.validated = 1;
     sv.loop.validated = 1;
     quic_initial_keys k = {0};

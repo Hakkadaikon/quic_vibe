@@ -21,12 +21,13 @@ static void test_rxpacket_payload_view(void)
     CHECK(fl == 3);
 
     u8 pkt[256];
-    usz n = quic_tx_packet(&ik, &hp, 0xc3, dcid, 8, 5, frames, fl, pkt, sizeof(pkt));
+    usz n = quic_tx_packet(&ik, &hp, 0xc3, dcid, 8, (const u8 *)0, 0, 1,
+                           (const u8 *)0, 0, 5, frames, fl, pkt, sizeof(pkt));
     CHECK(n != 0);
 
     const u8 *got;
     usz got_len;
-    CHECK(quic_rx_packet(&ik, &hp, pkt, n, 8, 5, &got, &got_len) == 1);
+    CHECK(quic_rx_packet(&ik, &hp, pkt, n, 1, &got, &got_len) == 1);
     CHECK(got_len == 3);
     CHECK(got[0] == QUIC_FRAME_PING && got[1] == QUIC_FRAME_PADDING);
     CHECK(got[2] == QUIC_FRAME_PING);
@@ -40,7 +41,7 @@ static void test_rxpacket_too_short(void)
     u8 buf[4] = {0};
     const u8 *got;
     usz got_len;
-    CHECK(quic_rx_packet(&ik, &hp, buf, sizeof(buf), 8, 1, &got, &got_len) == 0);
+    CHECK(quic_rx_packet(&ik, &hp, buf, sizeof(buf), 1, &got, &got_len) == 0);
 }
 
 void test_rxpacket(void)

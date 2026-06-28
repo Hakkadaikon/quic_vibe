@@ -25,7 +25,10 @@ static void test_hspkt_build_roundtrip(void)
     usz total = 0;
     CHECK(quic_hspkt_build(&k, &hp, dcid, 5, scid, 3, 9,
                            frames, sizeof(frames), pkt, sizeof(pkt), &total));
-    CHECK(total == 10u + 5u + sizeof(frames) + 16u);
+    /* RFC 9000 17.2.4 complete header: byte0(1)+version(4)+dcid_len(1)+dcid(5)
+     * +scid_len(1)+scid(3)+Length(1-byte varint)+pn(4) = 20, then payload+tag.
+     * No Token field for Handshake. */
+    CHECK(total == 20u + sizeof(frames) + 16u);
 
     const u8 *out = 0;
     usz olen = 0;

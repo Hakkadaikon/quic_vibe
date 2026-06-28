@@ -19,12 +19,13 @@ static void test_txpacket_roundtrip(void)
     CHECK(fl == 1);
 
     u8 pkt[256];
-    usz n = quic_tx_packet(&ik, &hp, 0xc3, dcid, 8, 1, ping, fl, pkt, sizeof(pkt));
+    usz n = quic_tx_packet(&ik, &hp, 0xc3, dcid, 8, (const u8 *)0, 0, 1,
+                           (const u8 *)0, 0, 1, ping, fl, pkt, sizeof(pkt));
     CHECK(n != 0);
 
     const u8 *frames;
     usz frames_len;
-    CHECK(quic_rx_packet(&ik, &hp, pkt, n, 8, 1, &frames, &frames_len) == 1);
+    CHECK(quic_rx_packet(&ik, &hp, pkt, n, 1, &frames, &frames_len) == 1);
     CHECK(frames_len == fl);
     CHECK(frames[0] == QUIC_FRAME_PING);
 }
@@ -40,13 +41,14 @@ static void test_txpacket_tamper(void)
 
     u8 ping[1] = {QUIC_FRAME_PING};
     u8 pkt[256];
-    usz n = quic_tx_packet(&ik, &hp, 0xc3, dcid, 4, 7, ping, 1, pkt, sizeof(pkt));
+    usz n = quic_tx_packet(&ik, &hp, 0xc3, dcid, 4, (const u8 *)0, 0, 1,
+                           (const u8 *)0, 0, 7, ping, 1, pkt, sizeof(pkt));
     CHECK(n != 0);
     pkt[n - 1] ^= 0x01; /* corrupt the tag */
 
     const u8 *frames;
     usz frames_len;
-    CHECK(quic_rx_packet(&ik, &hp, pkt, n, 4, 7, &frames, &frames_len) == 0);
+    CHECK(quic_rx_packet(&ik, &hp, pkt, n, 1, &frames, &frames_len) == 0);
 }
 
 void test_txpacket(void)
