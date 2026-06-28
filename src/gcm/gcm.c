@@ -25,7 +25,7 @@ static void gf_step(u8 z[16], u8 v[16], u8 mask)
 
 /* GF(2^128) multiply z = x * y per SP 800-38D (bit-reflected polynomial
  * R = 0xe1 in the high byte). y is consumed. */
-static void gf_mul(const u8 x[16], u8 y[16], u8 z[16])
+static void gf_mul(const u8 x[16], const u8 y[16], u8 z[16])
 {
     u8 v[16];
     for (usz i = 0; i < 16; i++) { z[i] = 0; v[i] = x[i]; }
