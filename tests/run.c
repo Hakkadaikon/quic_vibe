@@ -236,6 +236,16 @@
 #include "version/verselect.c"
 #include "version/version.c"
 #include "version/vneg.c"
+#include "x509/chain.c"
+#include "x509/basicconstraints.c"
+#include "x509/san.c"
+#include "connection/connection.c"
+#include "qpack/dyntable.c"
+#include "qpack/dynget.c"
+#include "qpack/dynfind.c"
+#include "flow/stream_read.c"
+#include "flow/credit.c"
+#include "flow/stream_credit.c"
 #include "varint_test.c"
 #include "header_test.c"
 #include "pnum_test.c"
@@ -462,6 +472,16 @@
 #include "keyset_test.c"
 #include "promote_test.c"
 #include "discard_driver_test.c"
+#include "chain_test.c"
+#include "basicconstraints_test.c"
+#include "san_test.c"
+#include "connection_test.c"
+#include "dyntable_test.c"
+#include "dynget_test.c"
+#include "dynfind_test.c"
+#include "stream_read_test.c"
+#include "credit_test.c"
+#include "stream_credit_test.c"
 
 int main(void)
 {
@@ -690,5 +710,15 @@ int main(void)
     test_keyset();
     test_promote();
     test_discard_driver();
+    test_chain();
+    test_basicconstraints();
+    test_san();
+    test_connection();
+    test_dyntable();
+    test_dynget();
+    test_dynfind();
+    test_stream_read();
+    test_credit();
+    test_stream_credit();
     return TEST_REPORT();
 }
