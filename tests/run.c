@@ -1,4 +1,7 @@
 #include "test.h"
+#include "initpkt/initkeys.c"
+#include "initpkt/initpkt.c"
+#include "initpkt/initopen.c"
 #include "idledrive/idledrive.c"
 #include "idledrive/idlenego.c"
 #include "idledrive/closesend.c"
@@ -580,6 +583,7 @@
 #include "odcid_test.c"
 #include "iscid_test.c"
 #include "rscid_test.c"
+#include "initpkt_test.c"
 
 int main(void)
 {
@@ -866,5 +870,6 @@ int main(void)
     test_odcid();
     test_iscid();
     test_rscid();
+    test_initpkt();
     return TEST_REPORT();
 }
