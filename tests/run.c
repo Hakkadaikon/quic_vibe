@@ -1,4 +1,5 @@
 #include "test.h"
+#include "fullhs/fullhs.c"
 #include "tlsdriver/tlsdriver.c"
 #include "crypto_stream/crypto_tx.c"
 #include "crypto_stream/crypto_rx.c"
@@ -548,6 +549,7 @@
 #include "driver_test.c"
 #include "crypto_stream_test.c"
 #include "tlsdriver_test.c"
+#include "fullhs_test.c"
 
 int main(void)
 {
@@ -818,5 +820,6 @@ int main(void)
     test_driver();
     test_crypto_stream();
     test_tlsdriver();
+    test_fullhs();
     return TEST_REPORT();
 }
