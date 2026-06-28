@@ -69,6 +69,7 @@ src/
   datagram/ unreliable DATAGRAM frames and TP                    (RFC 9221)
   grease/   grease_quic_bit transport parameter                  (RFC 9287)
   h3/       HTTP/3 frame codec + control/SETTINGS/GOAWAY          (RFC 9114)
+  session/  high-level kernel-free QUIC session (handshake + 1-RTT data)
 tests/      hosted assert-based test harness, one file per domain
 ```
 
@@ -81,6 +82,45 @@ Each domain is a directory with a `.h` (types, constants, prototypes) and a
 "varint/varint.h"`, and link the matching `.o` from `just build`.
 
 ## Using the library
+
+### The high-level session API (start here)
+
+`session/session.h` is the entry point if you just want a working QUIC
+exchange. A client and a server complete a handshake and exchange protected
+1-RTT data over an in-memory link — no sockets, no kernel network stack:
+
+```c
+#include "session/session.h"
+
+quic_memlink link;
+quic_memlink_init(&link);
+
+quic_session cli, srv;
+quic_session_init(&cli, client_priv, dcid, &link, /*is_server=*/0);
+quic_session_init(&srv, server_priv, dcid, &link, /*is_server=*/1);
+
+/* handshake: ClientHello over the link, server accepts, both agree keys */
+quic_session_client_hello(&cli);
+quic_session_accept(&srv);
+quic_session_finish(&cli, &srv, transcript, transcript_len);
+
+/* protected 1-RTT STREAM data, either direction */
+quic_session_send_stream(&srv, /*stream_id=*/4, (const u8*)"hello", 5, /*fin=*/1);
+quic_stream_frame got;
+quic_session_recv_stream(&cli, &got);   /* got.data == "hello" */
+```
+
+This is a real handshake (X25519 ECDHE + the TLS key schedule) and real
+AEAD-protected packets carried as IPv4/UDP over the memlink; it is **not** a
+loopback shortcut. What it is not: it does not speak to a remote QUIC peer
+over a real UDP socket (that path lives in the optional `io/udp` and is not
+wired into the session, by the kernel-free design), it carries a minimal
+ClientHello rather than a full TLS 1.3 negotiation, and it exchanges one
+STREAM frame per call rather than running a packet-scheduling loop. The
+`session` layer is the worked example of how the verified building blocks
+fit together; the building blocks themselves are the substance.
+
+### Building blocks
 
 The pieces compose bottom-up. A few representative entry points:
 
