@@ -1,0 +1,17 @@
+#include "h3conn/request.h"
+#include "appdata/stream_send.h"
+#include "h3req/reqbuild.h"
+
+/* RFC 9114 4.1 / RFC 9000 19.8 */
+int quic_h3conn_send_request(u64 stream_id, const u8 *qpack_headers, usz h_len,
+                             const u8 *body, usz body_len,
+                             u8 *out, usz cap, usz *out_len)
+{
+    u8 h3[1500];
+    usz h3_len = 0;
+    if (!quic_h3req_build(qpack_headers, h_len, body, body_len,
+                          h3, sizeof(h3), &h3_len))
+        return 0;
+    return quic_appdata_stream_frame(stream_id, 0, h3, h3_len, 1,
+                                     out, cap, out_len);
+}
