@@ -4,10 +4,10 @@
 
 /* RFC 8439 2.1 quarter-round on four state words. */
 #define QR(a, b, c, d)                                  \
-    a += b; d ^= a; d = ROTL(d, 16);                    \
-    c += d; b ^= c; b = ROTL(b, 12);                    \
-    a += b; d ^= a; d = ROTL(d, 8);                     \
-    c += d; b ^= c; b = ROTL(b, 7)
+    (a) += (b); (d) ^= (a); (d) = ROTL((d), 16);        \
+    (c) += (d); (b) ^= (c); (b) = ROTL((b), 12);        \
+    (a) += (b); (d) ^= (a); (d) = ROTL((d), 8);         \
+    (c) += (d); (b) ^= (c); (b) = ROTL((b), 7)
 
 static u32 rd32(const u8 *p)
 {
