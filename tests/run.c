@@ -1,4 +1,21 @@
 #include "test.h"
+#include "tls/hs_message.c"
+#include "tls/transcript_stage.c"
+#include "tls/transcript.c"
+#include "tls/ext_block.c"
+#include "tls/ext_algs.c"
+#include "tls/ext_versions.c"
+#include "tls/hp_select.c"
+#include "tls/aead_params.c"
+#include "tls/cipher.c"
+#include "rng/challenge.c"
+#include "rng/cidgen.c"
+#include "rng/rng.c"
+#include "io/udptransport.c"
+#include "io/addr.c"
+#include "asn1/derval.c"
+#include "asn1/derseq.c"
+#include "asn1/der.c"
 #include "session/session.c"
 #include "datagram/zerortt_dgram.c"
 #include "tls/ticketversion.c"
@@ -379,6 +396,23 @@
 #include "ticketversion_test.c"
 #include "zerortt_dgram_test.c"
 #include "session_test.c"
+#include "der_test.c"
+#include "derseq_test.c"
+#include "derval_test.c"
+#include "addr_test.c"
+#include "udptransport_test.c"
+#include "rng_test.c"
+#include "cidgen_test.c"
+#include "challenge_test.c"
+#include "cipher_test.c"
+#include "aead_params_test.c"
+#include "hp_select_test.c"
+#include "ext_versions_test.c"
+#include "ext_algs_test.c"
+#include "ext_block_test.c"
+#include "transcript_test.c"
+#include "transcript_stage_test.c"
+#include "hs_message_test.c"
 
 int main(void)
 {
@@ -566,5 +600,22 @@ int main(void)
     test_ticketversion();
     test_zerortt_dgram();
     test_session();
+    test_der_short_form();
+    test_derseq_two_ints();
+    test_derval_oid_equal();
+    test_addr_from_octets();
+    test_transport_connect();
+    test_rng_distinct_and_full();
+    test_cidgen_len_bounds();
+    test_challenge_distinct();
+    test_cipher_supported();
+    test_aead_params_key_len();
+    test_hp_select_is_chacha();
+    test_ext_versions_golden();
+    test_ext_groups_golden();
+    test_ext_block_concat();
+    test_transcript_empty();
+    test_transcript_stage_ch_sh();
+    test_hs_message_short();
     return TEST_REPORT();
 }
