@@ -1,4 +1,15 @@
 #include "test.h"
+#include "h3run/control.c"
+#include "h3run/settings_seq.c"
+#include "h3run/goaway.c"
+#include "handshake_drive/retry_drive.c"
+#include "handshake_drive/vn_drive.c"
+#include "protect_suite/aead_suite.c"
+#include "protect_suite/hp_suite.c"
+#include "schedule_drive/keyschedule.c"
+#include "sentpkt/sentpkt.c"
+#include "sentpkt/ack_process.c"
+#include "sentpkt/loss_detect.c"
 #include "keys/discard_driver.c"
 #include "keys/promote.c"
 #include "keys/keyset.c"
@@ -482,6 +493,17 @@
 #include "stream_read_test.c"
 #include "credit_test.c"
 #include "stream_credit_test.c"
+#include "h3run_control_test.c"
+#include "h3run_settings_seq_test.c"
+#include "h3run_goaway_test.c"
+#include "retry_drive_test.c"
+#include "vn_drive_test.c"
+#include "aead_suite_test.c"
+#include "hp_suite_test.c"
+#include "keyschedule_test.c"
+#include "sentpkt_test.c"
+#include "ack_process_test.c"
+#include "loss_detect_test.c"
 
 int main(void)
 {
@@ -720,5 +742,16 @@ int main(void)
     test_stream_read();
     test_credit();
     test_stream_credit();
+    test_h3run_control();
+    test_h3run_settings_seq();
+    test_h3run_goaway();
+    test_retry_drive();
+    test_vn_drive();
+    test_aead_suite();
+    test_hp_suite();
+    test_keyschedule();
+    test_sentpkt();
+    test_ack_process();
+    test_loss_detect();
     return TEST_REPORT();
 }
