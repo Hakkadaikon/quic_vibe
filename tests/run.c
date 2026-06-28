@@ -1,4 +1,16 @@
 #include "test.h"
+#include "tls/serverhello.c"
+#include "tls/clienthello.c"
+#include "tls/ext_keyshare.c"
+#include "x509/validity.c"
+#include "x509/spki.c"
+#include "x509/x509.c"
+#include "p256/ecdsa_verify.c"
+#include "p256/p256_point.c"
+#include "p256/p256_field.c"
+#include "rsa/rsa_verify.c"
+#include "bignum/modexp.c"
+#include "bignum/bignum.c"
 #include "tls/hs_message.c"
 #include "tls/transcript_stage.c"
 #include "tls/transcript.c"
@@ -413,6 +425,18 @@
 #include "transcript_test.c"
 #include "transcript_stage_test.c"
 #include "hs_message_test.c"
+#include "bignum_test.c"
+#include "modexp_test.c"
+#include "rsa_verify_test.c"
+#include "p256_field_test.c"
+#include "p256_point_test.c"
+#include "ecdsa_verify_test.c"
+#include "x509_test.c"
+#include "spki_test.c"
+#include "validity_test.c"
+#include "ext_keyshare_test.c"
+#include "clienthello_test.c"
+#include "serverhello_test.c"
 
 int main(void)
 {
@@ -617,5 +641,17 @@ int main(void)
     test_transcript_empty();
     test_transcript_stage_ch_sh();
     test_hs_message_short();
+    test_bn_be_roundtrip();
+    test_modexp_known();
+    test_rsa_pkcs1_valid();
+    test_p256_field_inv();
+    test_p256_g_on_curve();
+    test_ecdsa_valid();
+    test_x509_parse_golden();
+    test_spki_golden();
+    test_validity_golden();
+    test_ext_key_share_wire();
+    test_client_hello_has_all_exts();
+    test_server_hello_roundtrip();
     return TEST_REPORT();
 }
