@@ -3,7 +3,7 @@
 #include "util/bytes.h"
 
 /* RFC 8446 4.1.2: reserve the 2-byte extensions length. */
-int quic_tls_ext_block_begin(u8 *buf, usz cap, usz *off)
+int quic_tls_ext_block_begin(const u8 *buf, usz cap, usz *off)
 {
     if (cap < 2) return 0;
     (void)buf;

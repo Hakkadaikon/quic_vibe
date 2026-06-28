@@ -9,7 +9,7 @@
 
 /* Reserve the 2-byte length at buf and set *off to just past it. Returns 1,
  * or 0 if cap is below 2. */
-int quic_tls_ext_block_begin(u8 *buf, usz cap, usz *off);
+int quic_tls_ext_block_begin(const u8 *buf, usz cap, usz *off);
 
 /* Append ext_len bytes of ext at *off (cap total). Returns 1, 0 if no room. */
 int quic_tls_ext_append(u8 *buf, usz cap, usz *off, const u8 *ext, usz ext_len);
