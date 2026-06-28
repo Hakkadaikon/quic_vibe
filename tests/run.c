@@ -1,4 +1,18 @@
 #include "test.h"
+#include "idledrive/idledrive.c"
+#include "idledrive/idlenego.c"
+#include "idledrive/closesend.c"
+#include "sresetdrive/detect.c"
+#include "sresetdrive/tokenmap.c"
+#include "sresetdrive/onreset.c"
+#include "h3req/reqorder.c"
+#include "h3req/reqbuild.c"
+#include "h3req/respparse.c"
+#include "flowviol/flowviol.c"
+#include "flowviol/closeframe.c"
+#include "tpverify/odcid.c"
+#include "tpverify/iscid.c"
+#include "tpverify/rscid.c"
 #include "fullhs/fullhs.c"
 #include "tlsdriver/tlsdriver.c"
 #include "crypto_stream/crypto_tx.c"
@@ -552,6 +566,20 @@
 #include "tlsdriver_test.c"
 #include "fullhs_test.c"
 #include "client_test.c"
+#include "idledrive_test.c"
+#include "idlenego_test.c"
+#include "closesend_test.c"
+#include "sresetdrive_detect_test.c"
+#include "sresetdrive_tokenmap_test.c"
+#include "sresetdrive_onreset_test.c"
+#include "reqorder_test.c"
+#include "reqbuild_test.c"
+#include "respparse_test.c"
+#include "flowviol_test.c"
+#include "closeframe_test.c"
+#include "odcid_test.c"
+#include "iscid_test.c"
+#include "rscid_test.c"
 
 int main(void)
 {
@@ -824,5 +852,19 @@ int main(void)
     test_tlsdriver();
     test_fullhs();
     test_client();
+    test_idledrive();
+    test_idlenego();
+    test_closesend();
+    test_sresetdrive_detect();
+    test_sresetdrive_tokenmap();
+    test_sresetdrive_onreset();
+    test_reqorder();
+    test_reqbuild();
+    test_respparse();
+    test_flowviol();
+    test_closeframe();
+    test_odcid();
+    test_iscid();
+    test_rscid();
     return TEST_REPORT();
 }
