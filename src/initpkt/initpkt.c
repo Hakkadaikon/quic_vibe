@@ -4,12 +4,14 @@
 #include "pipeline/txpacket.h"
 #include "aes/aes.h"
 
-/* RFC 9000 14.1: the protected datagram must reach 1200 bytes. With the
- * simplified long header (10 + dcid_len) and a 16-byte AEAD tag, the plaintext
- * payload is padded with PADDING frames (0x00) to this target. */
-static usz pad_target(u8 dcid_len)
+/* RFC 9000 14.1: the protected datagram must reach 1200 bytes. The complete
+ * 17.2.2 header (byte0+version+DCID+SCID+empty Token+2-byte Length+4-byte PN)
+ * plus the 16-byte AEAD tag forms the overhead; the plaintext payload is padded
+ * with PADDING frames (0x00) so header + payload + tag is at least 1200. The
+ * 2-byte Length varint holds for any ~1200-byte Initial. */
+static usz pad_target(u8 dcid_len, u8 scid_len)
 {
-    usz overhead = 10u + dcid_len + 16u;
+    usz overhead = 30u + dcid_len + scid_len;
     return overhead < 1200u ? 1200u - overhead : 0u;
 }
 
@@ -28,9 +30,8 @@ static int build_payload(const u8 *crypto_payload, usz payload_len,
     return 1;
 }
 
-/* ponytail: scid is part of the public API but the pipeline's simplified long
- * header carries no source connection ID; it is accepted and ignored here. Add
- * a full 17.2.2 header (token, length, scid) when wire interop needs it. */
+/* RFC 9000 17.2.2: emit a complete Initial long header carrying the SCID and an
+ * empty Token, padded to the 1200-byte datagram floor. */
 int quic_initpkt_build(const u8 *dcid, u8 dcid_len,
                        const u8 *scid, u8 scid_len,
                        const u8 *crypto_payload, usz payload_len, u64 pn,
@@ -40,14 +41,14 @@ int quic_initpkt_build(const u8 *dcid, u8 dcid_len,
     quic_aes128 hp;
     u8 payload[1200];
     usz plen, total;
-    (void)scid; (void)scid_len;
     quic_initpkt_derive(dcid, dcid_len, &ck, &sk);
     quic_aes128_init(&hp, ck.hp);
-    if (!build_payload(crypto_payload, payload_len, pad_target(dcid_len),
-                       payload, sizeof(payload), &plen))
+    if (!build_payload(crypto_payload, payload_len,
+                       pad_target(dcid_len, scid_len), payload,
+                       sizeof(payload), &plen))
         return 0;
-    total = quic_tx_packet(&ck, &hp, 0xc3, dcid, dcid_len, pn,
-                           payload, plen, out, cap);
+    total = quic_tx_packet(&ck, &hp, 0xc3, dcid, dcid_len, scid, scid_len, 1,
+                           (const u8 *)0, 0, pn, payload, plen, out, cap);
     if (total == 0) return 0;
     *out_len = total;
     return 1;

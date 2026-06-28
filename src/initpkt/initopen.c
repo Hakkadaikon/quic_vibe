@@ -12,6 +12,6 @@ int quic_initpkt_open(const u8 *dcid, u8 dcid_len, u8 *pkt, usz len, u64 pn,
     quic_initpkt_derive(dcid, dcid_len, &ck, &sk);
     quic_aes128_init(&hp, ck.hp);
     (void)sk;
-    return quic_rx_packet(&ck, &hp, pkt, len, dcid_len, pn,
-                          crypto_out, crypto_len);
+    (void)pn;
+    return quic_rx_packet(&ck, &hp, pkt, len, 1, crypto_out, crypto_len);
 }
