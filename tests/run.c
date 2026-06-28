@@ -326,6 +326,13 @@
 #include "lhdr/lhdr_build.c"
 #include "lhdr/lhdr_parse.c"
 #include "vpn/vpn_open.c"
+#include "appdata/stream_send.c"
+#include "appdata/app_send.c"
+#include "appdata/app_recv.c"
+#include "h3recv/req_frames.c"
+#include "h3resp/field_encode.c"
+#include "h3resp/resp_build.c"
+#include "h3resp/hello.c"
 #include "varint_test.c"
 #include "header_test.c"
 #include "pnum_test.c"
@@ -635,6 +642,13 @@
 #include "lhdr_build_test.c"
 #include "lhdr_parse_test.c"
 #include "vpn_open_test.c"
+#include "stream_send_test.c"
+#include "app_send_test.c"
+#include "app_recv_test.c"
+#include "req_frames_test.c"
+#include "field_encode_test.c"
+#include "resp_build_test.c"
+#include "hello_test.c"
 
 int main(void)
 {
@@ -954,5 +968,12 @@ int main(void)
     test_lhdr_build();
     test_lhdr_parse();
     test_vpn_open();
+    test_stream_send();
+    test_app_send();
+    test_app_recv();
+    test_req_frames();
+    test_field_encode();
+    test_resp_build();
+    test_hello();
     return TEST_REPORT();
 }
