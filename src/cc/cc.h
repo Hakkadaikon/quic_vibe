@@ -5,7 +5,7 @@
 
 /* RFC 9002 7: NewReno-style congestion control. Sizes in bytes. */
 
-#define QUIC_MAX_DATAGRAM 1200
+#define QUIC_MAX_DATAGRAM ((u64)1200)
 #define QUIC_CC_MIN_WINDOW (2 * QUIC_MAX_DATAGRAM)            /* kMinimumWindow */
 #define QUIC_CC_INIT_WINDOW (10 * QUIC_MAX_DATAGRAM)          /* kInitialWindow */
 
