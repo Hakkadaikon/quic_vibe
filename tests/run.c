@@ -1,4 +1,5 @@
 #include "test.h"
+#include "session/session.c"
 #include "datagram/zerortt_dgram.c"
 #include "tls/ticketversion.c"
 #include "version/switchrule.c"
@@ -377,6 +378,7 @@
 #include "switchrule_test.c"
 #include "ticketversion_test.c"
 #include "zerortt_dgram_test.c"
+#include "session_test.c"
 
 int main(void)
 {
@@ -563,5 +565,6 @@ int main(void)
     test_switchrule();
     test_ticketversion();
     test_zerortt_dgram();
+    test_session();
     return TEST_REPORT();
 }
