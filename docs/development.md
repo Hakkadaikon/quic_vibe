@@ -1,78 +1,231 @@
 # Development
 
-How to work on `quic_vibe`: the constraints every change must hold, and the
-workflow for adding a domain.
+How to understand, navigate, and extend `quic_vibe`: the design philosophy, the
+layered architecture, the build system, the constraints every change must hold,
+and the workflow for adding a domain.
+
+## Philosophy
+
+`quic_vibe` is a QUIC + HTTP/3 stack built under three self-imposed disciplines:
+
+- **libc-free, freestanding.** Every production source compiles under
+  `-ffreestanding -nostdlib`. The only thing `src/` may include is
+  `sys/syscall.h` (direct x86_64-linux syscalls) and `util/*` (a handful of
+  inline primitives). No `<stdio.h>`, no `<string.h>`, no CRT. The compile
+  itself is the proof of independence.
+- **Low complexity by construction.** Every function has cyclomatic complexity
+  ≤ 3 (lizard-enforced). This is not a style preference: it forces small
+  functions, table-driven dispatch, and predicate helpers, which keeps each
+  codec auditable against its RFC.
+- **Verification-driven.** State machines are model-checked (TLA+) and critical
+  crypto/math is proved (Lean 4) *before* implementation; the resulting
+  invariants become the golden tests. RFC behavior is implemented against the
+  IETF primary source with self-recomputed test vectors.
+
+## Architecture
+
+The codebase is 104 domains, one per `src/<dir>/`, stacked in dependency layers.
+Higher layers depend on lower ones; the I/O layer sits to the side and drives
+the loop; the verification layer is tooling kept out of the shipped binary.
+
+```mermaid
+flowchart TB
+    subgraph H3["HTTP/3"]
+        h3["h3 · h3recv · h3req · h3resp · h3run · h3settings · qpack · qpackdyn"]
+    end
+    subgraph DRV["Connection driving"]
+        drv["driver · tlsdriver · fullhs · sdrv · srvfin · shbuild · sflight<br/>client · endpoint · session · hrr · stp · salpn"]
+    end
+    subgraph CORE["QUIC core"]
+        core["frame · varint · cid · stream · conn · flow · error · version · fsm<br/>ackrange · recvpn · keys · keyupdate · path · closelife · migrate<br/>retrytoken · sreset · grease · datagram"]
+    end
+    subgraph PKT["Packet protection"]
+        pkt["packet · lhdr · shorthdr · hp · protect · protectcs · hspkt · initpkt · vpn · pnspaces"]
+    end
+    subgraph TLS["TLS 1.3"]
+        tls["tls · tlsext · certreq · tparam · tpverify · selfcert · castore · x509"]
+    end
+    subgraph CRYPTO["Crypto primitives"]
+        crypto["hash · hkdf · aes · gcm · chacha · rsa · ed25519 · p256<br/>bignum · rng · asn1"]
+    end
+    subgraph BASE["Foundation"]
+        base["sys · util"]
+    end
+
+    H3 --> DRV --> CORE --> PKT --> TLS --> CRYPTO --> BASE
+
+    subgraph IO["I/O & loop"]
+        io["io · net · connio · connloop · udploop · framedispatch<br/>pktbuild · lossdrive · ackgen · idledrive · poll · recovery · cc · cwndctl · losstime · sentpkt · pmtu"]
+    end
+    IO --> CORE
+    IO -.drives.-> DRV
+
+    subgraph VERIFY["Verification layer (not shipped)"]
+        verify["TLA+ specs (tasks/loopeng/)<br/>Lean 4 proofs (tasks/fv/)"]
+    end
+    verify -. invariants become tests .-> CORE
+```
+
+To find code: one concern lives in exactly one `src/<dir>/` (MECE). The
+directory name is the domain; its public API is prefixed `quic_<domain>_`. So
+`grep -rn 'quic_stream_' src/stream/` is the whole story for stream framing,
+and a new behavior belongs in the layer whose responsibilities it matches.
+
+## Build system
+
+`just` drives three build modes off the same source tree and the same cflags
+(defined once in the `justfile`). Sources are auto-discovered, so adding a
+`src/**/*.c` file needs no justfile edit.
+
+```mermaid
+flowchart LR
+    src["src/**/*.c<br/>(find-discovered)"]
+
+    src --> build["just build<br/>freestanding per-file<br/>-ffreestanding -nostdlib<br/>→ build/&lt;path&gt;.o"]
+    src --> ninja["just ninja<br/>scripts/gen_ninja.sh → build.ninja<br/>parallel + header-dep incremental"]
+    src --> test["just test<br/>tests/run.c unity build<br/>(all *_test.c, one TU)<br/>337 tests, assertions on"]
+
+    build --> gate
+    test --> gate
+    ccn["lizard src --CCN 3 -w"] --> gate
+
+    gate{"three-point gate<br/>build · test · ccn<br/>+ object==source count"}
+    gate -->|all green| commit["git commit"]
+    gate -->|any red| stop["blocked"]
+```
+
+- **`just build`** compiles each `.c` individually under `-ffreestanding
+  -nostdlib` into a path-qualified `build/<path>.o`. This is the proof of libc
+  independence: if a file needs a standard header, the build fails — fix the
+  code, don't add the header. The path-qualified `.o` also lets the count check
+  work despite shared basenames (`frame.c`, `grease.c`, …).
+- **`just ninja`** generates `build.ninja` and does parallel, header-aware
+  incremental rebuilds — the fast inner loop while iterating.
+- **`just test`** compiles `tests/run.c`, a single unity translation unit that
+  `#include`s every production `.c` once and every `*_test.c` once, then runs
+  all 337 tests with assertions on.
+- **`just check`** runs the gate (`ccn` + `test`); the full commit gate adds
+  `just build` and the object-count check (see below).
 
 ## Hard constraints
 
-These are enforced and non-negotiable; a change that breaks any of them is not
-done.
+A change that breaks any of these is not done.
 
 - **No libc, no CRT.** Production sources compile under `-ffreestanding
-  -nostdlib` (`just build`). Do not include `<stdio.h>`, `<string.h>`, etc. in
-  `src/`. The only place a hosted header appears is `tests/test.h`. Write your
-  own small byte loops instead of `memcpy`/`memset`.
-- **Direct syscalls only**, through `src/sys/syscall.h`. No libc wrappers. The
-  end-to-end data path must not call any network syscall — see "Kernel-free"
-  below.
-- **x86_64-linux only.** No portability layer, no `#ifdef` for other arches.
-- **Cyclomatic complexity ≤ 3 for every function**, enforced by `just ccn`
-  (lizard). This shapes the whole codebase: lots of small functions, early
-  returns, and table/loop-driven logic instead of nested branches. `lizard`
-  counts `&&`, `||`, and `?:` as branches, so factor compound conditions into
-  named helper predicates.
+  -nostdlib`. Do not include `<stdio.h>`, `<string.h>`, etc. in `src/`. Write
+  your own small byte loops, or use the existing `util/*` inline helpers
+  (`bytes.h`, `be.h`, `ct.h`, `num.h`) — never re-roll `memcpy`/`put_be32`/a
+  constant-time compare a second time. Verify: `just build`.
+- **CCN ≤ 3 for every function.** `lizard` counts `&&`, `||`, `?:`, `if`,
+  `for`, `while` as +1 each. Factor compound conditions into named predicate
+  helpers and branch clusters into table + function-pointer dispatch. Count
+  branches *before* writing. Verify: `lizard src --CCN 3 -w`.
+- **MECE: one domain, one `src/<dir>/`.** Don't scatter a concern across dirs
+  or merge two concerns into one dir.
+- **Unity build = one global namespace.** Because `tests/run.c` links the whole
+  repo as a single TU, *every* symbol — public function, `static` helper,
+  `typedef`, macro, constant — is globally unique. Public API gets a
+  `quic_<domain>_` prefix; grep `src/` before adding a name. A duplicated
+  `static` helper is a link collision, not a private detail — hoist it to
+  `util/*` as `inline`. Verify: `just test`.
 
-## Workflow
+### The three-point gate
 
-1. **Read the RFC first.** Every codec/algorithm is implemented against a
-   specific RFC or FIPS section and verified with that document's published
-   test vectors. Find the vector before writing code.
-2. **Test first.** Add a `tests/<domain>_test.c` with the official vector as a
-   golden assertion, plus round-trip and truncated/invalid-input cases. Wire
-   it into `tests/run.c` and confirm it fails (Red).
-3. **Implement minimally.** Write the smallest code that passes. Reuse existing
-   helpers (`util/*.h`, `varint` cursors, the `fsm` engine) before adding new
-   ones. The first lazy solution that works and stays CCN ≤ 3 is the right one.
-4. **Keep the gate green.** Run `just check` (ccn + test). When a function hits
-   CCN 4, split out a helper — usually a boolean predicate for a compound
-   condition, or a sub-step that does part of the work.
-5. **Micro-commit.** Conventional commits in ~30–50 line logical units:
-   `feat(<domain>): ...` for code, a separate `test(<domain>): ...` for its
-   tests. Keep `feat` and `test` as distinct commits.
+A commit is allowed only when all three pass in the same working tree, plus the
+count check. Run them guarded so a red result cannot reach `git commit`:
+
+```sh
+if just test 2>&1 | grep -q "all tests passed" \
+   && just build >/dev/null 2>&1 \
+   && lizard src --CCN 3 -w \
+   && [ "$(find src -name '*.c' | wc -l)" = "$(find build -name '*.o' | wc -l)" ]; then
+    git commit -m "..."
+fi
+```
+
+Never pipe a gate into `tail`/`head` and `&&` a commit on the pipe's exit (the
+exit is the pager's). Never `;`-chain a gate and a commit. The count check
+catches a source that silently never got compiled — objects must equal sources.
 
 ## Adding a domain
 
-A domain is `src/<name>/<name>.h` + `src/<name>/<name>.c`:
+A domain is `src/<name>/<name>.h` (types, constants, prototypes) +
+`src/<name>/<name>.c` (implementation with `static` helpers).
 
-- The header holds types, constants, and prototypes; the `.c` holds the
-  implementation with `static` helpers.
-- Add the `.c` to the `build` recipe in the `justfile` so it is compiled
-  freestanding.
-- Add `#include "<name>_test.c"` and the `test_<name>()` call to
-  `tests/run.c`. Tests include the `.c` directly, so a domain's implementation
-  is compiled into the test translation unit; if two domains define a helper
-  with the same name, that collision surfaces here — promote the shared helper
-  to an inline function in `util/`.
-
-## Kernel-free data path
-
-The end-to-end path uses `net/memlink` (an in-process datagram FIFO) and the
-userspace `net/ipv4` + `net/udp4` stack. It must never call `socket`,
-`sendto`, `recvfrom`, or `bind`. Verify mechanically:
-
-```sh
-grep -rn "SYS_socket\|SYS_sendto\|SYS_recvfrom\|SYS_bind" \
-  src/endpoint src/net src/protect src/tls src/frame   # expect no matches
+```mermaid
+flowchart TB
+    A["create src/&lt;name&gt;/&lt;name&gt;.{h,c}"] --> B["public API = quic_&lt;name&gt;_*<br/>grep src/ to confirm unique"]
+    B --> C["test first: tests/&lt;name&gt;_test.c<br/>RFC vector golden + round-trip + malformed"]
+    C --> D["wire tests/run.c (MANUAL, 3 edits):<br/>#include production .c<br/>#include _test.c<br/>test_&lt;name&gt;() in main()"]
+    D --> E{"three-point gate"}
+    E -->|red| F["split CCN-4 fns, fix collisions"] --> E
+    E -->|green| G["micro-commit: feat then test"]
 ```
 
-Sockets exist only in `io/udp` as an optional real-network path, kept out of
-the end-to-end flow.
+The `justfile` finds `src/**/*.c` automatically, but **`tests/run.c` is
+hand-edited** — a new domain needs all three edits there or it is committed but
+never built or tested. After editing `run.c`, grep to confirm the edit landed,
+then run the object-count check.
 
-## Verification beyond tests
+## Verification layers
 
-For changes involving state machines, concurrency, or critical algorithms, the
-design and key properties are checked with model checking (TLA+) and proof
-(Lean 4) before/alongside implementation, and the resulting invariants and
-proven predicates are turned into the golden tests above. Those artifacts are
-kept out of the repository; what lands here is the verified code and the tests
-derived from it.
+Decide the layer in planning, before writing code. Three layers, three jobs —
+don't mix them and don't overuse them (TLA+/Lean on trivial logic is
+over-engineering).
+
+```mermaid
+flowchart TB
+    Q1{"state transitions /<br/>concurrency / protocol<br/>lifecycle?"}
+    Q1 -->|yes| TLA["TLA+ (loop-engineering)<br/>model-check; counterexamples<br/>→ Gherkin acceptance specs"]
+    Q1 -->|no| Q2{"critical crypto /<br/>math property?"}
+    Q2 -->|yes| LEAN["Lean 4 (formal-verification)<br/>round-trip, encode==decode,<br/>input-validation soundness"]
+    Q2 -->|no| TDD["TDD<br/>test list → Red → Green → Refactor"]
+    TLA -. proven invariants .-> TDD
+    LEAN -. proven predicates .-> TDD
+```
+
+- **State transitions / concurrency / protocol lifecycle → TLA+.** The 40 specs
+  in `tasks/loopeng/` exhaustively explore stream / connection / handshake /
+  PN-space / close / key-update / path / version-negotiation / HTTP/3-control
+  state, with zero surviving mutants. Counterexamples become acceptance specs.
+- **Critical crypto / math → Lean 4.** The proofs in `tasks/fv/` establish
+  varint, packet-number, AEAD, cwnd, RTT, and the Ed25519 signature equation
+  with no `sorry`.
+- **Everything else → TDD.** Test list first → Red (confirm it fails) → minimal
+  Green → Refactor.
+
+Properties proven in the top two layers become 1:1 predicates in the TDD test
+list. Both layers' artifacts live in `tasks/` and are kept out of the shipped
+repo; what lands is the verified code and the tests derived from it.
+
+## Test strategy
+
+`tests/run.c` is the single unity TU: it `#include`s each production `.c` and
+each `*_test.c` exactly once, so tests exercise real implementation code (not a
+mock) and symbol collisions surface immediately. Each domain's test covers, per
+the RFC, the test-design viewpoints:
+
+- **Official golden vector.** The RFC/FIPS published vector, re-derived by hand
+  before being baked in — external snippets have been wrong (a mis-XORed nonce,
+  a truncated ClientHello). When a full golden vector can't be retrieved, prove
+  correctness with round-trip + known sub-component vectors + hand-computed
+  parts, never a single faked match.
+- **Encode/decode round-trip.** Encode then decode returns the input.
+- **Boundary values & equivalence partitioning.** Lengths, offsets, varint
+  size classes, ODCID edge lengths.
+- **Malformed-input rejection.** Truncated, tampered, and out-of-range inputs
+  are rejected, not silently accepted.
+
+## Workflow
+
+1. **Read the RFC first.** Find the published test vector before writing code.
+2. **Test first.** Add `tests/<domain>_test.c` with the golden assertion plus
+   round-trip and malformed cases; wire it into `run.c` and confirm it fails.
+3. **Implement minimally.** Smallest code that passes and stays CCN ≤ 3. Reuse
+   `util/*`, varint cursors, and the `fsm` engine before adding helpers.
+4. **Keep the gate green.** When a function hits CCN 4, split out a predicate or
+   sub-step helper.
+5. **Micro-commit.** ~30–50 line conventional commits with an RFC section
+   reference; keep `feat(<domain>):` and `test(<domain>):` as distinct commits.
+</content>
+</invoke>

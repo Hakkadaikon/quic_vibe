@@ -1,79 +1,130 @@
-# 実 UDP QUIC サーバサンプル
+# Real-UDP QUIC server sample
 
-`quic_server.c` は、実際の UDP ソケットで QUIC の Initial パケットを受信し、
-リポジトリ本体の部品で TLS 1.3 のサーバフライトを組み立てて応答を返す最小サーバである。
-libc 非依存・x86_64-linux・直接 syscall で動く（自前の `_start` を持つ静的バイナリ）。
+`quic_server.c` is a minimal QUIC server that receives a real client `Initial`
+packet over a real UDP socket, assembles a TLS 1.3 server flight from the
+repository's own building blocks, and sends it back. It is libc-free,
+x86_64-linux only, and runs on direct syscalls with its own `_start` (a static,
+freestanding binary).
 
-何をするか。
+## Overview
 
-- `0.0.0.0:4433` に bind する。
-- datagram を受信し、簡易ロングヘッダから DCID を取り出す。
-- 取り出した DCID から Initial 鍵を導出して Initial を復号し（RFC 9001 5.2）、
-  CRYPTO フレームから ClientHello を取り出す。
-- ALPN `h3` のオファーを確認し、実行時に自己署名 Ed25519 証明書を組み立てる。
-- サーバドライバ（`sdrv`）で、**本物の TLS バイト列**のサーバフライトを生成する。
-  ServerHello、EncryptedExtensions、Certificate、CertificateVerify、Finished
-  （RFC 8446 4.4）である。
-- ServerHello をサーバ Initial パケットに封入し（RFC 9000 17.2.2）、
-  残りを Handshake パケットに封入して（RFC 9000 17.2.4、導出した handshake 鍵で保護）、
-  両方を送信元へ返す。
-- 各ステップを stderr に出力する。
+The server does exactly one round of the QUIC handshake: it accepts a client
+`Initial`, decrypts it, negotiates ALPN, builds a runtime self-signed
+certificate, generates the **real TLS 1.3 bytes** of the server flight
+(ServerHello + EncryptedExtensions / Certificate / CertificateVerify /
+Finished, RFC 8446 4.4), seals them into QUIC packets, and returns them. It
+does **not** serve HTTP/3, install 1-RTT keys, or receive the client Finished.
+Those are out of scope for this sample.
 
-## ビルドと起動
+## Server flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as quic_server (0.0.0.0:4433)
+
+    Note over S: listen_udp() — quic_udp_socket / bind
+    C->>S: client Initial (long header, ClientHello in CRYPTO)
+    Note over S: open_initial()<br/>quic_initpkt_open — derive Initial keys from DCID,<br/>decrypt, recover ClientHello
+    Note over S: log_alpn()<br/>quic_salpn_select_h3 — note "h3"
+    Note over S: setup_sdrv()<br/>quic_selfcert_build — runtime self-signed Ed25519 cert<br/>quic_sdrv_init
+    Note over S: run_sdrv()<br/>quic_sdrv_recv_client_hello +<br/>quic_sdrv_build_server_flight — real TLS bytes
+    Note over S: seal_initial()<br/>quic_tx_packet — ServerHello in a server Initial packet
+    Note over S: seal_handshake()<br/>quic_hspkt_build — EE/Cert/CV/Fin in a Handshake packet
+    S-->>C: ServerHello (Initial packet)
+    S-->>C: server flight (Handshake packet)
+```
+
+Each step also logs a line to stderr (`Initial received and opened`,
+`ALPN: h3 selected`, `certificate built`, `server flight built`,
+`ServerHello (Initial) sent`, `server flight (Handshake) sent`).
+
+The packet codec emits the complete RFC 9000 17.2 long header (DCID, SCID,
+Initial Token, Length, packet number).
+
+## Build and run
 
 ```sh
 cd examples
-nix develop          # clang / just / tcpdump が入る
-just run             # ビルドして 0.0.0.0:4433 で起動
+nix develop          # provides clang / just / tcpdump
+just run             # builds and starts on 0.0.0.0:4433
 ```
 
-`just build` だけでも `examples/quic_server` バイナリが生成される。
+`just build` alone produces the `examples/quic_server` binary. On startup the
+server prints `listening on 0.0.0.0:4433` and blocks in `recvfrom`. Stop it with
+Ctrl-C.
 
-## 実地検証で確認できたこと
+## Connecting from outside (honest)
 
-別プロセスのクライアントから実 UDP（ループバック）で 1 往復させ、サーバの
-受信・応答経路をワイヤ越しに通した。観測できた事実は次のとおり。
+### `curl --http3`
 
-クライアントは、本物の ClientHello を載せた AEAD + ヘッダ保護つきの client Initial
-（1200 バイト）を `127.0.0.1:4433` へ送る。
+```sh
+curl --http3 --insecure https://127.0.0.1:4433/
+```
 
-サーバは Initial を受信・復号し（`Initial received and opened`）、ALPN `h3` を選択し
-（`ALPN: h3 selected`）、自己署名証明書を組み立て（`certificate built`）、サーバフライトを
-生成し（`server flight built`）、ServerHello（Initial、128 バイト）とフライト
-（Handshake、385 バイト）の 2 つの datagram を送り返す。
+The server emits the same wire form a real client sends, and the repository's
+tests confirm the bytes match the RFC 9001 A.2 test vector. However, a full
+`curl --http3` round trip is **not verified in this environment**:
 
-クライアントは応答を受け取り、サーバ Initial 鍵で 1 つ目の応答を復号して、本物の
-ServerHello（handshake 型 `0x02`）を取り出せることを確認する。2 つ目の応答が
-サーバフライトを載せた Handshake パケットとして届くことも確認する。
+- The curl here is 8.5.0 built **without** HTTP/3 (`curl --version` lists no
+  `http3` under Protocols/Features).
+- Even with an HTTP/3-capable client, this sample stops after the server flight;
+  it never completes the handshake or answers an HTTP/3 request.
 
-つまり「実 UDP ソケットで QUIC Initial を受信し、本物のサーバフライトを生成して返す」
-ところまでを、ワイヤ越しに確認している。
+So "the wire format matches RFC 9001 A.2" is verified; "external QUIC clients
+(curl / quiche / ngtcp2 / Chrome) complete a handshake against it" is **not**.
 
-ワイヤを介さないインプロセスの検査では、ここからさらに踏み込み、サーバが封入した
-ServerHello とフライトを鍵で開き直してバイト列が一致すること、すなわち応答が
-正しく保護された開封可能なパケットであることまで確かめている。署名（CertificateVerify）
-と Finished の MAC をクライアントが検証して同じ ECDHE 共有秘密に到達する完全な
-ハンドシェイクは、本体の `sdrv` テストとドライバテストがメモリ上で実証している。
+### `tcpdump`
 
-## 正直な制約
+```sh
+tcpdump -i lo -n udp port 4433
+```
 
-- このサーバは**完全な HTTP/3 を返さない**。リクエストへのレスポンス生成は含まない。
-  1-RTT 鍵の設置やクライアント Finished の受理も、このサンプルの範囲外である。
-- 本体のパケットコーデックは、完全なロングヘッダ（DCID、SCID、Initial の Token、
-  Length、4 バイトのパケット番号）を RFC 9000 17.2 の形式で出力する。これは
-  `curl --http3` が送る Initial ヘッダと同じワイヤ形式で、本体テストでは
-  RFC 9001 A.2 のベクタと一致することを確かめている。
-  ただし `curl --http3` での実地完走は、この環境では未検証である。この環境の curl は
-  8.5.0 で、そもそも HTTP/3 を含まないビルドだった（`curl --version` の
-  Protocols/Features に http3 が無い）。実地検証は、同じコーデックを使うクライアントで行った。
-- `tcpdump` でのパケットキャプチャは、この環境では権限（CAP_NET_RAW）が無く実行できなかった。
-  代わりに、実ソケットでサーバの応答を受け取り、サーバ Initial 鍵で ServerHello を
-  復号して取り出せること、Handshake パケットが届くことを確認している。
-- 鍵は再現性のため固定シードである（`ponytail:` コメント参照）。本番では per-run 鍵にする。
+This would show the Initial going out and the two response datagrams coming
+back, but capturing requires `CAP_NET_RAW`, which is **not available in this
+environment**, so it was not run here.
 
-本体のドライバテストは、同じハンドシェイクが 1-RTT 鍵設置まで完走することをメモリ上で実証している。
+### Most reliable check: the repository's own client
+
+The exercised path was driven by a client built from the **same codec**, over a
+real loopback UDP socket, plus the in-tree handshake tests:
 
 ```sh
 cd ..
 just test
 ```
+
+## What is verified / what is not
+
+**Verified (demonstrated):**
+
+- **Build**: `cd examples && just build` produces the `quic_server` binary
+  (libc-free, own `_start`).
+- **Bind + listen**: `./quic_server` prints `listening on 0.0.0.0:4433` and
+  blocks in `recvfrom` (bind succeeds, no crash).
+- **Real UDP round trip (loopback)**: a separate client process sends a
+  full-header client Initial (1200 bytes) to `127.0.0.1:4433`; the server
+  decrypts it, selects ALPN `h3`, builds the self-signed certificate, generates
+  the server flight, and sends back two datagrams — a ServerHello (Initial,
+  128 bytes) and the flight (Handshake, 385 bytes). The client recovers the real
+  ServerHello (handshake type `0x02`) by decrypting the first response with the
+  server Initial keys, and receives the second as a Handshake packet.
+- **Wire format**: the long header conforms to RFC 9000 17.2 and the in-tree
+  tests confirm the bytes match the RFC 9001 A.2 vector.
+
+**Not verified (out of scope or environment-limited):**
+
+- A completed handshake against an **external** QUIC implementation
+  (curl / quiche / ngtcp2 / Chrome) — unverified here.
+- An end-to-end `curl --http3` round trip — the local curl lacks HTTP/3 support.
+- A `tcpdump` packet capture — no `CAP_NET_RAW` in this environment.
+- A full HTTP/3 response, 1-RTT data transfer, or client-Finished receipt — not
+  implemented by this sample.
+
+This sample proves the path "receive a real client Initial over real UDP and
+return a real TLS 1.3 server flight," and no further.
+
+The keys use fixed seeds for reproducibility (see the `ponytail:` comment in the
+source); a production server would derive per-run keys.
+</content>
+</invoke>

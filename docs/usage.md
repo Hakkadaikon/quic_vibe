@@ -30,60 +30,107 @@ just check   # ccn + test (use this before committing)
   (`tests/test.h`); each domain has one `*_test.c`, all driven by
   `tests/run.c`.
 
-## Layout
+## What this SDK does
 
+`quic_vibe` is a libc-free QUIC / TLS 1.3 toolkit. Everything runs in memory:
+it derives keys, runs a real X25519 ECDHE TLS 1.3 handshake, protects and
+opens QUIC packets, and verifies the handshake transcript — without touching a
+socket. Sockets exist (`io/udp`) but are optional and not on the in-memory
+path.
+
+The substance is the verified building blocks; the handshake and session
+drivers are worked examples of how they compose. Each piece is checked against
+official test vectors (see [Correctness](#correctness)).
+
+Where each layer fits:
+
+- **Cryptography** — SHA-256/HMAC/HKDF, AES-128-GCM, ChaCha20-Poly1305,
+  X25519, Ed25519 — each verified against published vectors.
+- **Packet protection** — derive Initial keys, seal/open Initial, Handshake
+  and 1-RTT packets (`initpkt`, `hspkt`, `protectcs`).
+- **TLS 1.3 handshake** — agree the ECDHE secret over real ClientHello/
+  ServerHello bytes (`tlsdriver`), then sequence Certificate/CertificateVerify/
+  Finished to completion and confirmation (`fullhs`); `client` wires those to a
+  socket, `sdrv` builds the server flight.
+- **Session** — a high-level in-memory client/server exchange (`session`).
+
+## The TLS 1.3 handshake flow
+
+The full flight is driven and verified in-memory by `tlsdriver_test`,
+`sdrv_test`, `fullhs_test`, and `client_test`. The annotations show which API
+produces or consumes each message.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+
+    Note over C: quic_tlsdriver_client_hello<br/>quic_client_build_initial
+    C->>S: ClientHello (CRYPTO, real bytes, key_share)
+    Note over S: quic_tlsdriver_recv_crypto<br/>(takes X25519 key_share)
+    S->>C: ServerHello (key_share)
+    Note over C: quic_tlsdriver_recv_crypto<br/>both sides: X25519 ECDHE → Handshake secret
+
+    Note over S: quic_sdrv_build_server_flight
+    S->>C: EncryptedExtensions
+    S->>C: Certificate
+    S->>C: CertificateVerify (Ed25519)
+    S->>C: Finished
+    Note over C: quic_fullhs_recv_cert<br/>quic_fullhs_recv_certverify (over transcript)<br/>quic_fullhs_recv_finished (MAC check)
+
+    Note over C: quic_fullhs_send_finished
+    C->>S: Finished
+    Note over C,S: both ends complete → quic_fullhs_advance_application<br/>→ application secrets → 1-RTT keys
+
+    S->>C: HANDSHAKE_DONE
+    Note over C: quic_fullhs_confirmed<br/>→ confirmed, Handshake keys discarded
 ```
-src/
-  sys/      x86_64 direct syscalls, freestanding entry, base types
-  varint/   variable-length integer codec + TLV cursor helpers   (RFC 9000 §16)
-  packet/   long/short header parse/build; packet number          (RFC 9000 §17,
-            truncation and recovery                                A.2/A.3)
-  tparam/   transport parameter TLV codec                          (RFC 9000 §18)
-  frame/    PADDING/PING/CRYPTO/STREAM/CONNECTION_CLOSE/ACK/       (RFC 9000 §19)
-            NEW_CONNECTION_ID codecs
-  fsm/      shared table-driven finite state machine engine
-  stream/   sending/receiving stream state machines               (RFC 9000 §3)
-  conn/     handshake lifecycle + per-space packet numbers         (RFC 9000 §12)
-  hash/     SHA-256 and HMAC-SHA-256                          (FIPS 180-4/198-1)
-  hkdf/     HKDF and HKDF-Expand-Label                         (RFC 5869/8446)
-  aes/      AES-128 block cipher (also AES-ECB)                    (FIPS 197)
-  gcm/      AES-128-GCM AEAD                              (NIST SP 800-38D)
-  chacha/   ChaCha20, Poly1305, ChaCha20-Poly1305 AEAD             (RFC 8439)
-  hp/       AES header protection                              (RFC 9001 §5.4)
-  protect/  packet protection pipeline (nonce, AEAD seal, HP)  (RFC 9001 §5.3)
-  tls/      Initial keys, X25519, handshake codec, key schedule
-            (RFC 9001 §5.2, RFC 7748, RFC 8446)
-  net/      userspace IPv4/UDP + checksum + in-memory link  (RFC 791/768/1071)
-  endpoint/ kernel-free end-to-end handshake driver
-  recovery/ RTT estimation, PTO, sent-packet & loss detection      (RFC 9002)
-  cc/       NewReno congestion control                            (RFC 9002 §7)
-  flow/     flow-control accounting + stream reassembly      (RFC 9000 §2.2/4)
-  io/       UDP sockets (direct syscalls) + retransmission queue
-  util/     shared inline helpers (constant-time compare, scalars)
-  error/    transport error codes and CRYPTO_ERROR mapping       (RFC 9000 §20)
-  keyupdate/ 1-RTT key update state machine                     (RFC 9001 §6)
-  path/     path validation and migration state              (RFC 9000 §8.2/9)
-  closelife/ connection close lifecycle (idle/closing/draining) (RFC 9000 §10)
-  version/  version numbers, version_information TP, negotiation
-            (RFC 8999/9368/9369)
-  datagram/ unreliable DATAGRAM frames and TP                    (RFC 9221)
-  grease/   grease_quic_bit transport parameter                  (RFC 9287)
-  h3/       HTTP/3 frame codec + control/SETTINGS/GOAWAY          (RFC 9114)
-  session/  high-level kernel-free QUIC session (handshake + 1-RTT data)
-tests/      hosted assert-based test harness, one file per domain
+
+`tlsdriver` carries the ClientHello/ServerHello and agrees the ECDHE shared
+secret; `fullhs` picks up from the derived handshake secret and drives the
+authentication flight (Certificate → CertificateVerify → Finished) to
+completion, installs the 1-RTT keys, and confirms on HANDSHAKE_DONE.
+
+## Handshake state and packet-number spaces
+
+The handshake advances forward only: `INITIAL → AUTH → CONFIRMED` (the
+`QUIC_CLIENT_HS_*` phases). There is no path back.
+
+```mermaid
+stateDiagram-v2
+    [*] --> INITIAL
+    INITIAL --> AUTH: ServerHello fed,<br/>handshake secret derived
+    AUTH --> CONFIRMED: Certificate/CertVerify/Finished<br/>verified, HANDSHAKE_DONE
+    CONFIRMED --> [*]
 ```
 
-Many frame, packet, and transport-parameter codecs live in additional files
-under the existing `frame/`, `packet/`, and `tparam/` directories (e.g.
-`frame/ack.c`, `frame/flowctl.c`, `packet/retry.c`, `tparam/tpblob.c`).
+Each handshake step lives in its own packet-number space; the three spaces
+number packets independently (RFC 9000 §12.3):
 
-Each domain is a directory with a `.h` (types, constants, prototypes) and a
-`.c` (implementation). Include the header you need, e.g. `#include
-"varint/varint.h"`, and link the matching `.o` from `just build`.
+```mermaid
+stateDiagram-v2
+    direction LR
+    Initial: Initial PN space
+    Handshake: Handshake PN space
+    Application: Application (1-RTT) PN space
+    [*] --> Initial
+    Initial --> Handshake: Handshake keys installed
+    Handshake --> Application: 1-RTT keys installed
+```
+
+The connection lifecycle is likewise forward-only — `open → Closing →
+Draining → Closed` — with no backward transitions (RFC 9000 §10,
+`closelife`).
 
 ## Using the library
 
-### The high-level session API (start here)
+Each domain is a directory with a `.h` (types, constants, prototypes) and a
+`.c` (implementation). Include the header you need, e.g. `#include
+"varint/varint.h"`, and link the matching `.o` from `just build`. The examples
+below use the real function signatures; see the matching `*_test.c` for full
+worked flows.
+
+### (a) The high-level session API (start here)
 
 `session/session.h` is the entry point if you just want a working QUIC
 exchange. A client and a server complete a handshake and exchange protected
@@ -112,13 +159,102 @@ quic_session_recv_stream(&cli, &got);   /* got.data == "hello" */
 
 This is a real handshake (X25519 ECDHE + the TLS key schedule) and real
 AEAD-protected packets carried as IPv4/UDP over the memlink; it is **not** a
-loopback shortcut. What it is not: it does not speak to a remote QUIC peer
-over a real UDP socket (that path lives in the optional `io/udp` and is not
-wired into the session, by the kernel-free design), it carries a minimal
-ClientHello rather than a full TLS 1.3 negotiation, and it exchanges one
-STREAM frame per call rather than running a packet-scheduling loop. The
-`session` layer is the worked example of how the verified building blocks
-fit together; the building blocks themselves are the substance.
+loopback shortcut. It carries a minimal ClientHello rather than a full TLS 1.3
+negotiation, and it exchanges one STREAM frame per call rather than running a
+packet-scheduling loop. For a full TLS 1.3 message flow, use the
+`tlsdriver`/`fullhs`/`client` path below.
+
+### (b) Driving the handshake to confirmed (`client`)
+
+`quic_client` orchestrates `tlsdriver` and `fullhs`. The data path is
+socket-free and can be driven by buffer injection (`quic_client_feed`), so the
+same logic the socket pump uses can be exercised without a socket. This mirrors
+`tests/client_test.c`:
+
+```c
+#include "client/client.h"
+
+quic_client c;
+quic_tlsdriver_init(&c.tls, my_priv, my_pub, /*is_server=*/0);
+
+/* (1) build the Initial datagram: ClientHello as CRYPTO, padded to 1200 */
+u8 dg[QUIC_CLIENT_DATAGRAM_MAX];
+usz n = quic_client_build_initial(&c, dg, sizeof(dg));   /* n == 1200 */
+
+/* (2) feed each inbound TLS message (CRYPTO payload). Dispatched by phase:
+ *     ServerHello -> tlsdriver (INITIAL -> AUTH), then
+ *     Certificate / CertificateVerify / Finished -> fullhs (-> CONFIRMED). */
+quic_client_feed(&c, server_hello, sh_len);      /* phase -> AUTH */
+quic_client_feed(&c, cert_msg, cert_len);
+quic_client_feed(&c, cert_verify, cv_len);
+quic_client_feed(&c, server_finished, fin_len);
+
+/* (3) once confirmed: */
+if (quic_client_is_connected(&c)) { /* 1-RTT ready */ }
+```
+
+With a real socket, `quic_client_init` opens the UDP socket and generates the
+X25519 key pair, `quic_client_start` sends the Initial, and
+`quic_client_run_handshake(&c, max_iterations)` pumps the socket until
+confirmed (bounded so a silent or hostile peer cannot wedge the client).
+
+The server side builds its flight with `quic_sdrv_recv_client_hello` then
+`quic_sdrv_build_server_flight` (ServerHello + EncryptedExtensions +
+Certificate + CertificateVerify + Finished); see `tests/sdrv_test.c`.
+
+### (c) Packet protection round-trip (`initpkt`)
+
+Build a protected client Initial from a DCID and open it back with the same
+DCID — seal then open is the identity on the CRYPTO payload (RFC 9001 §5.2,
+Appendix A keys). From `tests/initpkt_test.c`:
+
+```c
+#include "initpkt/initpkt.h"
+#include "initpkt/initopen.h"
+
+const u8 dcid[8] = {0x83,0x94,0xc8,0xf0,0x3e,0x51,0x57,0x08};
+const u8 scid[4] = {0xde,0xad,0xbe,0xef};
+const u8 ch[]    = "ClientHello";
+
+u8 pkt[1300];
+usz total;
+quic_initpkt_build(dcid, 8, scid, 4, ch, sizeof(ch) - 1, /*pn=*/2,
+                   pkt, sizeof(pkt), &total);   /* total >= 1200 */
+
+const u8 *crypto;
+usz clen;
+quic_initpkt_open(dcid, 8, pkt, total, /*pn=*/2, &crypto, &clen);
+/* crypto[0] == 0x06 (CRYPTO frame), payload follows */
+```
+
+A single tampered byte makes `quic_initpkt_open` return 0 (AEAD
+authentication). Handshake and 1-RTT packets use `quic_hspkt_build` /
+`quic_hspkt_open`; suite-aware seal/open (AES-128-GCM `0x1301` or
+ChaCha20-Poly1305 `0x1303`) is `quic_protectcs_seal` / `quic_protectcs_open`.
+
+### (d) Self-signed Ed25519 certificate (`selfcert`)
+
+Build a self-signed Ed25519 X.509 certificate from a 32-byte seed, then parse
+it back and verify its own signature (RFC 5280 §4.1, RFC 8410). From
+`tests/selfcert_test.c`:
+
+```c
+#include "selfcert/selfcert.h"
+#include "x509/x509.h"
+
+u8 cert[1024];
+usz clen;
+quic_selfcert_build(seed, cert, sizeof(cert), &clen);
+
+quic_x509 c;
+quic_x509_parse(cert, clen, &c);
+/* c.tbs / c.tbs_len is the signed body; c.sig the Ed25519 signature.
+ * quic_x509_public_key(c.tbs, c.tbs_len, ...) exposes the 32-byte key. */
+```
+
+This cert is what `sdrv` sends in its Certificate message and what
+`quic_fullhs_recv_certverify` authenticates. Root CAs are held in `castore`;
+chains parse through `x509`.
 
 ### Building blocks
 
@@ -134,9 +270,9 @@ The pieces compose bottom-up. A few representative entry points:
   `quic_protect_seal` builds the nonce (`iv XOR pn`), AEAD-seals the payload
   with the header as AAD, then applies header protection; `quic_protect_open`
   reverses it.
-- **Key derivation**: `quic_initial_derive` for Initial keys (RFC 9001
-  Appendix A), `quic_x25519`/`quic_x25519_base` for ECDHE, and
-  `quic_tls_handshake_secret`/`quic_tls_handshake_keys` for the schedule.
+- **Key derivation**: `quic_initpkt_derive` for Initial keys (RFC 9001
+  Appendix A), `quic_x25519`/`quic_x25519_base` for ECDHE, and the key schedule
+  for the handshake/application secrets.
 
 ### End to end, without the kernel
 
@@ -151,6 +287,24 @@ The data path makes no `socket`/`sendto`/`recvfrom` calls — sockets live only
 in an optional `io/udp` that the end-to-end path does not use. See
 `tests/endpoint_test.c` for the full worked flow.
 
+## Cryptographic primitives
+
+Every primitive is verified against its published vector and can be used
+directly:
+
+| Primitive | API | Vector |
+|-----------|-----|--------|
+| SHA-256 | `quic_sha256` | NIST |
+| HMAC-SHA-256 | `quic_hmac_sha256` | RFC 4231 |
+| HKDF / Expand-Label | `quic_hkdf_extract`, `quic_hkdf_expand_label` | RFC 5869 / 8446 |
+| AES-128 / -GCM | `quic_aes128_*`, `quic_gcm_seal`/`quic_gcm_open` | FIPS 197 / SP 800-38D |
+| ChaCha20-Poly1305 | `quic_chapoly_seal`/`quic_chapoly_open` | RFC 8439 |
+| X25519 | `quic_x25519`, `quic_x25519_base` | RFC 7748 |
+| Ed25519 | `quic_ed25519_keypair`, `quic_ed25519_verify` | RFC 8032 |
+
+The AEADs leave the plaintext untouched and return 0 when the ciphertext, AAD,
+or tag is tampered.
+
 ## Correctness
 
 Every codec is checked against official test vectors and has round-trip and
@@ -159,10 +313,8 @@ truncated-input tests:
 - Transport codecs against the RFC 9000 Appendix A sample vectors. The
   packet-number recovery window boundary is pinned, including the case at
   exactly half a window where recovery deliberately does not match.
-- Cryptography against the published vectors for each primitive: SHA-256
-  (NIST), HMAC (RFC 4231), HKDF (RFC 5869), AES-128 (FIPS 197), AES-GCM
-  (NIST SP 800-38D), ChaCha20/Poly1305 (RFC 8439), X25519 (RFC 7748). The
-  AEADs reject tampered ciphertext, AAD, or tags.
+- Cryptography against the published vectors for each primitive (table above).
+  The AEADs reject tampered ciphertext, AAD, or tags.
 - The RFC 9001 Appendix A Initial keys and the §5.4.2 header-protection mask
   match byte for byte, exercising the whole HKDF → AEAD → header-protection
   stack together.
@@ -182,8 +334,10 @@ error codes; stream/connection state machines; the full cryptography stack
 with RFC 9001 Initial/handshake key derivation and the Retry Integrity Tag;
 the packet protection pipeline; loss recovery and congestion control; flow
 control and reassembly; a userspace IPv4/UDP stack over an in-memory link;
-and a kernel-free endpoint that establishes a handshake and exchanges 1-RTT
-data.
+a kernel-free endpoint that establishes a handshake and exchanges 1-RTT data;
+and a real TLS 1.3 message flow (`tlsdriver` ECDHE agreement, `sdrv` server
+flight, `fullhs` Certificate/CertificateVerify/Finished to confirmation,
+`client` driving it to confirmed).
 
 Also implemented, each verified against its RFC: the 1-RTT key update (key
 phase, old-key retention, AEAD limits), path validation and connection
@@ -191,21 +345,40 @@ migration, the connection close / draining / idle-timeout lifecycle, version
 negotiation with downgrade protection and QUIC v2, compatible version
 negotiation (RFC 9368), the unreliable DATAGRAM extension (RFC 9221),
 grease_quic_bit (RFC 9287), Ed25519 signature verification (RFC 8032) with
-Certificate/CertificateVerify parsing, 0-RTT key derivation and constraints,
-stateless reset, coalesced packet splitting, received-packet-number tracking,
-loss recovery (PTO, ECN, pacing, persistent congestion) and the full
-congestion-control phases, and the HTTP/3 stack (frame codec, control /
-SETTINGS / GOAWAY state machine, request-stream framing, pseudo-headers,
-priorities) with the static QPACK table, integer/string/field-line codecs,
-SNI and ALPN extension codecs.
+Certificate/CertificateVerify parsing, self-signed Ed25519 certificate build
+(`selfcert`), 0-RTT key derivation and constraints, stateless reset, coalesced
+packet splitting, received-packet-number tracking, loss recovery (PTO, ECN,
+pacing, persistent congestion) and the full congestion-control phases, and the
+HTTP/3 stack (frame codec, control / SETTINGS / GOAWAY state machine,
+request-stream framing, pseudo-headers, priorities) with the static QPACK
+table, integer/string/field-line codecs, SNI and ALPN extension codecs.
 
 Verified across the whole tree: every function holds cyclomatic complexity
 <= 3, all sources compile freestanding (no libc), and the full test suite
 runs in one hosted translation unit.
 
-Not implemented (deliberate, noted in code): the QPACK dynamic table (RFC
-9204 — only the static parts are present), full TLS 1.3 certificate-chain /
-X.509 path validation beyond Ed25519 signature checking, and 0-RTT replay
-protection. The HTTP/3 HEADERS payload is passed through opaque, and the
-endpoint proves transport key agreement and encrypted data exchange rather
-than full PKI authentication.
+## Not implemented (deliberate)
+
+These are intentionally out of scope and remain so even in the finished form;
+they are noted in code:
+
+- **Real sockets on the main path.** `session`/`endpoint` never speak to a
+  real socket — they are kernel-free. Sockets exist only in the optional
+  `io/udp` and are not wired into the session by design.
+- **Full TLS 1.3 negotiation in `session`.** The `session` layer carries a
+  minimal ClientHello, not a full negotiation. The full TLS 1.3 message flow
+  lives in `tlsdriver`/`fullhs`/`client`.
+- **`curl --http3` interop.** A full real-world `curl --http3` run is not
+  verified.
+- **QPACK dynamic table** (RFC 9204 — only the static parts are present).
+- **Full X.509 path validation.** Authentication is Ed25519 signature
+  verification over the transcript; certificate-chain / path validation beyond
+  that is not done.
+- **0-RTT replay protection.**
+- **HTTP/3 HEADERS payload** is passed through opaque.
+
+The endpoint and handshake drivers prove transport key agreement, encrypted
+data exchange, and Ed25519 handshake authentication — not full PKI
+authentication.
+</content>
+</invoke>
