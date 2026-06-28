@@ -323,6 +323,8 @@
 #include "h3settings/control_open.c"
 #include "h3settings/settings_build.c"
 #include "h3settings/control_settings.c"
+#include "lhdr/lhdr_build.c"
+#include "lhdr/lhdr_parse.c"
 #include "varint_test.c"
 #include "header_test.c"
 #include "pnum_test.c"
@@ -629,6 +631,8 @@
 #include "h3settings_control_open_test.c"
 #include "h3settings_build_test.c"
 #include "h3settings_control_settings_test.c"
+#include "lhdr_build_test.c"
+#include "lhdr_parse_test.c"
 
 int main(void)
 {
@@ -945,5 +949,7 @@ int main(void)
     test_h3settings_control_open();
     test_h3settings_build();
     test_h3settings_control_settings();
+    test_lhdr_build();
+    test_lhdr_parse();
     return TEST_REPORT();
 }
