@@ -1,4 +1,13 @@
 #include "test.h"
+#include "datagram/zerortt_dgram.c"
+#include "tls/ticketversion.c"
+#include "version/switchrule.c"
+#include "tls/alpn_match.c"
+#include "tls/alpn.c"
+#include "tls/sni.c"
+#include "h3/reuse.c"
+#include "closelife/keepalive.c"
+#include "h3/priority.c"
 #include "hash/sha512.c"
 #include "qpack/base.c"
 #include "qpack/fieldline.c"
@@ -359,6 +368,15 @@
 #include "zerortt_params_test.c"
 #include "zerortt_policy_test.c"
 #include "zerortt_reject_test.c"
+#include "priority_test.c"
+#include "keepalive_test.c"
+#include "reuse_test.c"
+#include "sni_test.c"
+#include "alpn_test.c"
+#include "alpn_match_test.c"
+#include "switchrule_test.c"
+#include "ticketversion_test.c"
+#include "zerortt_dgram_test.c"
 
 int main(void)
 {
@@ -536,5 +554,14 @@ int main(void)
     test_zerortt_params();
     test_zerortt_policy();
     test_zerortt_reject();
+    test_priority();
+    test_keepalive();
+    test_reuse();
+    test_sni();
+    test_alpn();
+    test_alpn_match();
+    test_switchrule();
+    test_ticketversion();
+    test_zerortt_dgram();
     return TEST_REPORT();
 }
