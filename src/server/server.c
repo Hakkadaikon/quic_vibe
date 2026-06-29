@@ -120,12 +120,15 @@ static int srv_verify_finished(quic_server *s, const u8 *msg, usz len)
     return quic_srvfin_verify_client_finished(msg, len, c_traffic, th);
 }
 
-/* RFC 9001 4.1.2: on a verified client Finished, fold it in and complete
- * (advance to Master, install 1-RTT, confirm). */
+/* RFC 8446 7.1: on a verified client Finished, complete the handshake. The
+ * application_traffic_secret_0 is derived over the transcript through the
+ * server Finished (tr_through_flight), NOT the client Finished, so both peers
+ * reach the same 1-RTT keys. */
 static int srv_complete(quic_server *s, const u8 *msg, usz len)
 {
-    srv_tr_add(s, msg, len);
-    if (!quic_srvfin_complete(&s->fin, s->tr, s->tr_len)) return 0;
+    (void)msg;
+    (void)len;
+    if (!quic_srvfin_complete(&s->fin, s->tr, s->tr_through_flight)) return 0;
     s->phase = QUIC_SERVER_HS_CONFIRMED;
     return 1;
 }
