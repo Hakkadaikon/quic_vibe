@@ -20,7 +20,8 @@
  * Each step logs to stderr. See examples/README.md for what completes here vs.
  * what an external HTTP/3 client (curl/quiche) additionally needs. */
 
-#include "frame/frame.h"
+#include "crecv/collect.h"
+#include "crecv/message.h"
 #include "h3srv/state.h"
 #include "initpkt/initopen.h"
 #include "io/udp.h"
@@ -120,18 +121,36 @@ static int valid_initial(const u8 *dg, usz len)
     return len >= (usz)6 + dg[5];
 }
 
-/* Open the client Initial and recover the ClientHello CRYPTO (RFC 9000 17.2:
- * the DCID is unprotected at the front). Returns 1 and fills *cf on success. */
-static int open_initial(u8 *dg, usz len, quic_crypto_frame *cf)
+/* Walk the opened Initial payload's frames and reassemble the ClientHello from
+ * its CRYPTO frame(s). curl/quiche lead with PADDING/ACK and may split the
+ * ClientHello across CRYPTO frames, so crecv (framewalk + offset reassembly) is
+ * used rather than assuming a single CRYPTO at the front (RFC 9000 12.4 / 19.6).
+ * Returns 1 and points *msg at the contiguous ClientHello of *mlen bytes. */
+static int collect_ch(quic_crecv *cr, const u8 *payload, usz plen,
+                      const u8 **msg, usz *mlen)
 {
-    const u8 *crypto;
-    usz clen;
+    quic_crecv_init(cr);
+    if (!quic_crecv_collect(cr, payload, plen))
+        return logs("CRYPTO collect failed\n"), 0;
+    if (!quic_crecv_complete_message(cr))
+        return logs("ClientHello incomplete\n"), 0;
+    quic_crecv_message(cr, msg, mlen);
+    return 1;
+}
+
+/* Open the client Initial and recover the ClientHello (RFC 9000 17.2: the DCID
+ * is unprotected at the front). Returns 1 and points *msg at it on success. */
+static int open_initial(u8 *dg, usz len, quic_crecv *cr,
+                        const u8 **msg, usz *mlen)
+{
+    const u8 *payload;
+    usz plen;
     if (!valid_initial(dg, len))
         return 0;
-    if (!quic_initpkt_open(dg + 6, dg[5], dg, len, 0, &crypto, &clen))
+    if (!quic_initpkt_open(dg + 6, dg[5], dg, len, 0, &payload, &plen))
         return logs("Initial open failed\n"), 0;
     logs("Initial received and opened\n");
-    return quic_frame_get_crypto(crypto, clen, cf);
+    return collect_ch(cr, payload, plen, msg, mlen);
 }
 
 /* Init the orchestrator and loop with the fixed server identity and the
@@ -181,11 +200,11 @@ static int send_flight(i64 fd, const quic_sockaddr_in *peer, quic_server *s)
 /* Set up the orchestrator from the client's DCID and fold the ClientHello.
  * Returns 1 on success. */
 static int accept_client(quic_server *s, quic_srvloop *l, const u8 *dcid,
-                         u8 dcid_len, const quic_crypto_frame *cf)
+                         u8 dcid_len, const u8 *ch, usz ch_len)
 {
     if (!init_server(s, l, dcid, dcid_len))
         return logs("server init failed\n"), 0;
-    if (!quic_server_recv_initial(s, cf->data, (usz)cf->length))
+    if (!quic_server_recv_initial(s, ch, ch_len))
         return logs("ClientHello rejected\n"), 0;
     logs("ClientHello received\n");
     return 1;
@@ -195,11 +214,13 @@ static int accept_client(quic_server *s, quic_srvloop *l, const u8 *dcid,
 static int on_initial(i64 fd, const quic_sockaddr_in *peer, quic_server *s,
                       quic_srvloop *l, u8 *dg, usz len)
 {
-    quic_crypto_frame cf;
-    if (!open_initial(dg, len, &cf))
+    quic_crecv cr;
+    const u8 *ch;
+    usz ch_len;
+    if (!open_initial(dg, len, &cr, &ch, &ch_len))
         return 0;
-    log_alpn(cf.data, (usz)cf.length);
-    if (!accept_client(s, l, dg + 6, dg[5], &cf))
+    log_alpn(ch, ch_len);
+    if (!accept_client(s, l, dg + 6, dg[5], ch, ch_len))
         return 0;
     return send_flight(fd, peer, s);
 }
