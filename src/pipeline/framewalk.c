@@ -2,6 +2,7 @@
 #include "varint/varint.h"
 #include "frame/dispatch.h"
 #include "frame/frame.h"
+#include "frame/ack.h"
 
 void quic_framewalk_init(quic_framewalk *it, const u8 *frames, usz len)
 {
@@ -33,13 +34,28 @@ static int has_body(quic_frame_kind kind)
            kind == QUIC_FK_CONNECTION_CLOSE;
 }
 
+/* RFC 9000 19.3: an ACK frame's length comes from its own decoder. */
+static usz ack_len(const u8 *buf, usz n)
+{
+    quic_ack_frame f;
+    return quic_ack_decode(buf, n, &f);
+}
+
+/* Length of a frame the walker measures via a decoder (ACK or a length-bearing
+ * body), or 0 if it carries neither (RFC 9000 19.3/19.6/19.8/19.19). */
+static usz decoded_len(quic_frame_kind kind, const u8 *buf, usz n)
+{
+    if (kind == QUIC_FK_ACK) return ack_len(buf, n);
+    if (has_body(kind)) return body_len(kind, buf, n);
+    return 0;
+}
+
 /* Bytes the frame at buf occupies, or 0 if the walker cannot measure it. */
 static usz frame_len(u64 type, const u8 *buf, usz n)
 {
     quic_frame_kind kind = quic_frame_classify(type);
     if (single_byte(kind)) return 1;
-    if (has_body(kind)) return body_len(kind, buf, n);
-    return 0;
+    return decoded_len(kind, buf, n);
 }
 
 /* Measure the frame at the cursor, validating it fits. Returns its length or 0. */
