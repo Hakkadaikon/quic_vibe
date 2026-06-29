@@ -244,6 +244,7 @@
 #include "path/prefaddr.c"
 #include "pmtu/pmtu.c"
 #include "protect/protect.c"
+#include "qpack/huffman.c"
 #include "qpack/instruction.c"
 #include "qpack/integer.c"
 #include "qpack/prefix.c"
@@ -571,6 +572,7 @@
 #include "ptoreset_test.c"
 #include "ptype_test.c"
 #include "pushid_test.c"
+#include "qpack_huffman_test.c"
 #include "qpack_instruction_test.c"
 #include "qpack_prefix_test.c"
 #include "qpack_settings_test.c"
@@ -969,6 +971,7 @@ int main(void)
     test_qpack_enc_instr_roundtrip();
     test_qpack_prefix_empty();
     test_qpack_settings_value();
+    test_qpack_huffman();
     test_qpack_integer_vector();
     test_recvpn_dedup();
     test_qpack_rel_to_abs();
