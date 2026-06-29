@@ -1,9 +1,12 @@
 #include "sdrv/sdrv.h"
 #include "shbuild/shbuild.h"
-#include "sflight/encext.h"
 #include "sflight/certmsg.h"
-#include "sflight/certverify_build.h"
 #include "sflight/finished_build.h"
+#include "eebuild/eebuild.h"
+#include "p256cert/p256cert.h"
+#include "cvecdsa/cvecdsa.h"
+#include "stp/server_tp.h"
+#include "p256/p256_point.h"
 #include "tls/ext_keyshare.h"
 #include "tls/handshake.h"
 #include "tls/schedule.h"
@@ -16,15 +19,30 @@ static void sdrv_copy32(u8 *dst, const u8 *src)
     for (usz i = 0; i < 32; i++) dst[i] = src[i];
 }
 
+/* RFC 5480 / RFC 5280 4.1: build the self-signed P-256 end-entity certificate
+ * from p256_priv into the owned buffer and point the view at it. */
+static void sdrv_build_cert(quic_sdrv *s)
+{
+    ec_point q;
+    u8 pub_x[32], pub_y[32];
+    quic_ec_mul(&q, s->p256_priv, &quic_p256_g);
+    quic_fp_to_be(pub_x, q.x);
+    quic_fp_to_be(pub_y, q.y);
+    quic_p256cert_build(s->p256_priv, pub_x, pub_y,
+                        s->cert_buf, sizeof(s->cert_buf), &s->cert_len);
+    s->cert_der = s->cert_buf;
+}
+
 void quic_sdrv_init(quic_sdrv *s, const u8 server_priv_x25519[32],
-                    const u8 server_pub_x25519[32], const u8 cert_seed[32],
+                    const u8 server_pub_x25519[32], const u8 cert_priv[32],
                     const u8 *cert_der, usz cert_len)
 {
+    (void)cert_der;
+    (void)cert_len;
     sdrv_copy32(s->server_priv, server_priv_x25519);
     sdrv_copy32(s->server_pub, server_pub_x25519);
-    sdrv_copy32(s->cert_seed, cert_seed);
-    s->cert_der = cert_der;
-    s->cert_len = cert_len;
+    sdrv_copy32(s->p256_priv, cert_priv);
+    sdrv_build_cert(s);
     s->hs_ready = 0;
     quic_transcript_init(&s->tr);
 }
@@ -136,13 +154,15 @@ static void derive_secret(quic_sdrv *s)
     s->hs_ready = 1;
 }
 
-/* RFC 8446 4.3.1: build EncryptedExtensions and fold it into the flight. */
+/* RFC 8446 4.3.1 / RFC 9001 8.1-8.2: EncryptedExtensions carrying ALPN "h3"
+ * and the server transport parameters. ODCID/ISCID are not plumbed into the
+ * driver yet, so empty connection ids are advertised (well-formed TP). */
 static int emit_ee(quic_sdrv *s, u8 *flight, usz cap, usz *off)
 {
-    static const u8 tp[1] = {0};
-    u8 msg[1024];
-    usz n;
-    if (!quic_sflight_encrypted_extensions(tp, sizeof(tp), msg, sizeof(msg), &n))
+    u8 tp[256], msg[1024];
+    usz tn, n;
+    if (!quic_stp_build_server(0, 0, 0, 0, tp, sizeof(tp), &tn)) return 0;
+    if (!quic_eebuild_encrypted_extensions(tp, tn, msg, sizeof(msg), &n))
         return 0;
     return emit_msg(s, msg, n, flight, cap, off);
 }
@@ -157,13 +177,14 @@ static int emit_cert(quic_sdrv *s, u8 *flight, usz cap, usz *off)
     return emit_msg(s, msg, n, flight, cap, off);
 }
 
-/* RFC 8446 4.4.3: CertificateVerify over the transcript through Certificate. */
+/* RFC 8446 4.4.3: ECDSA P-256 CertificateVerify (scheme 0x0403) over the
+ * transcript through Certificate. */
 static int emit_certverify(quic_sdrv *s, u8 *flight, usz cap, usz *off)
 {
     u8 msg[256], th[QUIC_SHA256_DIGEST];
     usz n;
     quic_transcript_hash(&s->tr, th);
-    if (!quic_sflight_certificate_verify(s->cert_seed, th, msg, sizeof(msg), &n))
+    if (!quic_cvecdsa_build(s->p256_priv, th, msg, sizeof(msg), &n))
         return 0;
     return emit_msg(s, msg, n, flight, cap, off);
 }

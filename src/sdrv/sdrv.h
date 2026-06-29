@@ -12,8 +12,9 @@
 typedef struct {
     u8 server_priv[32];                 /* RFC 7748 x25519 private */
     u8 server_pub[32];                  /* RFC 7748 x25519 public */
-    u8 cert_seed[32];                   /* RFC 8032 Ed25519 signing seed */
-    const u8 *cert_der;                 /* RFC 8446 4.4.2 end-entity cert */
+    u8 p256_priv[32];                   /* RFC 5480 ECDSA P-256 signing scalar */
+    u8 cert_buf[512];                   /* self-signed P-256 cert DER (owned) */
+    const u8 *cert_der;                 /* RFC 8446 4.4.2 end-entity cert (view) */
     usz cert_len;
     u8 client_pub[32];                  /* RFC 8446 4.2.8 client key_share */
     u8 hs_secret[QUIC_HKDF_PRK];        /* RFC 8446 7.1 Handshake Secret */
@@ -22,9 +23,12 @@ typedef struct {
     quic_transcript tr;                 /* RFC 8446 4.4.1 Transcript-Hash */
 } quic_sdrv;
 
-/* Hold the server key material and certificate; init transcript/key schedule. */
+/* Hold the server key material and build the self-signed P-256 certificate from
+ * cert_priv (the ECDSA P-256 signing scalar); init transcript/key schedule. The
+ * cert_der/cert_len arguments are ignored (the cert is built internally) and
+ * kept only for caller compatibility. */
 void quic_sdrv_init(quic_sdrv *s, const u8 server_priv_x25519[32],
-                    const u8 server_pub_x25519[32], const u8 cert_seed[32],
+                    const u8 server_pub_x25519[32], const u8 cert_priv[32],
                     const u8 *cert_der, usz cert_len);
 
 /* RFC 8446 4.4.1: fold the ClientHello into the transcript and take the
