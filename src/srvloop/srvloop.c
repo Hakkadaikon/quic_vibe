@@ -1,14 +1,21 @@
 #include "srvloop/srvloop.h"
+#include "frame/ack.h"
 #include "h3srv/control.h"
 #include "h3srv/respond.h"
+#include "hspkt/hspkt_build.h"
+#include "keys/keyset.h"
+#include "appdata/stream_send.h"
 #include "srvloop/dispatch.h"
+#include "srvloop/keys.h"
 #include "srvloop/recv.h"
 #include "srvloop/send.h"
 #include "udploop/rxloop.h"
 
 #define QUIC_SRVLOOP_SCRATCH 512
 #define QUIC_SRVLOOP_RESP_STREAM 0
-#define QUIC_SRVLOOP_MAXPKTS 8 /* coalesced packets per datagram (RFC 9000 12.2) */
+#define QUIC_SRVLOOP_CTRL_STREAM 3 /* RFC 9114 6.2.1: first server uni stream */
+#define QUIC_SRVLOOP_MAXPKTS 8     /* coalesced packets per datagram (RFC 9000 12.2) */
+#define QUIC_SRVLOOP_CLIENT_FIN_PN 0 /* RFC 9000 13.1: client Finished arrives at Handshake PN 0 */
 
 int quic_srvloop_init(quic_srvloop *l, const u8 *cli_scid, u8 cli_scid_len)
 {
@@ -22,41 +29,101 @@ int quic_srvloop_init(quic_srvloop *l, const u8 *cli_scid, u8 cli_scid_len)
     for (usz i = 0; i < cli_scid_len; i++)
         l->cli_scid[i] = cli_scid[i];
     l->tx_pn = 0;
+    l->hs_tx_pn = 0;
     return 1;
 }
 
-/* RFC 9001 4.1.2 / RFC 9000 19.20: once confirmed, seal HANDSHAKE_DONE in a
- * 1-RTT packet (own-direction SERVER_AP) exactly once. */
-static int emit_handshake_done(quic_srvloop *l, quic_server *s,
-                               u8 *out, usz cap, usz *out_len)
+/* RFC 9000 13.2.1 / 19.3: encode an ACK frame for the single packet number pn. */
+static usz encode_ack_one(u8 *frames, usz cap, u64 pn)
 {
-    u8 frame[4];
-    usz fl;
-    if (!quic_server_handshake_done(s, frame, sizeof frame, &fl))
-        return 0;
-    return quic_srvloop_send_onertt(s, l->cli_scid, l->cli_scid_len,
-                                    l->tx_pn++, frame, fl, out, cap, out_len);
+    quic_ack_frame f = {0};
+    f.n_ranges = 1;
+    f.ranges[0].hi = pn;
+    f.ranges[0].lo = pn;
+    return quic_ack_encode(frames, cap, &f);
 }
 
-/* RFC 9114 6.2.1: ensure the server has emitted SETTINGS first (precondition of
- * any response). The control-stream bytes themselves are not separately carried
- * here; only the ordering flag the responder checks is set. */
-static void ensure_settings(quic_h3srv_state *h3)
+/* RFC 9000 13.2.1: seal a Handshake packet that carries only an ACK of the
+ * client Finished's packet number (no CRYPTO), so curl stops retransmitting it.
+ * ponytail: acks the fixed Handshake PN 0 (curl's first Handshake packet);
+ * track the received PN if a peer ever delays its Finished to a later one. */
+static int emit_handshake_ack(quic_srvloop *l, quic_server *s,
+                              u8 *out, usz cap, usz *out_len)
+{
+    const quic_initial_keys *k;
+    quic_aes128 hp;
+    u8 frames[16];
+    usz fl;
+    if (!quic_srvloop_seal_keys(s, QUIC_LEVEL_HANDSHAKE, &k, &hp))
+        return 0;
+    fl = encode_ack_one(frames, sizeof frames, QUIC_SRVLOOP_CLIENT_FIN_PN);
+    if (fl == 0)
+        return 0;
+    return quic_hspkt_build(k, &hp, l->cli_scid, l->cli_scid_len, s->sdrv.iscid,
+                            s->sdrv.iscid_len, l->hs_tx_pn++, frames, fl,
+                            out, cap, out_len);
+}
+
+/* RFC 9114 6.2.1: wrap the control-stream type + SETTINGS in a STREAM frame on
+ * the first server unidirectional stream (id 3, no FIN: the stream stays open). */
+static int build_settings_frame(quic_srvloop *l, u8 *out, usz cap, usz *len)
 {
     u8 ctl[64];
     usz cl;
-    if (!h3->settings_sent)
-        quic_h3srv_open_control(h3, ctl, sizeof ctl, &cl);
+    if (!quic_h3srv_open_control(&l->h3, ctl, sizeof ctl, &cl))
+        return 0;
+    return quic_appdata_stream_frame(QUIC_SRVLOOP_CTRL_STREAM, 0, ctl, cl, 0,
+                                     out, cap, len);
+}
+
+/* The 1-RTT payload sent at confirmation: the SETTINGS STREAM frame (RFC 9114
+ * 6.2.1) followed by HANDSHAKE_DONE (RFC 9000 19.20), in one packet. */
+static int confirm_payload(quic_srvloop *l, quic_server *s,
+                           u8 *buf, usz cap, usz *len)
+{
+    usz a, b;
+    if (!build_settings_frame(l, buf, cap, &a))
+        return 0;
+    if (!quic_server_handshake_done(s, buf + a, cap - a, &b))
+        return 0;
+    *len = a + b;
+    return 1;
+}
+
+/* Seal the confirmation 1-RTT packet (SETTINGS + HANDSHAKE_DONE) into out. */
+static int seal_confirm_onertt(quic_srvloop *l, quic_server *s,
+                               u8 *out, usz cap, usz *out_len)
+{
+    u8 pl[128];
+    usz pll;
+    if (!confirm_payload(l, s, pl, sizeof pl, &pll))
+        return 0;
+    return quic_srvloop_send_onertt(s, l->cli_scid, l->cli_scid_len, l->tx_pn++,
+                                    pl, pll, out, cap, out_len);
+}
+
+/* RFC 9000 12.2: at confirmation, coalesce a Handshake ACK and a 1-RTT packet
+ * (SETTINGS + HANDSHAKE_DONE) into one datagram. */
+static int emit_confirm(quic_srvloop *l, quic_server *s,
+                        u8 *out, usz cap, usz *out_len)
+{
+    usz hl = 0, rl = 0;
+    if (!emit_handshake_ack(l, s, out, cap, &hl))
+        return 0;
+    if (!seal_confirm_onertt(l, s, out + hl, cap - hl, &rl))
+        return 0;
+    *out_len = hl + rl;
+    return 1;
 }
 
 /* RFC 9114 4.1: build a 200 (no body) for the decoded request and seal it in a
- * 1-RTT packet. */
+ * 1-RTT packet. The server's SETTINGS were already sent at confirmation, which
+ * quic_h3srv_build_response requires (settings_sent). */
 static int emit_response(quic_srvloop *l, quic_server *s,
                          u8 *out, usz cap, usz *out_len)
 {
     u8 resp[256];
     usz rl;
-    ensure_settings(&l->h3);
     if (!quic_h3srv_build_response(&l->h3, QUIC_SRVLOOP_RESP_STREAM, 200,
                                    (const u8 *)0, 0, resp, sizeof resp, &rl))
         return 0;
@@ -64,14 +131,14 @@ static int emit_response(quic_srvloop *l, quic_server *s,
                                     l->tx_pn++, resp, rl, out, cap, out_len);
 }
 
-/* Pick the outbound packet for this step: a decoded GET yields a 200, otherwise
- * a freshly confirmed handshake yields HANDSHAKE_DONE. */
+/* Pick the outbound datagram for this step: a decoded GET yields a 200,
+ * otherwise a freshly confirmed handshake yields ACK + SETTINGS + DONE. */
 static int produce(quic_srvloop *l, quic_server *s, int got_request,
                    u8 *out, usz cap, usz *out_len)
 {
     if (got_request)
         return emit_response(l, s, out, cap, out_len);
-    return emit_handshake_done(l, s, out, cap, out_len);
+    return emit_confirm(l, s, out, cap, out_len);
 }
 
 /* RFC 9001 5 / 5.1: open one coalesced packet slice and walk its frames. A

@@ -14,7 +14,8 @@ typedef struct {
     quic_h3srv_state h3;
     u8 cli_scid[20]; /* the client's source id; DCID the server writes */
     u8 cli_scid_len;
-    u64 tx_pn; /* monotone packet number for sealed output */
+    u64 tx_pn;    /* monotone packet number for sealed 1-RTT output */
+    u64 hs_tx_pn; /* monotone packet number for sealed Handshake output */
 } quic_srvloop;
 
 /* Record the client's source connection id (the DCID for server-sent packets)
