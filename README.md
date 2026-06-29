@@ -12,16 +12,19 @@ checked against the official RFC/FIPS test vectors.
 - **libc-free**: compiles under `-ffreestanding -nostdlib -static`; its own
   `_start` and syscall wrappers, x86_64-linux only.
 - **Every function stays within cyclomatic complexity 3** (enforced by a gate).
-- **337 tests across 104 domains**, all assertion-based and hosted.
+- **393 tests across 124 domains**, all assertion-based and hosted.
 - **Official vectors only**: SHA-256 (FIPS 180-4), HMAC (RFC 4231), HKDF
   (RFC 5869), AES-GCM (SP 800-38D), ChaCha20-Poly1305 (RFC 8439), X25519
   (RFC 7748), Ed25519 (RFC 8032), ECDSA P-256 (RFC 6979), RSA. Initial keys
   match RFC 9001 A.1; the long-header Initial packet matches RFC 9001 A.2;
   ChaCha20 header protection matches RFC 9001 A.5.
-- **Verified beyond tests**: 40 TLA+ specs model the protocol state machines
-  (all states reachable, zero mutation survivors); Lean 4 proofs (no `sorry`)
-  cover varint, packet-number decoding, AEAD, cwnd, RTT, and the Ed25519
-  signing equation.
+- **Verified beyond tests**: the protocol state machines (connection drive, key
+  update, Retry/Version-Negotiation reconnection, PN-space lifecycle, close /
+  draining / idle) are model-checked before implementation — every reachable
+  state explored, zero mutation survivors — and critical crypto/math (varint,
+  packet-number decoding, AEAD, cwnd, RTT, the Ed25519 signing equation) is
+  machine-proved. The model-checker counterexamples and proved predicates become
+  1:1 golden tests.
 
 ## Architecture
 
@@ -91,7 +94,7 @@ confirmation, and Handshake-key discard.
 ```sh
 just build    # compile every domain freestanding (proves libc independence)
 just ninja    # fast incremental/parallel build
-just test     # run the 337-test assertion suite
+just test     # run the 393-test assertion suite
 just check    # the CCN ≤ 3 gate plus the full test suite
 ```
 
@@ -117,13 +120,19 @@ endpoint. Stated honestly:
 - **No verified interop with external implementations.** The wire format
   matches the RFC vectors, but a round trip against another QUIC stack (e.g.
   `curl --http3`) has not been demonstrated in this environment.
-- **The steady-state event loop is not fully wired up** — the pieces exist,
-  the driver is mid-assembly.
+- **The steady-state event loop is wired to a real socket.** `connrunner` binds
+  the deciding loop to a real UDP socket and the `connio` crypto layer, and
+  drives real-byte loss retransmission, key update, Retry / Version-Negotiation
+  reconnection, sent-packet metadata with in-flight accounting, and per-PN-space
+  send/receive. What is unverified is the *external* round trip above, not the
+  internal assembly.
 - **`session`/`endpoint` do not talk to a real socket** (kernel-free by
-  design); the UDP example is the socket-facing path.
-- **Intentionally out of scope**: QPACK dynamic table, full X.509 path
-  validation, and 0-RTT replay defense. See [docs/usage.md](docs/usage.md) for
-  the full scope.
+  design); `connrunner` and the UDP example are the socket-facing path.
+- **Intentionally out of scope**: full X.509 chain / path validation (the
+  certificate is parsed and its Ed25519 signature verified, but trust-chain
+  building is not done), 0-RTT replay defense, and CID-rotation privacy policy
+  (an operational concern, not an SDK one). See [docs/usage.md](docs/usage.md)
+  for the full scope.
 
 ## License
 

@@ -24,26 +24,26 @@ and the workflow for adding a domain.
 
 ## Architecture
 
-The codebase is 104 domains, one per `src/<dir>/`, stacked in dependency layers.
+The codebase is 124 domains, one per `src/<dir>/`, stacked in dependency layers.
 Higher layers depend on lower ones; the I/O layer sits to the side and drives
 the loop; the verification layer is tooling kept out of the shipped binary.
 
 ```mermaid
 flowchart TB
     subgraph H3["HTTP/3"]
-        h3["h3 · h3recv · h3req · h3resp · h3run · h3settings · qpack · qpackdyn"]
+        h3["h3 · h3recv · h3req · h3resp · h3run · h3settings · h3conn<br/>h3reqenc · h3reqdrive · h3cancel · qpack · qpackdyn"]
     end
     subgraph DRV["Connection driving"]
-        drv["driver · tlsdriver · fullhs · sdrv · srvfin · shbuild · sflight<br/>client · endpoint · session · hrr · stp · salpn"]
+        drv["driver · tlsdriver · fullhs · sdrv · srvfin · shbuild · sflight<br/>client · endpoint · session · hrr · stp · salpn · alpnver"]
     end
     subgraph CORE["QUIC core"]
-        core["frame · varint · cid · stream · conn · flow · error · version · fsm<br/>ackrange · recvpn · keys · keyupdate · path · closelife · migrate<br/>retrytoken · sreset · grease · datagram"]
+        core["frame · varint · cid · cidxchg · stream · conn · flow · error · version · fsm<br/>ackrange · recvpn · pnspaces · keys · keyupdate · kuswitch · path · closelife · migrate<br/>retrytoken · retrydrive · vndrive · sreset · resume · grease · datagram"]
     end
     subgraph PKT["Packet protection"]
         pkt["packet · lhdr · shorthdr · hp · protect · protectcs · hspkt · initpkt · vpn · pnspaces"]
     end
     subgraph TLS["TLS 1.3"]
-        tls["tls · tlsext · certreq · tparam · tpverify · selfcert · castore · x509"]
+        tls["tls · tlsext · certreq · tparam · tpverify · selfcert · castore · x509 · tbscert"]
     end
     subgraph CRYPTO["Crypto primitives"]
         crypto["hash · hkdf · aes · gcm · chacha · rsa · ed25519 · p256<br/>bignum · rng · asn1"]
@@ -55,7 +55,7 @@ flowchart TB
     H3 --> DRV --> CORE --> PKT --> TLS --> CRYPTO --> BASE
 
     subgraph IO["I/O & loop"]
-        io["io · net · connio · connloop · udploop · framedispatch<br/>pktbuild · lossdrive · ackgen · idledrive · poll · recovery · cc · cwndctl · losstime · sentpkt · pmtu"]
+        io["io · net · connrunner · connio · connloop · udploop · framedispatch<br/>evloop · pktbuild · rtxbytes · rtxdrive · lossdrive · kudrive · sentmeta · hspto<br/>ackgen · idledrive · udpsess · earlydrive · poll · recovery · cc · cwndctl · losstime · sentpkt · pmtu"]
     end
     IO --> CORE
     IO -.drives.-> DRV
@@ -83,7 +83,7 @@ flowchart LR
 
     src --> build["just build<br/>freestanding per-file<br/>-ffreestanding -nostdlib<br/>→ build/&lt;path&gt;.o"]
     src --> ninja["just ninja<br/>scripts/gen_ninja.sh → build.ninja<br/>parallel + header-dep incremental"]
-    src --> test["just test<br/>tests/run.c unity build<br/>(all *_test.c, one TU)<br/>337 tests, assertions on"]
+    src --> test["just test<br/>tests/run.c unity build<br/>(all *_test.c, one TU)<br/>393 tests, assertions on"]
 
     build --> gate
     test --> gate
@@ -103,7 +103,7 @@ flowchart LR
   incremental rebuilds — the fast inner loop while iterating.
 - **`just test`** compiles `tests/run.c`, a single unity translation unit that
   `#include`s every production `.c` once and every `*_test.c` once, then runs
-  all 337 tests with assertions on.
+  all 393 tests with assertions on.
 - **`just check`** runs the gate (`ccn` + `test`); the full commit gate adds
   `just build` and the object-count check (see below).
 
@@ -184,10 +184,11 @@ flowchart TB
     LEAN -. proven predicates .-> TDD
 ```
 
-- **State transitions / concurrency / protocol lifecycle → TLA+.** The 40 specs
-  in `tasks/loopeng/` exhaustively explore stream / connection / handshake /
-  PN-space / close / key-update / path / version-negotiation / HTTP/3-control
-  state, with zero surviving mutants. Counterexamples become acceptance specs.
+- **State transitions / concurrency / protocol lifecycle → TLA+.** The specs in
+  `tasks/loopeng/` exhaustively explore stream / connection / handshake /
+  PN-space / close-and-draining / key-update / path / version-negotiation /
+  Retry-reconnection / HTTP/3-control state, with zero surviving mutants.
+  Counterexamples become acceptance specs.
 - **Critical crypto / math → Lean 4.** The proofs in `tasks/fv/` establish
   varint, packet-number, AEAD, cwnd, RTT, and the Ed25519 signature equation
   with no `sorry`.

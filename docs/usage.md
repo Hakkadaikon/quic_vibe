@@ -32,11 +32,13 @@ just check   # ccn + test (use this before committing)
 
 ## What this SDK does
 
-`quic_vibe` is a libc-free QUIC / TLS 1.3 toolkit. Everything runs in memory:
-it derives keys, runs a real X25519 ECDHE TLS 1.3 handshake, protects and
-opens QUIC packets, and verifies the handshake transcript — without touching a
-socket. Sockets exist (`io/udp`) but are optional and not on the in-memory
-path.
+`quic_vibe` is a libc-free QUIC / TLS 1.3 toolkit. The in-memory path derives
+keys, runs a real X25519 ECDHE TLS 1.3 handshake, protects and opens QUIC
+packets, and verifies the handshake transcript — without touching a socket. A
+separate socket-facing path (`connrunner`) binds the steady-state loop to a real
+UDP socket and drives retransmission, key update, Retry/VN reconnection, and
+per-PN-space send/receive; sockets live in the optional `io/udp` and are not on
+the in-memory path.
 
 The substance is the verified building blocks; the handshake and session
 drivers are worked examples of how they compose. Each piece is checked against
@@ -340,18 +342,27 @@ flight, `fullhs` Certificate/CertificateVerify/Finished to confirmation,
 `client` driving it to confirmed).
 
 Also implemented, each verified against its RFC: the 1-RTT key update (key
-phase, old-key retention, AEAD limits), path validation and connection
-migration, the connection close / draining / idle-timeout lifecycle, version
+phase, old-key retention, AEAD limits) driven over the real send/receive path,
+path validation and connection migration with UDP send-target swap, the
+connection close / draining / idle-timeout lifecycle (per-phase send gating, a
+3·PTO close timer, and a once-only graceful close notification), version
 negotiation with downgrade protection and QUIC v2, compatible version
 negotiation (RFC 9368), the unreliable DATAGRAM extension (RFC 9221),
 grease_quic_bit (RFC 9287), Ed25519 signature verification (RFC 8032) with
-Certificate/CertificateVerify parsing, self-signed Ed25519 certificate build
-(`selfcert`), 0-RTT key derivation and constraints, stateless reset, coalesced
-packet splitting, received-packet-number tracking, loss recovery (PTO, ECN,
-pacing, persistent congestion) and the full congestion-control phases, and the
-HTTP/3 stack (frame codec, control / SETTINGS / GOAWAY state machine,
-request-stream framing, pseudo-headers, priorities) with the static QPACK
-table, integer/string/field-line codecs, SNI and ALPN extension codecs.
+Certificate/CertificateVerify parsing and full TBSCertificate field parsing
+(RFC 5280), self-signed Ed25519 certificate build (`selfcert`), 0-RTT key
+derivation with resumption / early-data eligibility, the Initial DCID/SCID
+exchange with original_destination_connection_id transport-parameter
+verification, stateless reset, coalesced packet splitting, per-PN-space
+send/receive, sent-packet metadata with in-flight accounting feeding real-byte
+loss retransmission, loss recovery (PTO including the handshake special case,
+ECN, pacing, persistent congestion) and the full congestion-control phases, and
+the HTTP/3 stack (frame codec, control / SETTINGS / GOAWAY state machine,
+request-stream framing, pseudo-headers, priorities, request cancellation via
+RESET_STREAM) with QPACK static *and* dynamic tables — real request/response
+HEADERS are QPACK-encoded and decoded over a 1-RTT stream round trip —
+integer/string/field-line codecs, SNI and ALPN extension codecs, and ALPN /
+version interaction.
 
 Verified across the whole tree: every function holds cyclomatic complexity
 <= 3, all sources compile freestanding (no libc), and the full test suite
@@ -362,23 +373,26 @@ runs in one hosted translation unit.
 These are intentionally out of scope and remain so even in the finished form;
 they are noted in code:
 
-- **Real sockets on the main path.** `session`/`endpoint` never speak to a
-  real socket — they are kernel-free. Sockets exist only in the optional
-  `io/udp` and are not wired into the session by design.
+- **Real sockets on the main session path.** `session`/`endpoint` never speak to
+  a real socket — they are kernel-free. The socket-facing path is `connrunner`
+  (which binds the loop to `io/udp`) and the UDP example; the in-memory session
+  is kernel-free by design.
 - **Full TLS 1.3 negotiation in `session`.** The `session` layer carries a
   minimal ClientHello, not a full negotiation. The full TLS 1.3 message flow
   lives in `tlsdriver`/`fullhs`/`client`.
-- **`curl --http3` interop.** A full real-world `curl --http3` run is not
-  verified.
-- **QPACK dynamic table** (RFC 9204 — only the static parts are present).
-- **Full X.509 path validation.** Authentication is Ed25519 signature
-  verification over the transcript; certificate-chain / path validation beyond
-  that is not done.
-- **0-RTT replay protection.**
-- **HTTP/3 HEADERS payload** is passed through opaque.
+- **`curl --http3` interop.** A full real-world `curl --http3` round trip is not
+  verified in this environment.
+- **Full X.509 chain / path validation.** The certificate is parsed (the whole
+  TBSCertificate is structured) and its Ed25519 signature is verified over the
+  transcript; trust-chain building and path validation beyond that are not done.
+- **0-RTT replay protection.** 0-RTT key derivation and the resumption /
+  early-data eligibility drive exist, but anti-replay defense does not.
+- **CID-rotation privacy policy** (RFC 9000 §10.11) — the CID-switch machinery
+  exists; *when* to rotate for unlinkability is an operational policy, left out
+  of the SDK.
 
-The endpoint and handshake drivers prove transport key agreement, encrypted
-data exchange, and Ed25519 handshake authentication — not full PKI
+The endpoint, handshake, and connection drivers prove transport key agreement,
+encrypted data exchange, and Ed25519 handshake authentication — not full PKI
 authentication.
 </content>
 </invoke>
