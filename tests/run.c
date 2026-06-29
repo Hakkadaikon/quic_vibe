@@ -385,6 +385,21 @@
 #include "tbscert/fields.c"
 #include "tbscert/version_serial.c"
 #include "tbscert/sigalg.c"
+#include "rtxdrive/select.c"
+#include "rtxdrive/build.c"
+#include "rtxdrive/batch.c"
+#include "kudrive/trigger.c"
+#include "kudrive/recv_phase.c"
+#include "kudrive/discard_timing.c"
+#include "retrydrive/accept.c"
+#include "retrydrive/reconnect.c"
+#include "retrydrive/token.c"
+#include "vndrive/accept.c"
+#include "vndrive/select.c"
+#include "vndrive/reconnect.c"
+#include "sentmeta/record.c"
+#include "sentmeta/on_ack.c"
+#include "sentmeta/detect_loss.c"
 #include "varint_test.c"
 #include "header_test.c"
 #include "pnum_test.c"
@@ -746,6 +761,15 @@
 #include "fields_test.c"
 #include "version_serial_test.c"
 #include "sigalg_test.c"
+#include "rtxdrive_select_test.c"
+#include "rtxdrive_build_test.c"
+#include "rtxdrive_batch_test.c"
+#include "kudrive_trigger_test.c"
+#include "kudrive_recv_phase_test.c"
+#include "kudrive_discard_timing_test.c"
+#include "retrydrive_test.c"
+#include "vndrive_test.c"
+#include "sentmeta_test.c"
 
 int main(void)
 {
@@ -1125,5 +1149,14 @@ int main(void)
     test_fields();
     test_version_serial();
     test_sigalg();
+    test_rtxdrive_select();
+    test_rtxdrive_build();
+    test_rtxdrive_batch();
+    test_kudrive_trigger();
+    test_kudrive_recv_phase();
+    test_kudrive_discard_timing();
+    test_retrydrive();
+    test_vndrive();
+    test_sentmeta();
     return TEST_REPORT();
 }
