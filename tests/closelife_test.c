@@ -75,12 +75,55 @@ static void test_life_closed_terminal(void)
     CHECK(l2.phase == QUIC_LIFE_CLOSING); /* did not reopen or switch */
 }
 
+/* A sent ack-eliciting packet resets the idle timer (RFC 9000 10.1). */
+static void test_life_send_resets_idle(void)
+{
+    quic_life l;
+    quic_life_init(&l, 3, 5);
+    quic_life_tick(&l); quic_life_tick(&l);
+    quic_life_on_send(&l);
+    CHECK(l.idle_ticks == 0);
+    quic_life_tick(&l); quic_life_tick(&l);
+    CHECK(l.phase == QUIC_LIFE_OPEN); /* did not close: timer was reset */
+}
+
+/* Entering the close path notifies the app exactly once (RFC 9000 10.2). */
+static void test_life_notify_once_on_close(void)
+{
+    quic_life l;
+    quic_life_init(&l, 10, 2);
+    CHECK(l.notified == 0);
+    quic_life_close(&l);
+    CHECK(l.notified == 1);
+    /* a later peer close is ignored (one-way), so no second notification */
+    quic_life_on_peer_close(&l);
+    CHECK(l.notified == 1 && l.phase == QUIC_LIFE_CLOSING);
+
+    /* peer close path also notifies once */
+    quic_life d;
+    quic_life_init(&d, 10, 2);
+    quic_life_on_peer_close(&d);
+    CHECK(d.notified == 1 && d.phase == QUIC_LIFE_DRAINING);
+}
+
+/* An idle silent close does NOT notify the app (RFC 9000 10.1). */
+static void test_life_idle_close_does_not_notify(void)
+{
+    quic_life l;
+    quic_life_init(&l, 2, 5);
+    quic_life_tick(&l); quic_life_tick(&l); /* idle silent close */
+    CHECK(l.phase == QUIC_LIFE_CLOSED && l.notified == 0);
+}
+
 void test_closelife(void)
 {
     test_life_idle_silent_close();
     test_life_recv_resets_idle();
+    test_life_send_resets_idle();
     test_life_immediate_close();
     test_life_draining();
     test_life_reset();
     test_life_closed_terminal();
+    test_life_notify_once_on_close();
+    test_life_idle_close_does_not_notify();
 }
