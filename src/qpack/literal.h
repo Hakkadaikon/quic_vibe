@@ -7,8 +7,8 @@
  * N=never-indexed, T=static, a 4-bit prefixed name index, then a value string
  * literal. RFC 9204 4.5.6. Literal Field Line With Literal Name: pattern
  * 001NHiii, N=never-indexed, H=name Huffman flag, a 3-bit prefixed name length
- * and that many name octets, then a value string literal. Only raw (H=0) name
- * literals are produced and accepted. */
+ * and that many name octets, then a value string literal. The encoder emits
+ * raw (H=0) names; the decoder accepts H=0 (raw) and H=1 (Huffman) names. */
 
 /* Encode a name-reference field line: name index/is_static/never plus the
  * value (vlen octets). Returns bytes written, or 0 if it does not fit. */
@@ -28,9 +28,9 @@ usz quic_qpack_literal_name_encode(u8 *buf, usz cap, int never, const u8 *name,
                                    usz nlen, const u8 *value, usz vlen);
 
 /* Decode a literal-name field line into *never, the name (into nm of ncap,
- * length to *nlen) and the value (into val of vcap, length to *vlen). Returns
- * bytes consumed, or 0 on a non-matching pattern, name Huffman (H=1),
- * truncation, or overflow. */
+ * length to *nlen) and the value (into val of vcap, length to *vlen). A H=1
+ * name is Huffman-decoded. Returns bytes consumed, or 0 on a non-matching
+ * pattern, truncation, or overflow. */
 usz quic_qpack_literal_name_decode(const u8 *buf, usz n, int *never, u8 *nm,
                                    usz ncap, usz *nlen, u8 *val, usz vcap,
                                    usz *vlen);

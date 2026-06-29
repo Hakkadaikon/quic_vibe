@@ -1,6 +1,7 @@
 #include "qpack/literal.h"
 #include "qpack/integer.h"
 #include "qpack/string.h"
+#include "qpack/huffman.h"
 #include "util/bytes.h"
 
 /* RFC 9204 4.5.4 first-byte bits. */
@@ -84,30 +85,42 @@ usz quic_qpack_literal_name_encode(u8 *buf, usz cap, int never, const u8 *name,
     return join(off, w);
 }
 
-/* RFC 9204 4.5.6: top three bits 001, and H (name Huffman) must be clear. */
+/* RFC 9204 4.5.6: top three bits 001 mark a literal-name field line. The H
+ * bit (name Huffman) is read separately and both H=0 and H=1 are accepted. */
 static int is_litname(const u8 *buf, usz n)
 {
-    return n != 0 && (buf[0] & 0xe0) == QPACK_LITNAME
-        && (buf[0] & QPACK_LITNAME_H) == 0;
+    return n != 0 && (buf[0] & 0xe0) == QPACK_LITNAME;
 }
 
-/* Copy len name octets at *off into nm, bounded by ncap. Returns 1 ok, 0. */
-static int take_name(const u8 *buf, usz n, usz *off, u8 *nm, usz ncap, u64 len)
+/* H=0: copy len name octets at off into nm, bounded by ncap. Returns 1 ok, 0. */
+static int name_raw(const u8 *buf, usz n, usz off, u8 *nm, usz ncap, u64 len,
+                    usz *nlen)
 {
-    if (len > ncap) return 0;
-    return quic_take_bytes(buf, n, off, nm, (usz)len);
+    if (len > ncap || !quic_take_bytes(buf, n, &off, nm, (usz)len)) return 0;
+    *nlen = (usz)len;
+    return 1;
+}
+
+/* Recover the name octets per the H flag (RFC 7541 5.2): H=1 is Huffman, H=0
+ * is raw. Truncated source octets fail either way. Returns 1 ok, 0. */
+static int name_octets(const u8 *buf, usz n, usz off, int huff, u8 *nm,
+                       usz ncap, u64 len, usz *nlen)
+{
+    if (off + len > n) return 0;
+    return huff ? quic_qpack_huffman_decode(buf + off, len, nm, ncap, nlen)
+                : name_raw(buf, n, off, nm, ncap, len, nlen);
 }
 
 /* Decode the 4.5.6 name into nm (ncap), length to *nlen. Returns bytes used
- * from buf, or 0 on truncation or overflow. */
-static usz litname_name_decode(const u8 *buf, usz n, u8 *nm, usz ncap, usz *nlen)
+ * from buf, or 0 on truncation or overflow. huff is the first byte's H flag. */
+static usz litname_name_decode(const u8 *buf, usz n, int huff, u8 *nm,
+                               usz ncap, usz *nlen)
 {
     u64 len;
     usz off = quic_qpack_int_decode(buf, n, 3, &len);
     if (off == 0) return 0;
-    if (!take_name(buf, n, &off, nm, ncap, len)) return 0;
-    *nlen = (usz)len;
-    return off;
+    if (!name_octets(buf, n, off, huff, nm, ncap, len, nlen)) return 0;
+    return off + (usz)len;
 }
 
 usz quic_qpack_literal_name_decode(const u8 *buf, usz n, int *never, u8 *nm,
@@ -117,6 +130,7 @@ usz quic_qpack_literal_name_decode(const u8 *buf, usz n, int *never, u8 *nm,
     usz off;
     if (!is_litname(buf, n)) return 0;
     *never = flag(buf[0], QPACK_LITNAME_N);
-    off = litname_name_decode(buf, n, nm, ncap, nlen);
+    off = litname_name_decode(buf, n, flag(buf[0], QPACK_LITNAME_H), nm, ncap,
+                              nlen);
     return decode_value(buf, n, off, val, vcap, vlen);
 }
