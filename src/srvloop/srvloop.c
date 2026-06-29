@@ -30,6 +30,9 @@ int quic_srvloop_init(quic_srvloop *l, const u8 *cli_scid, u8 cli_scid_len)
         l->cli_scid[i] = cli_scid[i];
     l->tx_pn = 0;
     l->hs_tx_pn = 0;
+    l->app_rx_pn = 0;
+    l->app_rx_seen = 0;
+    l->hs_done_sent = 0;
     return 1;
 }
 
@@ -116,29 +119,101 @@ static int emit_confirm(quic_srvloop *l, quic_server *s,
     return 1;
 }
 
-/* RFC 9114 4.1: build a 200 (no body) for the decoded request and seal it in a
- * 1-RTT packet. The server's SETTINGS were already sent at confirmation, which
- * quic_h3srv_build_response requires (settings_sent). */
+/* RFC 9000 13.2.1: append an ACK of the last received 1-RTT packet number to a
+ * 1-RTT payload, so the client stops retransmitting it. Returns the ACK length
+ * (0 if no 1-RTT packet has been received yet). */
+static usz app_ack_append(quic_srvloop *l, u8 *buf, usz cap)
+{
+    if (!l->app_rx_seen)
+        return 0;
+    return encode_ack_one(buf, cap, l->app_rx_pn);
+}
+
+/* RFC 9114 4.1 / RFC 9000 13.2.1: build a 200 (no body) for the decoded request,
+ * then append a 1-RTT ACK of the received GET, sealed in one 1-RTT packet. The
+ * response STREAM frame carries an explicit length, so a peer's response decoder
+ * stops at it and ignores the trailing ACK. SETTINGS were already sent at
+ * confirmation (build_response needs settings_sent). */
 static int emit_response(quic_srvloop *l, quic_server *s,
                          u8 *out, usz cap, usz *out_len)
 {
-    u8 resp[256];
+    u8 pl[288];
     usz rl;
     if (!quic_h3srv_build_response(&l->h3, QUIC_SRVLOOP_RESP_STREAM, 200,
-                                   (const u8 *)0, 0, resp, sizeof resp, &rl))
+                                   (const u8 *)0, 0, pl, sizeof pl, &rl))
         return 0;
+    rl += app_ack_append(l, pl + rl, sizeof pl - rl);
     return quic_srvloop_send_onertt(s, l->cli_scid, l->cli_scid_len,
-                                    l->tx_pn++, resp, rl, out, cap, out_len);
+                                    l->tx_pn++, pl, rl, out, cap, out_len);
 }
 
-/* Pick the outbound datagram for this step: a decoded GET yields a 200,
- * otherwise a freshly confirmed handshake yields ACK + SETTINGS + DONE. */
-static int produce(quic_srvloop *l, quic_server *s, int got_request,
-                   u8 *out, usz cap, usz *out_len)
+/* RFC 9000 13.2.1: a 1-RTT packet carrying only an ACK of the received packet,
+ * sent post-confirmation when no request decoded — so the confirmation is not
+ * re-emitted yet the client's 1-RTT packet is still acknowledged. */
+static int emit_ack_only(quic_srvloop *l, quic_server *s,
+                         u8 *out, usz cap, usz *out_len)
+{
+    u8 pl[16];
+    usz a = app_ack_append(l, pl, sizeof pl);
+    if (a == 0)
+        return 0;
+    return quic_srvloop_send_onertt(s, l->cli_scid, l->cli_scid_len,
+                                    l->tx_pn++, pl, a, out, cap, out_len);
+}
+
+/* Post-confirmation outbound: a decoded GET yields a 200 (+ACK), else a bare
+ * ACK of the received 1-RTT packet, else nothing. The confirmation is never
+ * re-emitted here (RFC 9000 13.2.1). */
+static int produce_confirmed(quic_srvloop *l, quic_server *s, int got_request,
+                             u8 *out, usz cap, usz *out_len)
 {
     if (got_request)
         return emit_response(l, s, out, cap, out_len);
-    return emit_confirm(l, s, out, cap, out_len);
+    return emit_ack_only(l, s, out, cap, out_len);
+}
+
+/* The confirmation (ACK + SETTINGS + HANDSHAKE_DONE) is emitted exactly once,
+ * the first time the handshake confirms. On success the hs_done_sent latch is
+ * set so a later non-request 1-RTT datagram no longer re-emits it. */
+static int emit_confirm_once(quic_srvloop *l, quic_server *s,
+                             u8 *out, usz cap, usz *out_len)
+{
+    if (!emit_confirm(l, s, out, cap, out_len))
+        return 0;
+    l->hs_done_sent = 1;
+    return 1;
+}
+
+/* 1 when this step should emit the one-time confirmation: it has not been sent
+ * yet and the step decoded no request (a Finished, not a GET). */
+static int confirm_pending(const quic_srvloop *l, int got_request)
+{
+    return !l->hs_done_sent && !got_request;
+}
+
+/* Pick the outbound datagram. Before the confirmation has been sent, a step with
+ * no request confirms the handshake; otherwise it is a 200 or a bare 1-RTT ACK,
+ * never a repeat of the confirmation (RFC 9000 13.2.1). */
+static int produce(quic_srvloop *l, quic_server *s, int got_request,
+                   u8 *out, usz cap, usz *out_len)
+{
+    if (confirm_pending(l, got_request))
+        return emit_confirm_once(l, s, out, cap, out_len);
+    return produce_confirmed(l, s, got_request, out, cap, out_len);
+}
+
+/* RFC 9000 13.2.1: once a 1-RTT packet is opened, its 4-byte packet number is
+ * cleartext in the header (header protection was removed in place). Record it as
+ * the number to ACK. pkt[1+iscid_len .. +4] is the short-header packet number. */
+static void note_app_rx(quic_srvloop *l, quic_server *s, int level, const u8 *pkt)
+{
+    const u8 *pn;
+    if (level != QUIC_LEVEL_ONERTT)
+        return;
+    pn = pkt + 1u + s->sdrv.iscid_len;
+    l->app_rx_pn = ((u64)pn[0] << 24) | ((u64)pn[1] << 16) |
+                   ((u64)pn[2] << 8) | (u64)pn[3];
+    l->app_rx_seen = 1;
 }
 
 /* RFC 9001 5 / 5.1: open one coalesced packet slice and walk its frames. A
@@ -155,6 +230,7 @@ static void step_one(quic_srvloop *l, quic_server *s, u8 *pkt, usz len,
     int level;
     if (!quic_srvloop_recv(s, pkt, len, &level, &payload, &plen))
         return;
+    note_app_rx(l, s, level, pkt);
     quic_srvloop_dispatch(s, &l->h3, payload, plen, scratch, sizeof scratch,
                           got_request, &req);
 }
