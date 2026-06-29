@@ -535,8 +535,62 @@ static void test_srvloop_coalesced_finished_behind_leading(void)
     CHECK(quic_server_is_confirmed(&f.s) == 1);
 }
 
+/* Build a STREAM frame on `stream_id` whose data is one type byte `lead`
+ * (RFC 9114 6.2: control 0x00 / QPACK encoder 0x02 / decoder 0x03). */
+static usz lp_uni_stream(u8 *out, usz cap, u64 stream_id, u8 lead)
+{
+    quic_stream_frame sf = {stream_id, 0, 1, &lead, 0};
+    return quic_frame_put_stream(out, cap, &sf);
+}
+
+/* STREAM ID CLASSIFICATION (RFC 9000 2.1, RFC 9114 6.2): a 1-RTT payload that
+ * carries only unidirectional STREAM frames (curl's control/encoder/decoder,
+ * ids 2 and 6) must be accepted without being mistaken for a request — no
+ * got_request, no error. */
+static void test_srvloop_dispatch_uni_streams_not_request(void)
+{
+    struct lp_fix f;
+    u8 payload[256];
+    usz off = 0;
+    quic_h3reqdrive_req req;
+    u8 scratch[512];
+    int got = 0;
+    lp_make_client_hello(&f);
+    lp_drive_to_flight(&f);
+    off += lp_uni_stream(payload + off, sizeof payload - off, 2, 0x00);
+    off += lp_uni_stream(payload + off, sizeof payload - off, 6, 0x02);
+    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, off,
+                                scratch, sizeof scratch, &got, &req) == 1);
+    CHECK(got == 0);
+}
+
+/* A client bidi request stream (id 0, HEADERS=GET) arriving AFTER leading
+ * unidirectional streams is the one decoded: the dispatcher skips the uni
+ * STREAMs and drives the request (RFC 9000 2.1, RFC 9114 6.1/6.2). */
+static void test_srvloop_dispatch_get_after_uni_streams(void)
+{
+    struct lp_fix f;
+    u8 payload[576], get[512];
+    usz off = 0, glen;
+    quic_h3reqdrive_req req;
+    u8 scratch[512];
+    int got = 0;
+    lp_make_client_hello(&f);
+    lp_drive_to_flight(&f);
+    off += lp_uni_stream(payload + off, sizeof payload - off, 2, 0x00);
+    off += lp_uni_stream(payload + off, sizeof payload - off, 3, 0x03);
+    CHECK(quic_h3reqdrive_send_get(0, (const u8 *)"/", 1, (const u8 *)"h", 1,
+                                   get, sizeof get, &glen));
+    for (usz i = 0; i < glen; i++) payload[off++] = get[i];
+    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, off,
+                                scratch, sizeof scratch, &got, &req) == 1);
+    CHECK(got == 1);
+}
+
 void test_srvloop(void)
 {
+    test_srvloop_dispatch_uni_streams_not_request();
+    test_srvloop_dispatch_get_after_uni_streams();
     test_srvloop_send_initial_roundtrip();
     test_srvloop_wrong_direction_open_fails();
     test_srvloop_no_onertt_seal_before_confirm();
