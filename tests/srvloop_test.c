@@ -1,5 +1,7 @@
 #include "ed25519/ed25519.h"
+#include "frame/frame.h"
 #include "h3reqdrive/request_drive.h"
+#include "srvloop/dispatch.h"
 #include "hspkt/onertt.h"
 #include "keys/keyset.h"
 #include "schedule_drive/keyschedule.h"
@@ -316,6 +318,69 @@ static void test_srvloop_full_roundtrip(void)
     }
 }
 
+/* Prepend a PADDING (0x00) byte to src into dst; returns the new length. */
+static usz lp_pad_prefix(u8 *dst, const u8 *src, usz n)
+{
+    dst[0] = 0x00; /* RFC 9000 19.1 PADDING */
+    for (usz i = 0; i < n; i++)
+        dst[1 + i] = src[i];
+    return n + 1;
+}
+
+/* Build a dispatcher payload [PADDING][CRYPTO(msg)] (RFC 9000 12.4 / 19.6). */
+static usz lp_padding_then_crypto(u8 *out, usz cap, const u8 *msg, usz mlen)
+{
+    quic_crypto_frame cf = {0, (u64)mlen, msg};
+    out[0] = 0x00; /* leading PADDING, as curl/quiche emit */
+    return 1 + quic_frame_put_crypto(out + 1, cap - 1, &cf);
+}
+
+/* NON-CRYPTO-FIRST handshake: a Handshake payload that leads with PADDING before
+ * its CRYPTO frame (curl/quiche do this) must still confirm. The dispatcher is
+ * exercised directly because the wire helper wraps everything in one CRYPTO
+ * frame (RFC 9000 12.4). */
+static void test_srvloop_dispatch_padding_before_crypto(void)
+{
+    struct lp_fix f;
+    u8 payload[256];
+    usz plen;
+    quic_h3reqdrive_req req;
+    u8 scratch[512];
+    int got = 0;
+    lp_make_client_hello(&f);
+    lp_drive_to_flight(&f);
+    lp_make_client_finished(&f);
+    plen = lp_padding_then_crypto(payload, sizeof payload,
+                                  f.cli_fin, f.cli_fin_len);
+    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, plen,
+                                scratch, sizeof scratch, &got, &req) == 1);
+    CHECK(quic_server_is_confirmed(&f.s) == 1);
+}
+
+/* NON-STREAM-FIRST 1-RTT: a 1-RTT packet that leads with PADDING before the
+ * STREAM frame still yields a 200 (RFC 9000 12.4). The full seal/open path is
+ * used here since onertt carries the raw frame payload. */
+static void test_srvloop_padding_before_stream(void)
+{
+    struct lp_fix f;
+    u8 cpkt[1024], out[1024], get[512], pget[576], spkt[1024];
+    usz clen, out_len = 0, glen, plen, slen;
+    lp_make_client_hello(&f);
+    lp_drive_to_flight(&f);
+    lp_make_client_finished(&f);
+    clen = client_seal_handshake(&f, f.cli_fin, f.cli_fin_len, cpkt, sizeof cpkt);
+    CHECK(quic_srvloop_step(&f.l, &f.s, cpkt, clen, out, sizeof out,
+                            &out_len) == 1);
+    CHECK(quic_h3reqdrive_send_get(0, (const u8 *)"/", 1,
+                                   (const u8 *)"h", 1, get, sizeof get, &glen));
+    plen = lp_pad_prefix(pget, get, glen);
+    slen = client_seal_onertt(&f, pget, plen, spkt, sizeof spkt);
+    out_len = 0;
+    CHECK(quic_srvloop_step(&f.l, &f.s, spkt, slen, out, sizeof out,
+                            &out_len) == 1);
+    CHECK(out_len > 0);
+}
+
 void test_srvloop(void)
 {
     test_srvloop_send_initial_roundtrip();
@@ -323,4 +388,6 @@ void test_srvloop(void)
     test_srvloop_no_onertt_seal_before_confirm();
     test_srvloop_forged_finished_no_promote();
     test_srvloop_full_roundtrip();
+    test_srvloop_dispatch_padding_before_crypto();
+    test_srvloop_padding_before_stream();
 }
