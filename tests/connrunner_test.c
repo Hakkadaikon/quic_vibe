@@ -198,6 +198,68 @@ static void test_advance_closed_idle(void)
     CHECK(r.loop.next_pn == 0);
 }
 
+/* Seal an ACK whose Largest Acknowledged is `largest` from the peer connio. */
+static usz seal_ack(quic_connio *peer, u64 largest, u8 *out, usz cap)
+{
+    u8 frames[32];
+    quic_ack_frame f = {0};
+    f.n_ranges = 1;
+    f.ranges[0].hi = largest;
+    f.ranges[0].lo = largest;
+    usz fl = quic_ack_encode(frames, sizeof(frames), &f);
+    CHECK(fl != 0 && frames[0] == 0x02); /* a real ACK frame was encoded */
+    return quic_connio_send(peer, QUIC_LEVEL_INITIAL, frames, fl, out, cap);
+}
+
+/* RFC 9002 A.1 / 7.4: an in-flight send is recorded in the sentmeta ring and
+ * adds its sealed bytes to total_in_flight over the real advance path; the
+ * peer's ACK of that packet number drops it back out (A.2.2). */
+static void test_sentmeta_inflight_tracking(void)
+{
+    quic_connio peer;
+    quic_connrunner r;
+    quic_connio_init(&peer, 0, 0xc3, g_dcid, 8, 1u << 20);
+    arm(&peer);
+    mk_runner(&r, 1);
+    r.loop.gate.handshake_complete = 1;
+    r.loop.have_new_data = 1; /* originate one in-flight packet */
+
+    usz out = quic_connrunner_advance(&r, 1, (u8 *)0, 0);
+    CHECK(out != 0);                       /* a packet went on the wire */
+    CHECK(r.sent.total_in_flight == out);  /* its bytes are counted in flight */
+    CHECK(quic_sentmeta_find(&r.sent, 0) != QUIC_SENTMETA_CAP); /* pn 0 tracked */
+
+    r.loop.have_new_data = 0;
+    u8 ack[256];
+    usz an = seal_ack(&peer, 0, ack, sizeof(ack)); /* ACK Largest=0 */
+    CHECK(an != 0);
+    quic_connrunner_advance(&r, 2, ack, an);
+    CHECK(r.io.disp.has_ack == 1);         /* the ACK was opened and dispatched */
+    CHECK(r.sent.total_in_flight == 0);    /* acked -> dropped from in flight */
+    CHECK(quic_sentmeta_find(&r.sent, 0) == QUIC_SENTMETA_CAP);
+}
+
+/* RFC 9002 6.1.1 / 13.3: a tracked packet kPacketThreshold below the largest
+ * acked is declared lost and its pn is fed into the resend slot, so the next
+ * flush retransmits it. */
+static void test_sentmeta_loss_feeds_rtx(void)
+{
+    quic_connrunner r;
+    mk_runner(&r, 1);
+    /* seed the ring as if pns 0 and 3 are in flight, then ack only 3 */
+    quic_sentmeta_on_sent(&r.sent, 0, 1, 1, 1, 64);
+    quic_sentmeta_on_sent(&r.sent, 3, 1, 1, 1, 64);
+    quic_sentmeta_find(&r.sent, 3); /* present */
+    r.io.disp.has_ack = 1;
+    r.io.disp.largest_acked = 3;
+
+    r.rtx_held = 0;
+    quic_connrunner_track_loss(&r, 1);
+    CHECK(r.rtx_held == 1);  /* pn 0 is 3 below largest -> lost */
+    CHECK(r.rtx_pn == 0);
+    CHECK(quic_sentmeta_find(&r.sent, 0) == QUIC_SENTMETA_CAP); /* reclaimed */
+}
+
 void test_connrunner(void)
 {
     test_packet_level();
@@ -208,4 +270,6 @@ void test_connrunner(void)
     test_retransmit_real_bytes();
     test_advance_roundtrip();
     test_advance_closed_idle();
+    test_sentmeta_inflight_tracking();
+    test_sentmeta_loss_feeds_rtx();
 }
