@@ -1,5 +1,6 @@
 #include "qpack/huffman.h"
 #include "qpack/string.h"
+#include "qpack/literal.h"
 #include "test.h"
 
 static int hf_eq(const u8 *a, usz alen, const char *b, usz blen)
@@ -97,6 +98,25 @@ static void test_huffman_string_h1(void)
     CHECK(hf_eq(out, olen, "hi", 2));
 }
 
+/* RFC 9204 4.5.6: a Literal Field Line With Literal Name whose H bit is set
+ * carries a Huffman-coded name. curl/quiche emit such lines for fields not in
+ * the static table; the name and value both decode. The line below is
+ * 0x2c (001 0 1 100: litname, H=1, name length 4), the Huffman code for
+ * ":path", then 0x82 (value length 2) and the Huffman code for "/p". */
+static void test_huffman_litname_hname(void)
+{
+    const u8 line[] = {0x2c, 0xb9, 0x58, 0xd3, 0x3f, 0x82, 0x62, 0xbf};
+    u8 nm[32], val[32];
+    usz nlen = 0, vlen = 0;
+    int never = 0;
+    usz c = quic_qpack_literal_name_decode(line, sizeof(line), &never, nm,
+                                           sizeof(nm), &nlen, val, sizeof(val),
+                                           &vlen);
+    CHECK(c == sizeof(line));
+    CHECK(hf_eq(nm, nlen, ":path", 5));
+    CHECK(hf_eq(val, vlen, "/p", 2));
+}
+
 void test_qpack_huffman(void)
 {
     test_huffman_rfc_vector();
@@ -106,4 +126,5 @@ void test_qpack_huffman(void)
     test_huffman_eos_rejected();
     test_huffman_overflow();
     test_huffman_string_h1();
+    test_huffman_litname_hname();
 }
