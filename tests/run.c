@@ -816,6 +816,7 @@
 #include "crecv_message_test.c"
 #include "server_test.c"
 #include "h3srv_test.c"
+#include "h3_loopback_test.c"
 
 int main(void)
 {
@@ -1223,5 +1224,6 @@ int main(void)
     test_crecv_message();
     test_server();
     test_h3srv();
+    test_h3_loopback();
     return TEST_REPORT();
 }
