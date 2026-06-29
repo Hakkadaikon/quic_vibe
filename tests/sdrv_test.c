@@ -35,8 +35,71 @@ static int next_hs(const u8 *b, usz n, usz *p, const u8 **msg, usz *len)
     return 1;
 }
 
+/* RFC 8446 4.1.2: splice a 32-byte legacy_session_id into a ClientHello that
+ * was built with an empty one. Insert the 32 bytes after body offset 34 (the
+ * session_id length byte), bump that byte to 32, and patch the 3-byte handshake
+ * length. Returns the new total length. */
+static usz ch_with_sid(u8 *out, const u8 *ch, usz ch_len, const u8 sid[32])
+{
+    usz tail = ch_len - (4 + 35);             /* bytes after the len byte */
+    for (usz i = 0; i < 4 + 35; i++) out[i] = ch[i];
+    for (usz i = 0; i < 32; i++) out[4 + 35 + i] = sid[i];
+    for (usz i = 0; i < tail; i++) out[4 + 35 + 32 + i] = ch[4 + 35 + i];
+    out[4 + 34] = 32;
+    quic_hs_finish(out, ch_len + 32);
+    return ch_len + 32;
+}
+
+/* RFC 8446 4.1.3: the server echoes the client's legacy_session_id in the
+ * ServerHello (legacy_session_id_echo). BoringSSL (curl/quiche) MUST-rejects a
+ * mismatch with illegal_parameter, so a 32-byte session_id must round-trip. */
+static void test_sdrv_session_id_echo(void)
+{
+    u8 cli_priv[32], cli_pub[32], srv_priv[32], srv_pub[32], cert_priv[32];
+    u8 ch[512], ch2[600], sh[256], flight[2048], srv_random[32], sid[32];
+    usz ch_len, ch2_len, sh_len, hs_len;
+    quic_sdrv s;
+
+    for (usz i = 0; i < 32; i++) {
+        cli_priv[i] = (u8)(i + 1);
+        srv_priv[i] = (u8)(0x40 + i);
+        cert_priv[i] = (u8)(0x80 + i);
+        srv_random[i] = (u8)(0xa0 + i);
+        sid[i] = (u8)(0x10 + i);
+    }
+    quic_x25519_base(cli_pub, cli_priv);
+    quic_x25519_base(srv_pub, srv_priv);
+
+    {
+        static const u8 tp[1] = {0};
+        ch_len = quic_tls_client_hello(ch, sizeof(ch), srv_random, cli_pub,
+                                       0, 0, tp, sizeof(tp));
+    }
+    CHECK(ch_len != 0);
+    ch2_len = ch_with_sid(ch2, ch, ch_len, sid);
+
+    quic_sdrv_init(&s, srv_priv, srv_pub, cert_priv, 0, 0);
+    CHECK(quic_sdrv_recv_client_hello(&s, ch2, ch2_len));
+    CHECK(quic_sdrv_build_server_flight(&s, srv_random, sh, sizeof(sh), &sh_len,
+                                        flight, sizeof(flight), &hs_len));
+
+    /* ServerHello legacy_session_id_echo sits at body offset 34: len byte then
+     * the bytes. Header(4) + version(2) + random(32) = 38, len at sh[38]. */
+    CHECK(sh[38] == 32);
+    for (usz i = 0; i < 32; i++) CHECK(sh[39 + i] == sid[i]);
+
+    /* TLS 1.3 native ClientHello (empty session_id) still works: echo len 0. */
+    quic_sdrv_init(&s, srv_priv, srv_pub, cert_priv, 0, 0);
+    CHECK(quic_sdrv_recv_client_hello(&s, ch, ch_len));
+    CHECK(quic_sdrv_build_server_flight(&s, srv_random, sh, sizeof(sh), &sh_len,
+                                        flight, sizeof(flight), &hs_len));
+    CHECK(sh[38] == 0);
+}
+
 void test_sdrv(void)
 {
+    test_sdrv_session_id_echo();
+
     u8 cli_priv[32], cli_pub[32], srv_priv[32], srv_pub[32];
     u8 cert_priv[32];
     u8 ch[512], sh[256], flight[2048];
