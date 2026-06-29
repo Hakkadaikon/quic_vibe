@@ -249,9 +249,10 @@ static void jac_to_affine(ec_point *r, const jac *j)
 
 void quic_ec_mul(ec_point *r, const u8 k[32], const ec_point *p)
 {
-    jac acc, base;
+    jac acc = {{0}, {0}, {0}};   /* infinity: Z==0, and X,Y defined so the first
+                                  * jac_double(acc,acc) never reads uninit (UB) */
+    jac base;
     jac_from_affine(&base, p);
-    acc.Z[0] = acc.Z[1] = acc.Z[2] = acc.Z[3] = 0;   /* infinity */
     for (usz bit = 0; bit < 256; bit++) ec_mul_step(&acc, k, &base, bit);
     jac_to_affine(r, &acc);
 }
