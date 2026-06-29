@@ -253,6 +253,8 @@ static void on_step(i64 fd, const quic_sockaddr_in *peer, quic_server *s,
     usz n = 0;
     int got = quic_srvloop_step(l, s, dg, len, out, sizeof out, &n);
     logs("post-confirm datagram received\n");
+    logs(l->last_1rtt_open_ok ? "  -> 1-RTT open ok\n"
+                              : "  -> 1-RTT open FAILED\n");
     logs(l->h3.request_seen ? "  -> GET decoded\n" : "  -> GET not decoded\n");
     if (!got)
         return;
