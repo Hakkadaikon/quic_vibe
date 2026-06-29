@@ -16,6 +16,9 @@ typedef struct {
     u8 cli_scid_len;
     u64 tx_pn;    /* monotone packet number for sealed 1-RTT output */
     u64 hs_tx_pn; /* monotone packet number for sealed Handshake output */
+    u64 app_rx_pn;  /* last received 1-RTT (application) packet number to ACK */
+    int app_rx_seen;/* 1 once a 1-RTT packet has been received (app_rx_pn valid) */
+    int hs_done_sent;/* 1 once the confirmation (HANDSHAKE_DONE) has been emitted */
 } quic_srvloop;
 
 /* Record the client's source connection id (the DCID for server-sent packets)
