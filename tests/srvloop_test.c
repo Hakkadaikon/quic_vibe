@@ -1,5 +1,7 @@
 #include "ed25519/ed25519.h"
+#include "frame/ack.h"
 #include "frame/frame.h"
+#include "pipeline/framewalk.h"
 #include "h3conn/response.h"
 #include "h3reqdrive/request_drive.h"
 #include "srvloop/dispatch.h"
@@ -353,6 +355,99 @@ static void test_srvloop_full_roundtrip(void)
     }
 }
 
+/* Client role: seal a 1-RTT STREAM payload at an explicit packet number. */
+static usz client_seal_onertt_pn(struct lp_fix *f, u64 pn, const u8 *pl, usz pln,
+                                 u8 *pkt, usz cap)
+{
+    const quic_initial_keys *k;
+    quic_aes128 hp;
+    usz total = 0;
+    CHECK(quic_keysched_get(&f->s.sched, QUIC_KS_CLIENT_AP, &k) == 1);
+    quic_aes128_init(&hp, k->hp);
+    CHECK(quic_hspkt_onertt_build(k, &hp, f->s.sdrv.iscid, f->s.sdrv.iscid_len,
+                                  pn, pl, pln, pkt, cap, &total));
+    return total;
+}
+
+/* Walk a 1-RTT payload and assert it carries an ACK frame whose largest range
+ * acknowledges pn (RFC 9000 19.3) — this is what stops the client retransmitting. */
+static void check_acks_pn(const u8 *pl, usz pll, u64 pn)
+{
+    quic_framewalk it;
+    u64 type;
+    const u8 *frame;
+    usz rem;
+    int found = 0;
+    quic_framewalk_init(&it, pl, pll);
+    while (quic_framewalk_next(&it, &type, &frame, &rem))
+        if (type == QUIC_FRAME_ACK) {
+            quic_ack_frame a;
+            CHECK(quic_ack_decode(frame, rem, &a) > 0);
+            CHECK(a.ranges[0].hi == pn);
+            found = 1;
+        }
+    CHECK(found);
+}
+
+/* Drive the loop to confirmed with a genuine client Finished. */
+static void lp_confirm(struct lp_fix *f, u8 *out, usz cap, usz *out_len)
+{
+    u8 cpkt[1024];
+    usz clen;
+    lp_make_client_hello(f);
+    lp_drive_to_flight(f);
+    lp_make_client_finished(f);
+    clen = client_seal_handshake(f, f->cli_fin, f->cli_fin_len, cpkt, sizeof cpkt);
+    *out_len = 0;
+    CHECK(quic_srvloop_step(&f->l, &f->s, cpkt, clen, out, cap, out_len) == 1);
+    CHECK(quic_server_is_confirmed(&f->s) == 1);
+}
+
+/* (C) ACK A 1-RTT GET: a decoded GET yields a 200 whose 1-RTT packet also
+ * carries an ACK of the received GET's packet number (RFC 9000 13.2.1), so the
+ * client stops retransmitting the GET once the 200 is received. */
+static void test_srvloop_onertt_get_is_acked(void)
+{
+    struct lp_fix f;
+    u8 out[1024], get[512], spkt[1024];
+    usz out_len = 0, glen, slen;
+    const u8 *pl;
+    usz pll;
+    lp_confirm(&f, out, sizeof out, &out_len);
+    CHECK(quic_h3reqdrive_send_get(0, (const u8 *)"/", 1,
+                                   (const u8 *)"h", 1, get, sizeof get, &glen));
+    slen = client_seal_onertt_pn(&f, 7, get, glen, spkt, sizeof spkt);
+    out_len = 0;
+    CHECK(quic_srvloop_step(&f.l, &f.s, spkt, slen, out, sizeof out,
+                            &out_len) == 1);
+    CHECK(client_open_onertt(&f, out, out_len, &pl, &pll) == 1);
+    check_acks_pn(pl, pll, 7);
+}
+
+/* (A) CONFIRM ONCE: after confirmation, a further 1-RTT datagram that does not
+ * decode to a request must NOT re-emit the confirmation (SETTINGS +
+ * HANDSHAKE_DONE). It either acks the received 1-RTT packet or sends nothing,
+ * but never the confirmation again, so the client is not flooded with it. */
+static void test_srvloop_confirm_emitted_once(void)
+{
+    struct lp_fix f;
+    u8 out[1024], junk[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    u8 spkt[1024];
+    usz out_len = 0, slen;
+    lp_confirm(&f, out, sizeof out, &out_len);
+    /* A 1-RTT packet that carries only PADDING: no request decoded. */
+    slen = client_seal_onertt_pn(&f, 3, junk, sizeof junk, spkt, sizeof spkt);
+    out_len = 0;
+    quic_srvloop_step(&f.l, &f.s, spkt, slen, out, sizeof out, &out_len);
+    if (out_len > 0) {
+        const u8 *pl;
+        usz pll;
+        CHECK(client_open_onertt(&f, out, out_len, &pl, &pll) == 1);
+        /* must not be the confirmation: no HANDSHAKE_DONE trailer. */
+        CHECK(!(pll > 0 && pl[pll - 1] == 0x1e));
+    }
+}
+
 /* Prepend a PADDING (0x00) byte to src into dst; returns the new length. */
 static usz lp_pad_prefix(u8 *dst, const u8 *src, usz n)
 {
@@ -450,4 +545,6 @@ void test_srvloop(void)
     test_srvloop_dispatch_padding_before_crypto();
     test_srvloop_padding_before_stream();
     test_srvloop_coalesced_finished_behind_leading();
+    test_srvloop_onertt_get_is_acked();
+    test_srvloop_confirm_emitted_once();
 }
