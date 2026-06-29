@@ -142,6 +142,7 @@
 #include "closelife/idletimeout.c"
 #include "closelife/termgate.c"
 #include "conn/cidnego.c"
+#include "cidxchg/cidxchg.c"
 #include "conn/conn.c"
 #include "conn/demux.c"
 #include "conn/pnspace.c"
@@ -462,6 +463,7 @@
 #include "ccphase_test.c"
 #include "cert_test.c"
 #include "cidnego_test.c"
+#include "cidxchg_test.c"
 #include "cidpool_test.c"
 #include "close_convert_test.c"
 #include "closelife_test.c"
@@ -841,6 +843,7 @@ int main(void)
     test_ccphase_in_slow_start();
     test_cert_parse();
     test_cidnego_adopt();
+    test_cidxchg();
     test_cidpool_limit();
     test_close_needs_convert_matrix();
     test_closelife();
