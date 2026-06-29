@@ -11,4 +11,9 @@
 /* Process one received datagram. Returns the number of packets accepted. */
 usz quic_connrunner_process_datagram(quic_connrunner *r, u8 *dgram, usz len);
 
+/* RFC 9002 A.2.2: if the last received datagram carried an ACK, reconcile the
+ * sentmeta ring against its Largest Acknowledged -- every tracked packet at or
+ * below it is acknowledged, dropping its bytes from in-flight. */
+void quic_connrunner_track_acks(quic_connrunner *r);
+
 #endif

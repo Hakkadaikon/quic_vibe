@@ -15,6 +15,7 @@ void quic_connrunner_init(quic_connrunner *r, i64 fd,
     r->peer = *peer;
     quic_evloop_init(&r->loop, level, cwnd, send_len);
     quic_rtxbytes_init(&r->rtx);
+    quic_sentmeta_init(&r->sent);
     r->rtx_held = 0;
     quic_connio_init(&r->io, is_server, byte0, dcid, dcid_len,
                      initial_max_data);
@@ -28,12 +29,17 @@ usz quic_connrunner_advance(quic_connrunner *r, u64 now, u8 *dgram, usz len)
 {
     u64 sent_before;
     int kind;
+    usz out;
     if (len) quic_connrunner_process_datagram(r, dgram, len);
+    quic_connrunner_track_acks(r);          /* RFC 9002 A.2.2: drop acked bytes */
     kind = quic_connrunner_pending_kind(r); /* before step clears it */
     quic_connrunner_capture_rtx(r);         /* lost pn before step drains it */
+    quic_connrunner_track_loss(r, now);     /* RFC 9002 6.1: real lost pn */
     sent_before = r->loop.next_pn;
     quic_evloop_step(&r->loop, now);
-    return quic_connrunner_flush_sends(r, sent_before, kind);
+    out = quic_connrunner_flush_sends(r, sent_before, kind);
+    quic_connrunner_track_sent(r, now, kind, out); /* RFC 9002 A.1: in-flight */
+    return out;
 }
 
 /* Append an armed timer's deadline to ds (RFC 9002 6: unarmed timers do not

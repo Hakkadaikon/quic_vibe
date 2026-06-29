@@ -2,6 +2,7 @@
 #include "frame/ack.h"
 #include "frame/frame.h"
 #include "rtxdrive/build.h"
+#include "sentmeta/detect_loss.h"
 
 /* Any ack-eliciting packet sitting in the receive queue (RFC 9000 13.2.1). */
 static int queue_has_eliciting(const quic_connrunner *r)
@@ -99,4 +100,40 @@ usz quic_connrunner_flush_sends(quic_connrunner *r, u64 sent_before, int kind)
     if (fl == 0) return 0;
     return quic_connio_send(&r->io, r->loop.level, frames, fl,
                             r->txbuf, sizeof(r->txbuf));
+}
+
+/* RFC 9002 2 / 13.2.1: an ACK-only packet (kind 1) is neither ack-eliciting nor
+ * counted in flight; a retransmission or new data (kind 2/3) is both. */
+static int kind_in_flight(int kind) { return kind >= 2; }
+
+void quic_connrunner_track_sent(quic_connrunner *r, u64 now, int kind,
+                                usz sent_len)
+{
+    int infl;
+    if (sent_len == 0) return;
+    infl = kind_in_flight(kind);
+    quic_sentmeta_on_sent(&r->sent, r->io.tx_pn - 1, now, infl, infl, sent_len);
+}
+
+/* ponytail: no RTT estimator is wired into this loop yet, so time-threshold
+ * loss (RFC 9002 6.1.2) has no loss_delay to use; pass an effectively infinite
+ * delay so detection relies purely on the packet threshold (6.1.1). When an RTT
+ * estimate lands, replace this with max(SRTT, latest)*9/8 (kTimeThreshold). */
+#define QUIC_CONNRUNNER_NO_RTT_DELAY (1ull << 62)
+
+/* Feed the oldest sentmeta-lost pn into the resend slot only when the loop
+ * captured none of its own (RFC 9002 13.3). */
+static int take_lost(const quic_connrunner *r, usz n)
+{
+    return n > 0 && !r->rtx_held;
+}
+
+void quic_connrunner_track_loss(quic_connrunner *r, u64 now)
+{
+    u64 lost[QUIC_SENTMETA_CAP];
+    usz n = 0;
+    if (!r->io.disp.has_ack) return; /* largest_acked is only valid after an ACK */
+    quic_sentmeta_detect_loss(&r->sent, r->io.disp.largest_acked, now,
+                              QUIC_CONNRUNNER_NO_RTT_DELAY, lost, &n);
+    if (take_lost(r, n)) r->rtx_pn = lost[0], r->rtx_held = 1;
 }
