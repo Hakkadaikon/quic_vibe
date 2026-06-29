@@ -46,10 +46,11 @@ typedef struct {
     usz tr_through_flight;       /* transcript length through server Finished */
 } quic_server;
 
-/* Initialize the orchestrator with the server key material and certificate.
- * server_priv_x25519/server_pub_x25519 are the static ECDHE pair; cert_seed
- * is the Ed25519 signing seed; cert_der/cert_len the end-entity certificate
- * (held as a view, must outlive the server). No socket is opened. */
+/* Initialize the orchestrator with the server key material.
+ * server_priv_x25519/server_pub_x25519 are the static ECDHE pair; cert_seed is
+ * the ECDSA P-256 signing scalar (big-endian). cert_der/cert_len are ignored:
+ * the driver builds its own self-signed P-256 end-entity certificate from
+ * cert_seed (sdrv). No socket is opened. */
 void quic_server_init(quic_server *s, const u8 server_priv_x25519[32],
                       const u8 server_pub_x25519[32], const u8 cert_seed[32],
                       const u8 *cert_der, usz cert_len);

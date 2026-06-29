@@ -20,7 +20,6 @@
  * Each step logs to stderr. See examples/README.md for what completes here vs.
  * what an external HTTP/3 client (curl/quiche) additionally needs. */
 
-#include "ed25519/ed25519.h"
 #include "frame/frame.h"
 #include "h3srv/state.h"
 #include "initpkt/initopen.h"
@@ -79,8 +78,9 @@ static void fill_random(u8 r[32])
         r[i] = (u8)(0xa0 + i);
 }
 
-/* Fixed server identity: X25519 handshake key and the Ed25519 signing seed.
- * A demo needs no rotation; deterministic keys keep it reproducible. */
+/* Fixed server identity: X25519 handshake key and the ECDSA P-256 signing
+ * scalar (cert_seed). A demo needs no rotation; deterministic keys keep it
+ * reproducible. */
 static void server_keys(u8 priv[32], u8 pub[32], u8 cert_seed[32])
 {
     for (usz i = 0; i < 32; i++) {
@@ -88,23 +88,6 @@ static void server_keys(u8 priv[32], u8 pub[32], u8 cert_seed[32])
         cert_seed[i] = (u8)(0x80 + i);
     }
     quic_x25519_base(pub, priv);
-}
-
-/* RFC 5280 4.1: minimal Ed25519 end-entity cert carrying pub in its SPKI. */
-static usz ed_cert(u8 *out, const u8 pub[32])
-{
-    static const u8 head[] = {
-        0x30, 0x48, 0x30, 0x3c, 0xa0, 0x03, 0x02, 0x01, 0x02,
-        0x02, 0x01, 0x01, 0x30, 0x00, 0x30, 0x00, 0x30, 0x00, 0x30, 0x00,
-        0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
-    };
-    static const u8 tail[] = {
-        0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x01, 0x00,
-    };
-    memcpy(out, head, sizeof head);
-    memcpy(out + sizeof head, pub, 32);
-    memcpy(out + sizeof head + 32, tail, sizeof tail);
-    return sizeof head + 32 + sizeof tail;
 }
 
 /* Note ALPN "h3" if the ClientHello offers it (informational only). */
@@ -152,18 +135,15 @@ static int open_initial(u8 *dg, usz len, quic_crypto_frame *cf)
 }
 
 /* Init the orchestrator and loop with the fixed server identity and the
- * client's DCID as the ODCID. Returns 1 on success. */
+ * client's DCID as the ODCID. The server driver builds its own ECDSA P-256
+ * end-entity certificate from cert_seed, so no cert DER is passed in (the
+ * cert_der argument is ignored). Returns 1 on success. */
 static int init_server(quic_server *s, quic_srvloop *l, const u8 *dcid,
                        u8 dcid_len)
 {
-    u8 priv[32], pub[32], seed[32], cert_pub[32];
-    static u8 cert[128];
-    usz cert_len;
+    u8 priv[32], pub[32], seed[32];
     server_keys(priv, pub, seed);
-    if (!quic_ed25519_keypair(seed, cert_pub))
-        return 0;
-    cert_len = ed_cert(cert, cert_pub);
-    quic_server_init(s, priv, pub, seed, cert, cert_len);
+    quic_server_init(s, priv, pub, seed, 0, 0);
     if (!quic_server_set_cids(s, dcid, dcid_len, SERVER_SCID, sizeof SERVER_SCID))
         return 0;
     return quic_srvloop_init(l, dcid, dcid_len);
