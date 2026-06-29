@@ -1,6 +1,10 @@
 #include "test.h"
 #include "client/client.h"
 #include "server/server.h"
+#include "srvloop/srvloop.h"
+#include "srvwire/wire.h"
+#include "hspkt/onertt.h"
+#include "schedule_drive/keyschedule.h"
 #include "tls/clienthello.h"
 #include "tls/serverhello.h"
 #include "tls/handshake.h"
@@ -8,23 +12,27 @@
 #include "tls/finished.h"
 #include "tls/x25519.h"
 #include "ed25519/ed25519.h"
-#include "crypto_stream/crypto_tx.h"
-#include "h3srv/control.h"
-#include "h3srv/respond.h"
 #include "h3reqdrive/request_drive.h"
 #include "h3conn/response.h"
 
-/* RFC 9000 5/7, RFC 8446 4, RFC 9114 4.1: an end-to-end smoke test wiring the
- * real client and server orchestrators plus the HTTP/3 response layer the way
- * examples/quic_server.c does. Three independent checks:
+/* RFC 9001 4 / 5 / 5.1, RFC 9000 17.2, RFC 9114 4.1: real-AEAD-wire loopback.
+ * A genuine server orchestrator (quic_server) is driven to FLIGHT_SENT, then a
+ * client peer (sharing the server's key schedule, so seal-then-open across the
+ * wire is identity per RFC 9001 5) seals its real Finished and GET into
+ * AEAD-protected QUIC packets, ships them across a real 127.0.0.1 UDP socket,
+ * and the server runs quic_srvloop_step on the bytes that came off the wire:
  *
- *   1. loopback UDP: the client's real Initial datagram reaches a bound server
- *      socket and parses as an RFC 9000 17.2 long header (sandbox graceful: a
- *      socket that cannot open is skipped, matching udptransport_test).
- *   2. handshake confirmation: the server orchestrator is driven CH -> flight
- *      -> genuine client Finished -> CONFIRMED by buffer injection.
- *   3. HTTP/3 GET -> 200: the server decodes a GET and answers 200 with a body
- *      the client's response decoder recovers (RFC 9114 4.1 / 4.3.2). */
+ *   1. Initial datagram delivery: the client's real protected Initial reaches a
+ *      bound server socket (RFC 9000 14.1 padding to 1200).
+ *   2. real-wire confirmation: a srvwire-sealed client Finished crosses the
+ *      socket and quic_srvloop_step opens it, confirms the server, and seals a
+ *      1-RTT HANDSHAKE_DONE that the peer opens with SERVER_AP.
+ *   3. real-wire GET -> 200: a 1-RTT GET crosses the socket and the step seals a
+ *      200 the peer opens with SERVER_AP.
+ *
+ * Sockets may be forbidden in a sandbox; a failed open/bind is a benign skip,
+ * matching udptransport_test. The buffer-path equivalent (no socket) is covered
+ * by srvloop_test's full round trip. */
 
 /* RFC 5280 4.1: minimal Ed25519 end-entity cert carrying pub in its SPKI. */
 static usz lb_ed_cert(u8 *out, const u8 pub[32])
@@ -44,38 +52,11 @@ static usz lb_ed_cert(u8 *out, const u8 pub[32])
     return off;
 }
 
-/* (1) Loopback: the client's real Initial datagram crosses a UDP socket and
- * arrives intact, padded to 1200 (RFC 9000 14.1). The datagram carries the
- * ClientHello as a CRYPTO frame (frame type 0x06, RFC 9000 19.6); on-wire
- * long-header AEAD protection routes through connio and is not yet wired, so
- * this checks delivery and padding, not the long header. Sockets may be
- * forbidden in a sandbox, so a failed open/bind is a benign skip. */
-static void test_loopback_initial_datagram(void)
-{
-    quic_client c;
-    quic_sockaddr_in srv, from;
-    u8 ip[4] = {127, 0, 0, 1}, dg[1500];
-    i64 sfd, n;
+static const u8 g_scid[6] = {'C', 'L', 'I', 'S', 'C', 'I'};
 
-    sfd = quic_udp_socket();
-    if (sfd < 0) return;                         /* sandbox: no sockets */
-    quic_udp_addr(&srv, 4433, 127, 0, 0, 1);
-    if (quic_udp_bind(sfd, &srv) < 0) { quic_udp_close(sfd); return; }
-
-    if (!quic_client_init(&c, ip, 4433, 0, 0)) { quic_udp_close(sfd); return; }
-    CHECK(quic_client_start(&c) == 1);           /* sends a padded Initial */
-
-    n = quic_udp_recvfrom(sfd, dg, sizeof(dg), &from);
-    CHECK(n == 1200);                            /* RFC 9000 14.1 padding */
-    CHECK(dg[0] == 0x06);                        /* CRYPTO frame (RFC 9000 19.6) */
-
-    quic_client_close(&c);
-    quic_udp_close(sfd);
-}
-
-/* A server fixture and the bytes needed to forge a genuine client Finished. */
 struct lb_fix {
     quic_server s;
+    quic_srvloop l;
     u8 ch[512];
     usz ch_len;
     u8 sh[256];
@@ -102,6 +83,7 @@ static void lb_make_client_hello(struct lb_fix *f)
                                       cli_pub, 0, 0, tp, sizeof(tp));
 }
 
+/* Bring the server to FLIGHT_SENT (Handshake keys derived) and init the loop. */
 static void lb_drive_to_flight(struct lb_fix *f)
 {
     u8 srv_priv[32], srv_pub[32], cert_seed[32], cert_pub[32];
@@ -116,11 +98,14 @@ static void lb_drive_to_flight(struct lb_fix *f)
     cert_len = lb_ed_cert(cert, cert_pub);
 
     quic_server_init(&f->s, srv_priv, srv_pub, cert_seed, cert, cert_len);
+    CHECK(quic_server_set_cids(&f->s, g_scid, 6, g_scid, 6) == 1);
+    CHECK(quic_srvloop_init(&f->l, g_scid, 6) == 1);
     CHECK(quic_server_recv_initial(&f->s, f->ch, f->ch_len) == 1);
     CHECK(quic_server_build_flight(&f->s, f->srv_random,
                                    f->sh, sizeof(f->sh), &f->sh_len,
                                    f->flight, sizeof(f->flight),
                                    &f->flight_len) == 1);
+    CHECK(f->s.phase == QUIC_SERVER_HS_FLIGHT_SENT);
 }
 
 /* RFC 8446 4.4.4: compute the genuine client Finished from the transcript. */
@@ -150,56 +135,158 @@ static void lb_make_client_finished(struct lb_fix *f)
     quic_hs_finish(f->cli_fin, f->cli_fin_len);
 }
 
-/* (2) Handshake confirmation: drive the server to CONFIRMED + HANDSHAKE_DONE. */
-static void test_loopback_handshake_confirmed(void)
+/* Client peer: seal a Handshake CRYPTO flight toward the server with the
+ * peer-direction CLIENT_HS key (the server opens with it). */
+static usz lb_seal_handshake(struct lb_fix *f, const u8 *msg, usz mlen,
+                             u8 *pkt, usz cap)
+{
+    const quic_initial_keys *k;
+    quic_aes128 hp;
+    usz total = 0;
+    CHECK(quic_keysched_get(&f->s.sched, QUIC_KS_CLIENT_HS, &k) == 1);
+    quic_aes128_init(&hp, k->hp);
+    CHECK(quic_srvwire_seal_handshake(k, &hp, f->s.sdrv.iscid,
+                                      f->s.sdrv.iscid_len, g_scid, 6, 0,
+                                      msg, mlen, pkt, cap, &total));
+    return total;
+}
+
+/* Client peer: seal a 1-RTT STREAM payload toward the server with CLIENT_AP. */
+static usz lb_seal_onertt(struct lb_fix *f, const u8 *pl, usz pln,
+                          u8 *pkt, usz cap)
+{
+    const quic_initial_keys *k;
+    quic_aes128 hp;
+    usz total = 0;
+    CHECK(quic_keysched_get(&f->s.sched, QUIC_KS_CLIENT_AP, &k) == 1);
+    quic_aes128_init(&hp, k->hp);
+    CHECK(quic_hspkt_onertt_build(k, &hp, f->s.sdrv.iscid, f->s.sdrv.iscid_len,
+                                  0, pl, pln, pkt, cap, &total));
+    return total;
+}
+
+/* Client peer: open a server 1-RTT packet with the peer SERVER_AP key. */
+static int lb_open_onertt(struct lb_fix *f, u8 *pkt, usz len,
+                          const u8 **pl, usz *pll)
+{
+    const quic_initial_keys *k;
+    quic_aes128 hp;
+    CHECK(quic_keysched_get(&f->s.sched, QUIC_KS_SERVER_AP, &k) == 1);
+    quic_aes128_init(&hp, k->hp);
+    return quic_hspkt_onertt_open(k, &hp, pkt, len, 6, pl, pll);
+}
+
+/* A bound server socket and a client socket, both on 127.0.0.1. Returns 1 with
+ * the fds, or 0 (benign skip) if the sandbox forbids sockets. */
+static int lb_open_sockets(i64 *sfd, i64 *cfd, quic_sockaddr_in *srv)
+{
+    *sfd = quic_udp_socket();
+    if (*sfd < 0) return 0;
+    quic_udp_addr(srv, 4435, 127, 0, 0, 1);
+    if (quic_udp_bind(*sfd, srv) < 0) { quic_udp_close(*sfd); return 0; }
+    *cfd = quic_udp_socket();
+    if (*cfd < 0) { quic_udp_close(*sfd); return 0; }
+    return 1;
+}
+
+/* Ship `pkt` from client to server and run one srvloop_step on what arrives.
+ * Returns the step result; *out_len holds the sealed reply length. */
+static int lb_wire_step(struct lb_fix *f, i64 cfd, i64 sfd,
+                        const quic_sockaddr_in *srv, const u8 *pkt, usz n,
+                        u8 *out, usz cap, usz *out_len)
+{
+    quic_sockaddr_in from;
+    u8 rx[1500];
+    i64 r;
+    CHECK(quic_udp_send(cfd, srv, pkt, n) == (i64)n);
+    r = quic_udp_recvfrom(sfd, rx, sizeof rx, &from);
+    CHECK(r == (i64)n);
+    return quic_srvloop_step(&f->l, &f->s, rx, (usz)r, out, cap, out_len);
+}
+
+/* (1) Loopback: the client's real protected Initial reaches a bound server
+ * socket, padded to 1200 (RFC 9000 14.1). */
+static void test_loopback_initial_datagram(void)
+{
+    quic_client c;
+    quic_sockaddr_in srv, from;
+    u8 priv[32], pub[32], pkt[1500], dg[1500];
+    usz total = 0;
+    i64 sfd, n;
+
+    sfd = quic_udp_socket();
+    if (sfd < 0) return;                         /* sandbox: no sockets */
+    quic_udp_addr(&srv, 4434, 127, 0, 0, 1);
+    if (quic_udp_bind(sfd, &srv) < 0) { quic_udp_close(sfd); return; }
+
+    for (usz i = 0; i < 32; i++) priv[i] = (u8)(7 + i);
+    quic_x25519_base(pub, priv);
+    quic_tlsdriver_init(&c.tls, priv, pub, 0);
+    CHECK(quic_client_build_initial_wire(&c, g_scid, 6, g_scid, 6, 0,
+                                         pkt, sizeof pkt, &total) == 1);
+    CHECK(total == 1200);                        /* RFC 9000 14.1 padding */
+
+    {
+        i64 cfd = quic_udp_socket();
+        if (cfd < 0) { quic_udp_close(sfd); return; }
+        CHECK(quic_udp_send(cfd, &srv, pkt, total) == (i64)total);
+        n = quic_udp_recvfrom(sfd, dg, sizeof dg, &from);
+        CHECK(n == 1200);
+        CHECK((dg[0] & 0x80) != 0);              /* long header (RFC 9000 17.2) */
+        quic_udp_close(cfd);
+    }
+    quic_udp_close(sfd);
+}
+
+/* (2)+(3) Real-AEAD-wire: a srvwire-sealed Finished and a 1-RTT GET cross a real
+ * UDP socket; quic_srvloop_step opens them off the wire, confirms, and seals a
+ * HANDSHAKE_DONE and a 200 the peer opens with SERVER_AP. */
+static void test_loopback_wire_confirm_and_get(void)
 {
     struct lb_fix f;
-    u8 payload[256], hsdone[4], frame_len;
-    usz plen, dlen;
+    quic_sockaddr_in srv;
+    i64 sfd, cfd;
+    u8 cpkt[1300], out[1300], get[512];
+    usz clen, out_len = 0, glen;
+    const u8 *pl;
+    usz pll;
+
+    if (!lb_open_sockets(&sfd, &cfd, &srv)) return;   /* sandbox: benign skip */
+
     lb_make_client_hello(&f);
     lb_drive_to_flight(&f);
     lb_make_client_finished(&f);
 
-    CHECK(quic_crypto_stream_emit(f.cli_fin, f.cli_fin_len, 0, 256,
-                                  payload, sizeof(payload), &plen));
-    (void)frame_len;
-    CHECK(quic_server_feed(&f.s, payload, plen) == 1);
+    /* Finished over the wire -> confirmed + HANDSHAKE_DONE sealed. */
+    clen = lb_seal_handshake(&f, f.cli_fin, f.cli_fin_len, cpkt, sizeof cpkt);
+    CHECK(lb_wire_step(&f, cfd, sfd, &srv, cpkt, clen, out, sizeof out,
+                       &out_len) == 1);
     CHECK(quic_server_is_confirmed(&f.s) == 1);
-    CHECK(quic_server_handshake_done(&f.s, hsdone, sizeof(hsdone), &dlen) == 1);
-    CHECK(dlen == 1 && hsdone[0] == 0x1e);
-}
+    CHECK(lb_open_onertt(&f, out, out_len, &pl, &pll) == 1);
+    CHECK(pll == 1 && pl[0] == 0x1e);            /* HANDSHAKE_DONE (RFC 9000 19.20) */
 
-/* (3) HTTP/3 GET -> 200: server SETTINGS-first, decode GET, answer 200+body,
- * client decoder recovers status and body (RFC 9114 4.1 / 4.3.2). */
-static void test_loopback_http3_get_200(void)
-{
-    quic_h3srv_state st = {0};
-    const u8 path[] = {'/'};
-    const u8 auth[] = {'h', '1'};
-    const u8 body[] = {'H', 'e', 'l', 'l', 'o', ',', ' ',
-                       'H', 'T', 'T', 'P', '/', '3', '!'};
-    u8 ctrl[64], req[256], scratch[128], resp[256];
-    usz clen = 0, req_len = 0, resp_len = 0;
-    quic_h3reqdrive_req r;
-    u16 status = 0;
-    const u8 *rbody = 0;
-    usz rbody_len = 0;
-
-    CHECK(quic_h3srv_open_control(&st, ctrl, sizeof(ctrl), &clen));
-    CHECK(quic_h3reqdrive_send_get(0, path, sizeof(path), auth, sizeof(auth),
-                                   req, sizeof(req), &req_len));
-    CHECK(quic_h3srv_on_request(&st, req, req_len, scratch, sizeof(scratch), &r));
-    CHECK(quic_h3srv_build_response(&st, 0, 200, body, sizeof(body),
-                                    resp, sizeof(resp), &resp_len));
-    CHECK(quic_h3conn_recv_response(resp, resp_len, &status, &rbody, &rbody_len));
-    CHECK(status == 200);
-    CHECK(rbody_len == sizeof(body));
-    CHECK(rbody[0] == 'H' && rbody[13] == '!');
+    /* GET over the wire -> 200 sealed back, opened by the peer. */
+    CHECK(quic_h3reqdrive_send_get(0, (const u8 *)"/", 1, (const u8 *)"h", 1,
+                                   get, sizeof get, &glen));
+    clen = lb_seal_onertt(&f, get, glen, cpkt, sizeof cpkt);
+    out_len = 0;
+    CHECK(lb_wire_step(&f, cfd, sfd, &srv, cpkt, clen, out, sizeof out,
+                       &out_len) == 1);
+    CHECK(out_len > 0);
+    CHECK(lb_open_onertt(&f, out, out_len, &pl, &pll) == 1);
+    {
+        u16 status = 0;
+        const u8 *rbody = 0;
+        usz rbody_len = 0;
+        CHECK(quic_h3conn_recv_response(pl, pll, &status, &rbody, &rbody_len));
+        CHECK(status == 200);                    /* RFC 9114 4.1 */
+    }
+    quic_udp_close(cfd);
+    quic_udp_close(sfd);
 }
 
 void test_h3_loopback(void)
 {
     test_loopback_initial_datagram();
-    test_loopback_handshake_confirmed();
-    test_loopback_http3_get_200();
+    test_loopback_wire_confirm_and_get();
 }
