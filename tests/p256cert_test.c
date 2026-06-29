@@ -5,6 +5,7 @@
 #include "asn1/derseq.h"
 #include "x509/x509.h"
 #include "x509/spki.h"
+#include "x509/san.h"
 #include "x509/ec_pubkey.h"
 #include "p256/p256_point.h"
 #include "p256/p256_field.h"
@@ -157,10 +158,31 @@ static void test_cert_selfsigned(void)
     ((u8 *)c.tbs)[0] = saved;
 }
 
+/* RFC 5280 4.2.1.6. The cert carries a SubjectAltName dNSName "localhost",
+ * the name modern TLS stacks (BoringSSL/curl) check; a foreign host fails. */
+static void test_cert_san_localhost(void)
+{
+    u8 priv[32], x[32], y[32];
+    for (usz i = 0; i < 32; i++) priv[i] = (u8)(0x40 + i);
+    pc_pubkey(priv, x, y);
+
+    u8 cert[1024];
+    usz clen;
+    CHECK(quic_p256cert_build(priv, x, y, cert, sizeof(cert), &clen) == 1);
+    quic_x509 c;
+    CHECK(quic_x509_parse(cert, clen, &c) == 1);
+
+    CHECK(quic_x509_san_matches(c.tbs, c.tbs_len,
+                                (const u8 *)"localhost", 9) == 1);
+    CHECK(quic_x509_san_matches(c.tbs, c.tbs_len,
+                                (const u8 *)"example.com", 11) == 0);
+}
+
 void test_p256cert(void)
 {
     test_spki_roundtrip();
     test_p256cert_parse();
     test_cert_spki_key();
     test_cert_selfsigned();
+    test_cert_san_localhost();
 }
