@@ -33,7 +33,7 @@ static void compute_r(
 static void compute_u(
     p256_fe u1, p256_fe u2, const p256_fe e, const p256_fe r, const p256_fe s) {
   p256_fe w;
-  quic_fp_inv(w, s, quic_p256_n);
+  quic_mont_inv(w, s, &quic_p256_mont_n); /* s^-1 mod n, fast Montgomery */
   quic_fp_mul(u1, e, w, quic_p256_n);
   quic_fp_mul(u2, r, w, quic_p256_n);
 }

@@ -22,7 +22,7 @@ static void ps_compute_s(
     const p256_fe d) {
   p256_fe k, kinv, rd, sum;
   quic_fp_from_be(k, kb);
-  quic_fp_inv(kinv, k, quic_p256_n);
+  quic_mont_inv(kinv, k, &quic_p256_mont_n); /* k^-1 mod n, fast Montgomery */
   quic_fp_mul(rd, r, d, quic_p256_n);
   quic_fp_add(sum, e, rd, quic_p256_n);
   quic_fp_mul(s, kinv, sum, quic_p256_n);
