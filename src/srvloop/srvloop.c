@@ -37,6 +37,9 @@ int quic_srvloop_init(quic_srvloop *l, const u8 *cli_scid, u8 cli_scid_len)
     l->on_request = 0;
     l->req_ctx = 0;
     l->got_request = 0;
+    l->req_len = 0;
+    l->req_fin = 0;
+    l->req_done = 0;
     return 1;
 }
 
@@ -296,19 +299,44 @@ static void note_app_rx(quic_srvloop *l, quic_server *s, int level, const u8 *pk
  * STREAM frame sets *got_request; CRYPTO is fed to the handshake. A slice that
  * fails to open (wrong level/key) is silently skipped, as the next slice in the
  * datagram may still be ours (RFC 9000 12.2). */
+/* RFC 9000 2.2: view the loop's cross-datagram request-stream accumulator. */
+static quic_srvloop_reqacc step_reqacc(quic_srvloop *l)
+{
+    quic_srvloop_reqacc acc;
+    acc.buf = l->req_buf;
+    acc.cap = sizeof l->req_buf;
+    acc.len = &l->req_len;
+    acc.fin = &l->req_fin;
+    acc.done = &l->req_done;
+    return acc;
+}
+
 static void step_one(quic_srvloop *l, quic_server *s, u8 *pkt, usz len,
                      int *got_request)
 {
     const u8 *payload;
     usz plen;
     int level;
+    quic_srvloop_reqacc acc = step_reqacc(l);
     int opened = quic_srvloop_recv(s, pkt, len, app_largest_pn(l),
                                    &level, &payload, &plen);
     if (!opened)
         return;
     note_app_rx(l, s, level, pkt);
-    quic_srvloop_dispatch(s, &l->h3, payload, plen, l->req_scratch,
+    quic_srvloop_dispatch(s, &l->h3, payload, plen, &acc, l->req_scratch,
                           sizeof l->req_scratch, got_request, &l->req);
+}
+
+/* RFC 9000 2.2: re-arm the request-stream accumulator after a completed request
+ * has been answered, so the next request (curl reuses stream 0 across requests)
+ * reassembles from a clean buffer rather than re-triggering the finished one. */
+static void rearm_reqacc(quic_srvloop *l, int got_request)
+{
+    if (!got_request)
+        return;
+    l->req_len = 0;
+    l->req_fin = 0;
+    l->req_done = 0;
 }
 
 /* RFC 9000 12.2: a received datagram may coalesce several QUIC packets (e.g. an
@@ -320,8 +348,11 @@ int quic_srvloop_step(quic_srvloop *l, quic_server *s, u8 *dgram, usz len,
     const u8 *pkts[QUIC_SRVLOOP_MAXPKTS];
     usz offs[QUIC_SRVLOOP_MAXPKTS], lens[QUIC_SRVLOOP_MAXPKTS], n, i;
     int got_request = 0;
+    int r;
     n = quic_udploop_split(dgram, len, pkts, offs, lens, QUIC_SRVLOOP_MAXPKTS);
     for (i = 0; i < n; i++)
         step_one(l, s, dgram + offs[i], lens[i], &got_request);
-    return produce(l, s, got_request, out, cap, out_len);
+    r = produce(l, s, got_request, out, cap, out_len);
+    rearm_reqacc(l, got_request);
+    return r;
 }

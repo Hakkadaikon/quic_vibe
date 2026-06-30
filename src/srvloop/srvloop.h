@@ -31,6 +31,16 @@ typedef struct {
     int got_request;                 /* 1 when this step decoded a request */
     quic_h3reqdrive_req req;         /* the decoded request (valid when got_request) */
     u8 req_scratch[512];             /* backing store for req's path/body views */
+    /* RFC 9000 2.2: the request stream (id 0) reassembled across datagrams. curl
+     * splits one request's HEADERS and DATA into separate STREAM frames in
+     * separate 1-RTT packets; each frame's data is written at its offset here and
+     * the request is decoded only once FIN arrives.
+     * ponytail: a single request stream (id 0) only; one request per connection,
+     * re-armed by quic_srvloop_init. Overflow past req_buf is truncated. */
+    u8 req_buf[2048];                /* offset-indexed request stream bytes */
+    usz req_len;                     /* highest offset+len written into req_buf */
+    u8 req_fin;                      /* 1 once a request-stream FIN was seen */
+    int req_done;                    /* 1 once this request was decoded/answered */
 } quic_srvloop;
 
 /* Register the app response-body builder; pass 0 to clear (body-less 200). */
