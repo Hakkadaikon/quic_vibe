@@ -22,15 +22,15 @@
 
 #include "crecv/collect.h"
 #include "crecv/message.h"
-#include "h3srv/state.h"
+#include "app/http3/server/h3srv/state.h"
 #include "initpkt/initopen.h"
 #include "io/udp.h"
 #include "packet/header.h"
 #include "salpn/ch_ext.h"
 #include "salpn/negotiate.h"
 #include "server/server.h"
-#include "srvloop/send.h"
-#include "srvloop/srvloop.h"
+#include "app/http3/server/srvloop/send.h"
+#include "app/http3/server/srvloop/srvloop.h"
 #include "common/platform/sys/syscall.h"
 #include "tls/x25519.h"
 

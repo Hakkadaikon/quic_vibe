@@ -2,7 +2,7 @@
 #include "appdata/app_recv.h"
 #include "appdata/app_send.h"
 #include "initpkt/initpkt.h"
-#include "srvwire/wire.h"
+#include "app/http3/server/srvwire/wire.h"
 #include "tls/clienthello.h"
 
 /* RFC 9001 4 / 5: client real-wire codec. Seal own-direction (CLIENT_*),

@@ -1,7 +1,7 @@
 #include "client/clientwire.h"
 #include "initpkt/initopen.h"
 #include "schedule_drive/keyschedule.h"
-#include "srvwire/wire.h"
+#include "app/http3/server/srvwire/wire.h"
 #include "test.h"
 #include "tls/x25519.h"
 
