@@ -145,6 +145,74 @@ static void test_h3srv_request_answered(void)
     CHECK(rbody_len == 2 && rbody[0] == 'o' && rbody[1] == 'k');
 }
 
+/* RFC 9110 9.3.2: a HEAD response carries the same :status as the GET would but
+ * MUST NOT include message content; build_response_for_method drops the DATA
+ * frame so the client decoder sees status with body_len 0. */
+static void test_h3srv_head_no_body(void)
+{
+    quic_h3srv_state st = {0};
+    const u8 head[] = {'H', 'E', 'A', 'D'};
+    const u8 body[] = {'o', 'k'};
+    u8 resp[256];
+    usz resp_len = 0;
+    u16 status = 0;
+    const u8 *rbody = (const u8 *)1;
+    usz rbody_len = 99;
+
+    st.settings_sent = 1;
+    st.request_seen = 1;
+    CHECK(quic_h3srv_build_response_for_method(&st, 0, head, sizeof(head), 200,
+                                               body, sizeof(body), resp,
+                                               sizeof(resp), &resp_len));
+    CHECK(quic_h3conn_recv_response(resp, resp_len, &status, &rbody, &rbody_len));
+    CHECK(status == 200);     /* :status still returned for HEAD */
+    CHECK(rbody_len == 0);    /* no DATA frame: body suppressed */
+}
+
+/* RFC 9110 9.3.1 (contrast): GET keeps its DATA frame; same path through
+ * build_response_for_method preserves the body for non-HEAD methods. */
+static void test_h3srv_get_keeps_body(void)
+{
+    quic_h3srv_state st = {0};
+    const u8 get[] = {'G', 'E', 'T'};
+    const u8 body[] = {'o', 'k'};
+    u8 resp[256];
+    usz resp_len = 0;
+    u16 status = 0;
+    const u8 *rbody = 0;
+    usz rbody_len = 0;
+
+    st.settings_sent = 1;
+    st.request_seen = 1;
+    CHECK(quic_h3srv_build_response_for_method(&st, 0, get, sizeof(get), 200,
+                                               body, sizeof(body), resp,
+                                               sizeof(resp), &resp_len));
+    CHECK(quic_h3conn_recv_response(resp, resp_len, &status, &rbody, &rbody_len));
+    CHECK(status == 200);
+    CHECK(rbody_len == 2 && rbody[0] == 'o' && rbody[1] == 'k');
+}
+
+/* RFC 9114 4.3.1: an OPTIONS request in asterisk-form (:path = "*", a single
+ * 0x2a octet) is not malformed; it round-trips through encode/decode with the
+ * method and path recovered intact. */
+static void test_h3srv_options_asterisk(void)
+{
+    quic_h3srv_state st = {0};
+    const u8 method[] = {'O', 'P', 'T', 'I', 'O', 'N', 'S'};
+    const u8 star[] = {'*'};
+    const u8 auth[] = {'x'};
+    u8 req[256], scratch[128];
+    usz req_len = 0;
+    quic_h3reqdrive_req r;
+
+    CHECK(quic_h3reqdrive_send_method(0, method, sizeof(method), star,
+                                      sizeof(star), auth, sizeof(auth), 0, 0,
+                                      req, sizeof(req), &req_len));
+    CHECK(quic_h3srv_on_request(&st, req, req_len, scratch, sizeof(scratch), &r));
+    CHECK(srv_eq(r.method, r.method_len, "OPTIONS", 7));
+    CHECK(srv_eq(r.path, r.path_len, "*", 1));   /* 0x2a recovered, not rejected */
+}
+
 /* RFC 9114 4.1: no response on a stream that never received a request. */
 static void test_h3srv_no_response_without_request(void)
 {
@@ -201,6 +269,9 @@ void test_h3srv(void)
     test_h3srv_accept_uni_streams();
     test_h3srv_request_decode();
     test_h3srv_request_answered();
+    test_h3srv_head_no_body();
+    test_h3srv_get_keeps_body();
+    test_h3srv_options_asterisk();
     test_h3srv_no_response_without_request();
     test_h3srv_no_response_before_own_settings();
     test_h3srv_respond_without_peer_settings();
