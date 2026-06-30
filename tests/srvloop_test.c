@@ -34,6 +34,19 @@
 
 static const u8 g_cli_scid[6] = {'C', 'L', 'I', 'S', 'C', 'I'};
 
+/* View a loop's cross-datagram request-stream accumulator (RFC 9000 2.2), so a
+ * direct quic_srvloop_dispatch call reassembles into the loop's own buffer. */
+static quic_srvloop_reqacc lp_reqacc(quic_srvloop *l)
+{
+    quic_srvloop_reqacc acc;
+    acc.buf = l->req_buf;
+    acc.cap = sizeof l->req_buf;
+    acc.len = &l->req_len;
+    acc.fin = &l->req_fin;
+    acc.done = &l->req_done;
+    return acc;
+}
+
 /* Minimal Ed25519 end-entity cert carrying pub in its SPKI (RFC 5280 4.1). */
 static usz lp_ed_cert(u8 *out, const u8 pub[32])
 {
@@ -511,8 +524,11 @@ static void lp_confirm_via_dispatch(struct lp_fix *f)
     cf.length = f->cli_fin_len;
     cf.data = f->cli_fin;
     plen = quic_frame_put_crypto(payload, sizeof payload, &cf);
-    CHECK(quic_srvloop_dispatch(&f->s, &f->l.h3, payload, plen,
-                                scratch, sizeof scratch, &got, &req) == 1);
+    {
+        quic_srvloop_reqacc acc = lp_reqacc(&f->l);
+        CHECK(quic_srvloop_dispatch(&f->s, &f->l.h3, payload, plen, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+    }
     CHECK(quic_server_is_confirmed(&f->s) == 1);
 }
 
@@ -608,8 +624,11 @@ static void test_srvloop_dispatch_padding_before_crypto(void)
     lp_make_client_finished(&f);
     plen = lp_padding_then_crypto(payload, sizeof payload,
                                   f.cli_fin, f.cli_fin_len);
-    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, plen,
-                                scratch, sizeof scratch, &got, &req) == 1);
+    {
+        quic_srvloop_reqacc acc = lp_reqacc(&f.l);
+        CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, plen, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+    }
     CHECK(quic_server_is_confirmed(&f.s) == 1);
 }
 
@@ -685,8 +704,11 @@ static void test_srvloop_dispatch_uni_streams_not_request(void)
     lp_drive_to_flight(&f);
     off += lp_uni_stream(payload + off, sizeof payload - off, 2, 0x00);
     off += lp_uni_stream(payload + off, sizeof payload - off, 6, 0x02);
-    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, off,
-                                scratch, sizeof scratch, &got, &req) == 1);
+    {
+        quic_srvloop_reqacc acc = lp_reqacc(&f.l);
+        CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, off, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+    }
     CHECK(got == 0);
 }
 
@@ -708,53 +730,89 @@ static void test_srvloop_dispatch_get_after_uni_streams(void)
     CHECK(quic_h3reqdrive_send_get(0, (const u8 *)"/", 1, (const u8 *)"h", 1,
                                    get, sizeof get, &glen));
     for (usz i = 0; i < glen; i++) payload[off++] = get[i];
-    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, off,
-                                scratch, sizeof scratch, &got, &req) == 1);
+    {
+        quic_srvloop_reqacc acc = lp_reqacc(&f.l);
+        CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, off, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+    }
     CHECK(got == 1);
 }
 
-/* RFC 9000 2.2 / RFC 9114 4.1: curl may carry a request's HEADERS frame and its
- * DATA frame in two separate STREAM frames (one datagram, contiguous offsets)
- * rather than one. Split a one-STREAM-frame POST at the HTTP/3 HEADERS/DATA
- * boundary into [STREAM off 0: HEADERS][STREAM off=hb: DATA] and return the
- * combined payload length. */
-static usz lp_split_post_streams(u8 *out, usz cap)
+/* Build a POST as two separate request STREAM frames split at the HTTP/3
+ * HEADERS/DATA boundary: hp = [STREAM off 0: HEADERS] (no FIN), dp = [STREAM
+ * off=hb: DATA "hi"] (FIN). Returns hb (the byte offset of the DATA frame) and
+ * the two frame lengths in hl and dl. This mirrors curl's POST on the wire. */
+static usz lp_split_post_frames(u8 *hp, usz hcap, usz *hl,
+                                u8 *dp, usz dcap, usz *dl)
 {
     u8 reqb[256];
-    usz rlen = 0, p = 0, n0, n1;
+    usz rlen = 0, hb;
     quic_stream_frame sf;
     u64 type = 0, plen = 0;
-    const u8 *body = (const u8 *)"hi";
-    const u8 *pl = 0;
+    const u8 *body = (const u8 *)"hi", *pl = 0;
     CHECK(quic_h3reqdrive_send_method(0, (const u8 *)"POST", 4, (const u8 *)"/", 1,
                                       (const u8 *)"h", 1, body, 2,
                                       reqb, sizeof reqb, &rlen));
     CHECK(quic_frame_get_stream(reqb, rlen, &sf) > 0);
-    /* hb = length of the leading HEADERS frame inside the stream data. */
-    usz hb = quic_h3_frame_get(sf.data, (usz)sf.length, &type, &pl, &plen);
+    hb = quic_h3_frame_get(sf.data, (usz)sf.length, &type, &pl, &plen);
     CHECK(hb > 0 && type == QUIC_H3_FRAME_HEADERS);
-    CHECK(quic_appdata_stream_frame(0, 0, sf.data, hb, 0, out, cap, &n0));
-    p = n0;
+    CHECK(quic_appdata_stream_frame(0, 0, sf.data, hb, 0, hp, hcap, hl));
     CHECK(quic_appdata_stream_frame(0, hb, sf.data + hb, (usz)sf.length - hb, 1,
-                                    out + p, cap - p, &n1));
-    return p + n1;
+                                    dp, dcap, dl));
+    return hb;
 }
 
 /* RFC 9000 2.2 / RFC 9114 4.1: a POST whose HEADERS and DATA arrive as two
- * separate request STREAM frames (contiguous offsets, one datagram) is
- * reassembled in offset order and the body recovered — not dropped as body 0. */
+ * separate request STREAM frames in ONE datagram is reassembled in offset order
+ * and the body recovered — not dropped as body 0. */
 static void test_srvloop_dispatch_split_request_streams(void)
 {
     struct lp_fix f;
     u8 payload[512], scratch[512];
-    usz plen;
+    usz hl, dl;
     quic_h3reqdrive_req req;
     int got = 0;
     lp_make_client_hello(&f);
     lp_drive_to_flight(&f);
-    plen = lp_split_post_streams(payload, sizeof payload);
-    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, plen,
-                                scratch, sizeof scratch, &got, &req) == 1);
+    /* HEADERS frame then DATA frame back to back in one payload. */
+    lp_split_post_frames(payload, sizeof payload, &hl,
+                         payload + 256, sizeof payload - 256, &dl);
+    for (usz i = 0; i < dl; i++) payload[hl + i] = payload[256 + i];
+    {
+        quic_srvloop_reqacc acc = lp_reqacc(&f.l);
+        CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, hl + dl, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+    }
+    CHECK(got == 1);
+    CHECK(req.body_len == 2 && req.body[0] == 'h' && req.body[1] == 'i');
+}
+
+/* RFC 9000 2.2: curl's POST sends the HEADERS STREAM frame and the DATA STREAM
+ * frame in SEPARATE datagrams (separate 1-RTT packets), so the server processes
+ * them in separate dispatch calls. The first (HEADERS, no FIN) must NOT yet
+ * decode a request; the second (DATA at the HEADERS' end offset, FIN) completes
+ * the stream and the body is recovered — the real-curl failure that reported
+ * body_len 0 because only one datagram was reassembled. */
+static void test_srvloop_dispatch_split_across_datagrams(void)
+{
+    struct lp_fix f;
+    u8 hp[256], dp[256], scratch[512];
+    usz hl, dl;
+    quic_h3reqdrive_req req;
+    int got = 0;
+    lp_make_client_hello(&f);
+    lp_drive_to_flight(&f);
+    lp_split_post_frames(hp, sizeof hp, &hl, dp, sizeof dp, &dl);
+    {
+        quic_srvloop_reqacc acc = lp_reqacc(&f.l);
+        /* datagram 1: HEADERS only, no FIN -> accumulated, no request yet. */
+        CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, hp, hl, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+        CHECK(got == 0);
+        /* datagram 2: DATA at offset hb, FIN -> request completes with body. */
+        CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, dp, dl, &acc,
+                                    scratch, sizeof scratch, &got, &req) == 1);
+    }
     CHECK(got == 1);
     CHECK(req.body_len == 2 && req.body[0] == 'h' && req.body[1] == 'i');
 }
@@ -826,6 +884,7 @@ void test_srvloop(void)
     test_srvloop_dispatch_uni_streams_not_request();
     test_srvloop_dispatch_get_after_uni_streams();
     test_srvloop_dispatch_split_request_streams();
+    test_srvloop_dispatch_split_across_datagrams();
     test_srvloop_send_initial_roundtrip();
     test_srvloop_wrong_direction_open_fails();
     test_srvloop_no_onertt_seal_before_confirm();
