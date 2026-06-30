@@ -1,7 +1,7 @@
 #ifndef QUIC_P256CERT_SPKI_H
 #define QUIC_P256CERT_SPKI_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1.2.7 / SEC1 C.3. Build a P-256 SubjectPublicKeyInfo:
  *   SEQUENCE { AlgorithmIdentifier{ id-ecPublicKey, secp256r1 },

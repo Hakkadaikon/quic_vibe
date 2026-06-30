@@ -1,7 +1,7 @@
 #ifndef QUIC_POLL_NONBLOCK_H
 #define QUIC_POLL_NONBLOCK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 #define QUIC_O_NONBLOCK 0x800 /* O_NONBLOCK */
 #define QUIC_F_SETFL    4     /* fcntl cmd F_SETFL */

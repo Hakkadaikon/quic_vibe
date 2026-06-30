@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_STREAM_CREDIT_H
 #define QUIC_FLOW_STREAM_CREDIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.6: an endpoint limits how many streams its peer may open via
  * MAX_STREAMS. This tracks the grant locally: each open consumes one slot up

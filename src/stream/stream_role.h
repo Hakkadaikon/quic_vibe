@@ -1,7 +1,7 @@
 #ifndef QUIC_STREAM_STREAM_ROLE_H
 #define QUIC_STREAM_STREAM_ROLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 3.1/2.1: a unidirectional stream may only be written by the
  * endpoint that initiated it; the peer may only read it. Bidirectional

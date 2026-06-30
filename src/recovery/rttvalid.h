@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_RTTVALID_H
 #define QUIC_RECOVERY_RTTVALID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 5.1: conditions for generating an RTT sample. */
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_RETRY_TAG_H
 #define QUIC_TLS_RETRY_TAG_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.8 Retry Integrity Tag: AEAD_AES_128_GCM over the Retry
  * Pseudo-Packet (ODCID Length + ODCID + Retry packet without the tag) with a

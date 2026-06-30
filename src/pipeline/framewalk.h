@@ -1,7 +1,7 @@
 #ifndef QUIC_PIPELINE_FRAMEWALK_H
 #define QUIC_PIPELINE_FRAMEWALK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 12.4: walk a decrypted payload frame by frame. Each frame begins
  * with its type as a varint; the walker reports the type and advances past the

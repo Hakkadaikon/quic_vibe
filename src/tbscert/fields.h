@@ -1,7 +1,7 @@
 #ifndef QUIC_TBSCERT_FIELDS_H
 #define QUIC_TBSCERT_FIELDS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1.2. TBSCertificate ::= SEQUENCE {
  *   version [0] EXPLICIT INTEGER DEFAULT v1, serialNumber INTEGER,

@@ -1,7 +1,7 @@
 #ifndef QUIC_RETRYDRIVE_TOKEN_H
 #define QUIC_RETRYDRIVE_TOKEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "retrydrive/reconnect.h"
 
 /* RFC 9000 17.2.5.1: a client's Initial after an accepted Retry carries the

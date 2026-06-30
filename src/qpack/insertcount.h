@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_INSERTCOUNT_H
 #define QUIC_QPACK_INSERTCOUNT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5.1.1. Required Insert Count is transmitted as EncodedInsertCount
  * to bound it relative to MaxEntries. max_entries is the dynamic table capacity

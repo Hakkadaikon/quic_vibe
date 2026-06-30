@@ -1,7 +1,7 @@
 #ifndef QUIC_CIDXCHG_CIDXCHG_H
 #define QUIC_CIDXCHG_CIDXCHG_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 7.2/7.3: drives the Initial Connection ID exchange.
  *

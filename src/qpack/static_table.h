@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_STATIC_TABLE_H
 #define QUIC_QPACK_STATIC_TABLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 Appendix A. The QPACK static table: 99 fixed (name, value)
  * entries at indices 0..98. Names and values are NUL-terminated C strings

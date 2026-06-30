@@ -1,7 +1,7 @@
 #ifndef QUIC_SENTPKT_SENTPKT_H
 #define QUIC_SENTPKT_SENTPKT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 A.1: sent-packet tracking. Fixed-capacity ring buffer, no
  * dynamic allocation. Each slot records one in-flight packet. */

@@ -1,6 +1,6 @@
 #include "hspto/hspto.h"
 #include "recovery/pto.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 /* RFC 9002 6.2.2.1: max_ack_delay is only added once the handshake is
  * confirmed (RFC 9002 6.2.1). */

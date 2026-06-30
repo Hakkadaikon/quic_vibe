@@ -1,7 +1,7 @@
 #ifndef QUIC_DATAGRAM_DATAGRAM_H
 #define QUIC_DATAGRAM_DATAGRAM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 unreliable datagram extension. The DATAGRAM frame type 0x30 has
  * no length (data runs to the packet end); 0x31 carries an explicit length.

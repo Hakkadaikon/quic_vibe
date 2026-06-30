@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_NCID_CHECK_H
 #define QUIC_FRAME_NCID_CHECK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.15: NEW_CONNECTION_ID is malformed (FRAME_ENCODING_ERROR) if
  * Retire Prior To is greater than the Sequence Number, or the connection ID

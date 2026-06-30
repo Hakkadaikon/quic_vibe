@@ -1,7 +1,7 @@
 #ifndef QUIC_VNDRIVE_ACCEPT_H
 #define QUIC_VNDRIVE_ACCEPT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 6.2: a client accepts a Version Negotiation packet only as a
  * response to its first Initial (before the handshake completes), and MUST

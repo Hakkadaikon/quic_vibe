@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQ_RESPPARSE_H
 #define QUIC_H3REQ_RESPPARSE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. Split a response stream into its leading HEADERS frame (the
  * status/header field section) and the following DATA frame (the body). The

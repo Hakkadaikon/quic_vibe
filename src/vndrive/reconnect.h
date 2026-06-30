@@ -1,7 +1,7 @@
 #ifndef QUIC_VNDRIVE_RECONNECT_H
 #define QUIC_VNDRIVE_RECONNECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 6.2: after selecting a version the client re-sends an Initial with
  * that version. To avoid an infinite loop it responds to a Version

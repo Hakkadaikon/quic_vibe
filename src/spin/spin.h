@@ -1,7 +1,7 @@
 #ifndef QUIC_SPIN_SPIN_H
 #define QUIC_SPIN_SPIN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.3.1 / 17.4: the latency spin bit. On the highest-numbered
  * packet received, the client sets its outgoing spin to the inverse of the

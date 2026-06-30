@@ -1,5 +1,5 @@
 #include "recovery/pto.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 u64 quic_pto_backoff(u32 count)
 {

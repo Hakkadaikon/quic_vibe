@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_FINALSIZE_H
 #define QUIC_FLOW_FINALSIZE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.5: a stream's final size is the byte offset just past its last
  * byte, learned from a FIN-bearing STREAM frame or a RESET_STREAM. Once

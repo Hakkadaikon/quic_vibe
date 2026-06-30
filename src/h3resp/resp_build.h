@@ -1,7 +1,7 @@
 #ifndef QUIC_H3RESP_RESP_BUILD_H
 #define QUIC_H3RESP_RESP_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. Assemble a response stream byte sequence: a HEADERS frame
  * carrying the QPACK-encoded :status field section, followed by a DATA frame

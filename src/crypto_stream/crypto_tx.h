@@ -1,7 +1,7 @@
 #ifndef QUIC_CRYPTO_STREAM_TX_H
 #define QUIC_CRYPTO_STREAM_TX_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.6: carry TLS handshake bytes in CRYPTO frames (type 0x06).
  * Bytes longer than max_frame are split across consecutive CRYPTO frames at

@@ -1,7 +1,7 @@
 #ifndef QUIC_UTIL_BE_H
 #define QUIC_UTIL_BE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Big-endian stores shared across the network and codec domains. Inline so
  * they need no translation unit and never clash across included sources. */

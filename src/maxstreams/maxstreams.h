@@ -1,7 +1,7 @@
 #ifndef QUIC_MAXSTREAMS_MAXSTREAMS_H
 #define QUIC_MAXSTREAMS_MAXSTREAMS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.6 / 19.11: MAX_STREAMS frame and the open-permission check it
  * feeds. Wire codec delegates to frame/flowctl; this layer presents the

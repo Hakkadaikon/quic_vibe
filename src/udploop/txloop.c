@@ -1,5 +1,5 @@
 #include "udploop/txloop.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 usz quic_udploop_pack(const u8 *pkts, const usz *pkt_lens, usz n_pkts,
                       u8 *scratch, usz cap)

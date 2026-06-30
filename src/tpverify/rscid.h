@@ -1,7 +1,7 @@
 #ifndef QUIC_TPVERIFY_RSCID_H
 #define QUIC_TPVERIFY_RSCID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 7.3: retry_source_connection_id must be present iff a Retry was
  * processed, and then equal the Source CID of the Retry packet. A present-but-

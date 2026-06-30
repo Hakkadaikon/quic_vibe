@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_VNEG_H
 #define QUIC_PACKET_VNEG_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "packet/header.h"
 
 /* RFC 8999 6 / RFC 9000 17.2.1 Version Negotiation packet. The supported

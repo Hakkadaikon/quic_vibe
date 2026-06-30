@@ -1,5 +1,5 @@
 #include "chacha/aead.h"
-#include "util/ct.h"
+#include "common/bytes/util/ct.h"
 
 /* The MAC input is aad || pad16 || ct || pad16 || le64(aad_len) || le64(ct_len).
  * We build it into a caller buffer via a small cursor. */

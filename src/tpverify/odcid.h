@@ -1,7 +1,7 @@
 #ifndef QUIC_TPVERIFY_ODCID_H
 #define QUIC_TPVERIFY_ODCID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 7.3: the client checks original_destination_connection_id in the
  * server's transport parameters equals the Destination CID it placed in its

@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSION_SWITCHRULE_H
 #define QUIC_VERSION_SWITCHRULE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9369 4.1: on a compatible version switch the Retry Integrity Tag and the
  * 0-RTT keys are derived with version-specific salts/labels, so a change of

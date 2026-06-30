@@ -1,7 +1,7 @@
 #ifndef QUIC_PATH_PATH_H
 #define QUIC_PATH_PATH_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 8.2/9: path validation and connection migration. A path is
  * validated only by a PATH_RESPONSE matching the PATH_CHALLENGE we sent on

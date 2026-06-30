@@ -1,7 +1,7 @@
 #ifndef QUIC_HP_HPAPPLY_H
 #define QUIC_HP_HPAPPLY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.4.1: protect byte0's low bits with mask[0] (low 4 bits for long
  * headers, low 5 bits for short headers). XOR is self-inverse, so the same

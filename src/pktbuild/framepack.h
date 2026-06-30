@@ -1,7 +1,7 @@
 #ifndef QUIC_PKTBUILD_FRAMEPACK_H
 #define QUIC_PKTBUILD_FRAMEPACK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 12.4: concatenate n_frames pre-encoded frames into one packet
  * payload of cap bytes, in order. Each frames[i] is frame_lens[i] bytes.

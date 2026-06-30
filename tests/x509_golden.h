@@ -1,7 +1,7 @@
 #ifndef QUIC_TEST_X509_GOLDEN_H
 #define QUIC_TEST_X509_GOLDEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* A real self-signed prime256v1 / ecdsa-with-SHA256 certificate (394 bytes),
  * generated with OpenSSL 3.0.13:

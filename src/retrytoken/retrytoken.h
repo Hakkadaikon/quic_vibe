@@ -1,7 +1,7 @@
 #ifndef QUIC_RETRYTOKEN_RETRYTOKEN_H
 #define QUIC_RETRYTOKEN_RETRYTOKEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 8.1.1/8.1.2: a server validates a client's address by sending a
  * Retry token the client must echo. The token binds the client's address and

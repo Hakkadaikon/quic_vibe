@@ -1,5 +1,5 @@
 #include "pktbuild/framepack.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 12.4: a packet payload is a sequence of complete frames. */
 int quic_pktbuild_framepack(u8 *payload, usz cap, const u8 *const *frames,

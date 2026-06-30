@@ -1,7 +1,7 @@
 #ifndef QUIC_CLOSELIFE_IDLEFLOOR_H
 #define QUIC_CLOSELIFE_IDLEFLOOR_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.1: idle timeout must not undercut 3*PTO. */
 

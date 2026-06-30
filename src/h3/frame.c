@@ -1,6 +1,6 @@
 #include "h3/frame.h"
-#include "varint/varint.h"
-#include "util/bytes.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/bytes.h"
 
 /* Write Type then Length (two varints). Returns 1 ok, 0 on overflow. */
 static int put_head(u8 *buf, usz cap, usz *off, u64 type, u64 len)

@@ -5,7 +5,7 @@
 #include "hash/sha256.h"
 #include "p256sign/sign.h"
 #include "ecdsasig/sig_value.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 5280 4.1.1.3. signatureValue BIT STRING (0x00 unused-bits || sig DER).
  * sig is the ECDSA-Sig-Value DER of (r, s). Writes the whole TLV. 0 on fail. */

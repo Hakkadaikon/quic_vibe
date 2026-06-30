@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_CONNECT_H
 #define QUIC_H3_CONNECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "h3reqdrive/request_drive.h"
 
 /* RFC 9114 4.4. A CONNECT request omits the :scheme and :path pseudo-header

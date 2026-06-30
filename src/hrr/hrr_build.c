@@ -2,8 +2,8 @@
 #include "tls/handshake.h"
 #include "tls/ext_block.h"
 #include "tls/ext_versions.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 8446 4.1.3: SHA-256("HelloRetryRequest"). */
 const u8 quic_hrr_random[32] = {

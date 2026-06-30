@@ -1,5 +1,5 @@
 #include "resume/resume.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 8446 4.6.1 */
 int quic_resume_store(quic_resume *r, const u8 *ticket, usz len,

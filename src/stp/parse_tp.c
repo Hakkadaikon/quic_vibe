@@ -1,6 +1,6 @@
 #include "stp/parse_tp.h"
 #include "tparam/tpblob.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* Decode the value view as a varint into *value_out (0 if not a single one). */
 static void emit_int(const u8 *val, usz vlen, u64 *value_out)

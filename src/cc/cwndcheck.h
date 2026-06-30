@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_CWNDCHECK_H
 #define QUIC_CC_CWNDCHECK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.5/7.8: congestion-window admission and application-limited
  * detection. Sizes in bytes. */

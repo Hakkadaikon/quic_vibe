@@ -1,7 +1,7 @@
 #ifndef QUIC_IO_UDPTRANSPORT_H
 #define QUIC_IO_UDPTRANSPORT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* A real-socket datagram transport. Mirrors the memlink send/recv contract so
  * a session can run over either an in-process link or a kernel UDP socket. */

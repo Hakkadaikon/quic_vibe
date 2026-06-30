@@ -1,5 +1,5 @@
 #include "tlsext/earlydata.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 #define QUIC_TLSEXT_T_EARLY_DATA 0x002a
 

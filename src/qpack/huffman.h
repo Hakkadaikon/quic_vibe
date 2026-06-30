@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_HUFFMAN_H
 #define QUIC_QPACK_HUFFMAN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 7541 Appendix B / RFC 9204 4.1.2. Decode a Huffman-coded (H=1) string
  * literal's octets. src (src_len bytes) holds the canonical static Huffman

@@ -1,7 +1,7 @@
 #ifndef QUIC_INITPKT_INITPKT_H
 #define QUIC_INITPKT_INITPKT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.2 / RFC 9000 17.2.2: build one AEAD-protected client Initial
  * packet. The CRYPTO payload (a ClientHello) is carried in a CRYPTO frame,

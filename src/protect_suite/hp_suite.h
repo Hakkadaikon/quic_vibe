@@ -1,7 +1,7 @@
 #ifndef QUIC_PROTECT_SUITE_HP_SUITE_H
 #define QUIC_PROTECT_SUITE_HP_SUITE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.4: derive the 5-byte header-protection mask for the given
  * cipher suite. AES suites (0x1301) use AES-ECB over the sample; ChaCha

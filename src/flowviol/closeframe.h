@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOWVIOL_CLOSEFRAME_H
 #define QUIC_FLOWVIOL_CLOSEFRAME_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.19: build a transport CONNECTION_CLOSE (type 0x1c) carrying the
  * error code, the type of the frame that triggered the violation, and a reason

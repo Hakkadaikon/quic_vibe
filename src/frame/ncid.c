@@ -1,6 +1,6 @@
 #include "frame/ncid.h"
-#include "varint/varint.h"
-#include "util/bytes.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/bytes.h"
 
 /* The frame is well-formed if the CID length is in range and a peer cannot
  * be told to retire a sequence number it was never issued. */

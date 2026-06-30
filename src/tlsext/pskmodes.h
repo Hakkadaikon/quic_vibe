@@ -1,7 +1,7 @@
 #ifndef QUIC_TLSEXT_PSKMODES_H
 #define QUIC_TLSEXT_PSKMODES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.2.9: psk_key_exchange_modes, extension_type 0x002d. Body is a
  * 1-byte ke_modes list length followed by that many 1-byte modes. This codec

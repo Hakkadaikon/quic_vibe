@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_CONTROL_H
 #define QUIC_H3_CONTROL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 6.2.1/7.2.4/5.2: the HTTP/3 control stream, SETTINGS ordering, and
  * GOAWAY graceful shutdown. A peer opens at most one control stream which is

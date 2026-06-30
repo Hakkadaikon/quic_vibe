@@ -1,7 +1,7 @@
 #ifndef QUIC_DGDELIVER_DG_LOSS_H
 #define QUIC_DGDELIVER_DG_LOSS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 5.2: DATAGRAM frames are ack-eliciting but never retransmitted.
  * On loss the application is notified that the datagram was lost; nothing is

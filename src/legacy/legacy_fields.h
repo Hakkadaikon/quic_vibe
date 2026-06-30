@@ -1,7 +1,7 @@
 #ifndef QUIC_LEGACY_FIELDS_H
 #define QUIC_LEGACY_FIELDS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.2: TLS 1.3 freezes the ClientHello legacy fields. legacy_version
  * MUST be 0x0303, legacy_compression_methods MUST be a single null (0x01 0x00),

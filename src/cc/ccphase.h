@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_CCPHASE_H
 #define QUIC_CC_CCPHASE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.3.1/7.3.2: slow-start vs congestion-avoidance window growth.
  * Sizes in bytes. */

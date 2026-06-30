@@ -1,7 +1,7 @@
 #ifndef QUIC_P256CERT_P256CERT_H
 #define QUIC_P256CERT_P256CERT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1 / SEC1. Build a self-signed ECDSA P-256 X.509 certificate
  * (self-issued CN=localhost, fixed validity, secp256r1 SPKI,

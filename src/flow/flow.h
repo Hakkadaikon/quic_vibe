@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_FLOW_H
 #define QUIC_FLOW_FLOW_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4: flow control accounting. A sender may send up to max_data
  * cumulative bytes; a receiver advertises a limit and advances it. */

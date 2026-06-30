@@ -1,7 +1,7 @@
 #include "qpackdyn/insert_encode.h"
 #include "qpack/integer.h"
 #include "qpack/string.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9204 4.3.3. First byte top bits 010 (H=0); the 5-bit prefix carries the
  * name length. */

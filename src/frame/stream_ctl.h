@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_STREAM_CTL_H
 #define QUIC_FRAME_STREAM_CTL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.4/19.5 stream control frames. RESET_STREAM abruptly terminates
  * the sending part of a stream; STOP_SENDING requests the peer to stop. */

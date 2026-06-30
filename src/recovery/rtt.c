@@ -1,5 +1,5 @@
 #include "recovery/rtt.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 void quic_rtt_init(quic_rtt *r)
 {

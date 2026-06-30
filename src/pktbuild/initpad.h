@@ -1,7 +1,7 @@
 #ifndef QUIC_PKTBUILD_INITPAD_H
 #define QUIC_PKTBUILD_INITPAD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 14.1: pad a datagram carrying an Initial up to the 1200-byte
  * minimum using PADDING frames (0x00). Writes zero bytes at datagram[current_len..]

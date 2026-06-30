@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQENC_REQUEST_HEADERS_H
 #define QUIC_H3REQENC_REQUEST_HEADERS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.3.1 / RFC 9204 4.5. Build the complete QPACK field section for a
  * GET request: the empty field section prefix followed by the four request

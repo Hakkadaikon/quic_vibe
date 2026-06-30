@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_HEADER_H
 #define QUIC_PACKET_HEADER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17. Packet header form is the high bit of byte 0. */
 

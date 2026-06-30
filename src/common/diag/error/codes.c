@@ -1,4 +1,4 @@
-#include "error/codes.h"
+#include "common/diag/error/codes.h"
 
 /* The enumerated transport error codes occupy 0x00..0x11 (RFC 9000 20.1). */
 static int in_enum_range(u64 code)

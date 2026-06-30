@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_PACING_H
 #define QUIC_CC_PACING_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.7: inter-packet interval to smooth bursts.
  * interval = N * packet_size * srtt / cwnd with N = 5/4. Times in us. */

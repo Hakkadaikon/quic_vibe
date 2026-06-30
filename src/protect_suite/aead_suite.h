@@ -1,7 +1,7 @@
 #ifndef QUIC_PROTECT_SUITE_AEAD_SUITE_H
 #define QUIC_PROTECT_SUITE_AEAD_SUITE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.3: per-suite AEAD seal/open for QUIC packet protection. The
  * 12-byte nonce is iv XOR pn (left-padded). AES suites (0x1301) use

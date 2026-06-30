@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_ERRCLASS_H
 #define QUIC_H3_ERRCLASS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 8.1. HTTP/3 error codes 0x0100..0x0110 are defined by this
  * specification ("known"). Values of the form 0x1f*N + 0x21 are reserved for

@@ -1,7 +1,7 @@
 #ifndef QUIC_CVECDSA_CVECDSA_H
 #define QUIC_CVECDSA_CVECDSA_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4.3: build the server CertificateVerify handshake message
  * (type 0x0f) signed with ECDSA P-256 / SHA-256, scheme

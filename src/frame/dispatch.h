@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_DISPATCH_H
 #define QUIC_FRAME_DISPATCH_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 12.4: a frame begins with its type as a varint. This classifies
  * the type into a frame kind and reports whether it is ack-eliciting

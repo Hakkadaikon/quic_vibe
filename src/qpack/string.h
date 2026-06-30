@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_STRING_H
 #define QUIC_QPACK_STRING_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.1.2 / RFC 7541 5.2. A string literal: an H flag (1 bit), a
  * length as a 7-bit prefixed integer, then that many octets. H=0 octets are

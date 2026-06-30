@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_CRYPTO_OFFSET_H
 #define QUIC_FRAME_CRYPTO_OFFSET_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.6, 7.5: CRYPTO frames carry an offset in a stream-independent
  * space. The receiver must bound writes by a buffer limit and accept gaps. */

@@ -1,7 +1,7 @@
 #ifndef QUIC_SFLIGHT_CERTMSG_H
 #define QUIC_SFLIGHT_CERTMSG_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4.2: build the server Certificate message (type 0x0b) with an
  * empty certificate_request_context and a one-entry certificate_list holding

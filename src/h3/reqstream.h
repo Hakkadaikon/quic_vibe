@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_REQSTREAM_H
 #define QUIC_H3_REQSTREAM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. A request/response stream carries, in order: a HEADERS frame
  * (the header section), then zero or more DATA frames, then an optional

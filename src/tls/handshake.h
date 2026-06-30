@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_HANDSHAKE_H
 #define QUIC_TLS_HANDSHAKE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 TLS 1.3 handshake messages carried in QUIC CRYPTO frames.
  * Each message is: msg_type(1) length(3, big-endian) body. We build the

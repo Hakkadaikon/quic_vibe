@@ -1,7 +1,7 @@
 #ifndef QUIC_STP_PARSE_TP_H
 #define QUIC_STP_PARSE_TP_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 18. Scan the transport parameters tp (len bytes) for param_id.
  * On a match: bytes_out and bytes_len point at the raw value (within tp), and

@@ -1,6 +1,6 @@
 #include "tls/ext_block.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 8446 4.1.2: reserve the 2-byte extensions length. */
 int quic_tls_ext_block_begin(const u8 *buf, usz cap, usz *off)

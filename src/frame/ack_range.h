@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_ACK_RANGE_H
 #define QUIC_FRAME_ACK_RANGE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.3.1: ACK ranges descend from Largest Acknowledged without
  * overlap. First ACK Range cannot drop below packet number zero, and each

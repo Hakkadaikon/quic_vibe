@@ -1,7 +1,7 @@
 #ifndef QUIC_SRESETDRIVE_ONRESET_H
 #define QUIC_SRESETDRIVE_ONRESET_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.3 acting on a detected stateless reset. On detection the
  * connection enters the draining state immediately and is closed silently:

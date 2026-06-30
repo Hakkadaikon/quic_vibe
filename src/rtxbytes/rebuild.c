@@ -1,8 +1,8 @@
 #include "rtxbytes/rebuild.h"
 
 #include "frame/frame.h"
-#include "util/bytes.h"
-#include "varint/varint.h"
+#include "common/bytes/util/bytes.h"
+#include "common/bytes/varint/varint.h"
 
 /* RFC 9000 19.3: ACK frame type is 0x02 or 0x03. */
 static int is_ack_or_padding(u64 type)

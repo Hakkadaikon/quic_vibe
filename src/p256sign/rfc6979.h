@@ -1,7 +1,7 @@
 #ifndef QUIC_P256SIGN_RFC6979_H
 #define QUIC_P256SIGN_RFC6979_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 6979 Section 3.2 deterministic nonce for P-256 with HMAC-SHA-256.
  * priv and hash are big-endian 32-byte. Writes k (big-endian, 1 <= k < n)

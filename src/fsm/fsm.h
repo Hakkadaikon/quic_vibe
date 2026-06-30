@@ -1,7 +1,7 @@
 #ifndef QUIC_FSM_FSM_H
 #define QUIC_FSM_FSM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* A small table-driven finite state machine shared by the stream and
  * connection state machines. A transition is legal iff some row names the

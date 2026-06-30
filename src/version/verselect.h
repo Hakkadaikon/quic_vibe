@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSION_VERSELECT_H
 #define QUIC_VERSION_VERSELECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "version/verinfo.h"
 
 /* RFC 9368 2.2 / 3: validation and selection over a received Version

@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_ECN_H
 #define QUIC_CC_ECN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.1.2: ECN counts must increase monotonically; a CE increase
  * signals congestion. Counts are cumulative per-path. */

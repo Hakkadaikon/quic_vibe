@@ -1,7 +1,7 @@
 #ifndef QUIC_DGDELIVER_DG_RECV_H
 #define QUIC_DGDELIVER_DG_RECV_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 5: extract the payload of a received DATAGRAM frame (type 0x30 or
  * 0x31 at frame[0]) for delivery to the application. *payload points into the

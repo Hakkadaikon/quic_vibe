@@ -1,7 +1,7 @@
 #ifndef QUIC_RTXDRIVE_BUILD_H
 #define QUIC_RTXDRIVE_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 #include "rtxbytes/rtxstore.h"
 

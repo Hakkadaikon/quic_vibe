@@ -1,4 +1,4 @@
-#include "rng/rng.h"
+#include "common/platform/rng/rng.h"
 
 /* getrandom returning <= 0 means no progress: EINTR/EAGAIN or a hard error.
    Either way the caller cannot make progress this round, so treat as failure. */

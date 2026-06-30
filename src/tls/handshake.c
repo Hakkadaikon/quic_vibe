@@ -1,5 +1,5 @@
 #include "tls/handshake.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 usz quic_hs_begin(u8 *out, usz cap, u8 msg_type)
 {

@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_SENT_H
 #define QUIC_RECOVERY_SENT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 A: sent-packet tracking, ACK handling, and packet-threshold
  * loss detection. Fixed-capacity, no dynamic allocation. */

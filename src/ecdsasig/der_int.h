@@ -1,7 +1,7 @@
 #ifndef QUIC_ECDSASIG_DER_INT_H
 #define QUIC_ECDSASIG_DER_INT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* SEC1 C.5 / RFC 5280. DER-encode one 32-octet big-endian unsigned value as an
  * ASN.1 INTEGER: strip leading 0x00 to the minimal form (a single 0x00 when the

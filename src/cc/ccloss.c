@@ -1,5 +1,5 @@
 #include "cc/ccloss.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 u64 quic_cc_on_loss_ssthresh(u64 cwnd)
 {

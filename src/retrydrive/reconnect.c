@@ -1,5 +1,5 @@
 #include "retrydrive/reconnect.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 17.2.5: token and SCID must fit the reconnection-state buffers. */
 static int fits(usz token_len, usz scid_len)

@@ -1,7 +1,7 @@
 #ifndef QUIC_CRYPTO_STREAM_RX_H
 #define QUIC_CRYPTO_STREAM_RX_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "flow/reassemble.h"
 
 /* RFC 9000 19.6 / 7.5: reassemble CRYPTO frame data arriving out of order or

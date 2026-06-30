@@ -9,7 +9,7 @@ cflags := "-target x86_64-linux-gnu -ffreestanding -fno-stack-protector -fno-bui
 build extra='':
     cd .. && {{cc}} {{cflags}} {{extra}} \
         examples/quic_server.c \
-        $(find src -name '*.c' ! -path 'src/sys/sys.c') \
+        $(find src -name '*.c' ! -path 'src/common/platform/sys/sys.c') \
         -o examples/quic_server
 
 # Debug build: timestamped trace logging compiled in via -DQUIC_DEBUG.

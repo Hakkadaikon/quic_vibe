@@ -1,7 +1,7 @@
 #ifndef QUIC_CRYPTO_STREAM_ECDHE_H
 #define QUIC_CRYPTO_STREAM_ECDHE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 4.1 / RFC 8446 7.4.2: the ECDHE shared secret for the TLS 1.3
  * handshake is X25519(own private key, peer public key). Feed shared[] to the

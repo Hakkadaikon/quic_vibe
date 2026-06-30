@@ -1,7 +1,7 @@
 #include "qpack/string.h"
 #include "qpack/integer.h"
 #include "qpack/huffman.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* The Huffman flag sits in the bit above the 7-bit length prefix. */
 #define QPACK_STR_HUFFMAN 0x80

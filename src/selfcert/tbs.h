@@ -1,7 +1,7 @@
 #ifndef QUIC_SELFCERT_TBS_H
 #define QUIC_SELFCERT_TBS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1. Build a v3 TBSCertificate (self-issued CN=localhost, fixed
  * validity, Ed25519 SPKI) into out (cap octets). Sets *out_len to the whole

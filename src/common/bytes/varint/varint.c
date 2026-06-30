@@ -1,4 +1,4 @@
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* Length class: 0->1B, 1->2B, 2->4B, 3->8B. Prefix bits = class << 6. */
 

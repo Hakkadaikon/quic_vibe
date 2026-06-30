@@ -1,7 +1,7 @@
 #ifndef QUIC_H3RUN_CONTROL_H
 #define QUIC_H3RUN_CONTROL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 6.2.1: each endpoint opens exactly one control stream, prefixed by
  * the stream type 0x00. A second control stream is H3_STREAM_CREATION_ERROR. */

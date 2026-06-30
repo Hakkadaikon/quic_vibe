@@ -1,5 +1,5 @@
 #include "grease/grease.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 usz quic_grease_encode(u8 *buf, usz cap)
 {

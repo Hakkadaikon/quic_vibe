@@ -1,6 +1,6 @@
 #include "rsa/mgf1.h"
 #include "hash/sha256.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* SHA-256(seed || counter_be32) -> 32-byte block. */
 static void mgf1_block(const u8 *seed, usz seed_len, u32 counter, u8 out[32])

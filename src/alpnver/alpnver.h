@@ -1,7 +1,7 @@
 #ifndef QUIC_ALPNVER_ALPNVER_H
 #define QUIC_ALPNVER_ALPNVER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Interaction between the negotiated ALPN protocol and the QUIC version.
  * Builds on tls/alpn_match (protocol identity) and version/compat (version

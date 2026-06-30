@@ -1,7 +1,7 @@
 #ifndef QUIC_IDLEDRIVE_IDLEDRIVE_H
 #define QUIC_IDLEDRIVE_IDLEDRIVE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.1: stateful idle-timeout driver. Holds the effective timeout and
  * the timestamp of the last packet sent or received; fires once enough time has

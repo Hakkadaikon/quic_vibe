@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAMEDISPATCH_DISPATCH_STATE_H
 #define QUIC_FRAMEDISPATCH_DISPATCH_STATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "flow/stream_read.h"
 #include "sentpkt/sentpkt.h"
 #include "flow/credit.h"

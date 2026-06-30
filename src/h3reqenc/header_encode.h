@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQENC_HEADER_ENCODE_H
 #define QUIC_H3REQENC_HEADER_ENCODE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5.6. Encode one ordinary request header (e.g. user-agent) as a
  * single Literal Field Line With Literal Name (raw name, raw value, not marked

@@ -1,5 +1,5 @@
 #include "tls/ext_versions.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* RFC 8446 4.2.1: type(2) + ext_data length(2) + list length(1) + versions. */
 usz quic_tls_ext_supported_versions(u8 *buf, usz cap)

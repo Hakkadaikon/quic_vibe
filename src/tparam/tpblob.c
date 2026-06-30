@@ -1,7 +1,7 @@
 #include "tparam/tpblob.h"
-#include "varint/varint.h"
-#include "util/bytes.h"
-#include "util/be.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/bytes.h"
+#include "common/bytes/util/be.h"
 
 /* --- opaque-value parameter --- */
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_H3RUN_GOAWAY_H
 #define QUIC_H3RUN_GOAWAY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 5.2: successive GOAWAY ids MUST be non-increasing; an increase is
  * H3_ID_ERROR. */

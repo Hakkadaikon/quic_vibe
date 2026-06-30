@@ -1,6 +1,6 @@
 #include "tls/tpext.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9001 8.2: extension_type(2) + extension_data length(2) + data. */
 usz quic_tpext_encode(u8 *buf, usz cap, const u8 *tp_data, usz tp_len)

@@ -1,7 +1,7 @@
 #ifndef QUIC_KUDRIVE_TRIGGER_H
 #define QUIC_KUDRIVE_TRIGGER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6.1/6.5: an endpoint MUST NOT initiate a key update before the
  * handshake is confirmed; once confirmed, an update is initiated when the

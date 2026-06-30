@@ -1,7 +1,7 @@
 #ifndef QUIC_MANAGE_DOSMITIGATE_H
 #define QUIC_MANAGE_DOSMITIGATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9308 5.6: a server under load from unverified peers can send a Retry to
  * force address validation, and must never amplify by sending more than three

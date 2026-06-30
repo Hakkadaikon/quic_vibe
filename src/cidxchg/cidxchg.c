@@ -1,6 +1,6 @@
 #include "cidxchg/cidxchg.h"
 #include "tpverify/odcid.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 7.2: a CID stored in cidxchg fits in 20 bytes. */
 static int cidxchg_fits(u8 a, u8 b)

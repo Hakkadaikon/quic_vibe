@@ -1,6 +1,6 @@
 #include "packet/inittoken.h"
-#include "varint/varint.h"
-#include "util/bytes.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 17.2.2: Token Length(varint) + Token. */
 usz quic_inittoken_put(u8 *buf, usz cap, const u8 *token, usz len)

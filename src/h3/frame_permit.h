@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_FRAME_PERMIT_H
 #define QUIC_H3_FRAME_PERMIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 7.2. Which frame types may appear on which stream. DATA and HEADERS
  * (7.2.1, 7.2.2) are allowed only on request or push streams; CANCEL_PUSH,

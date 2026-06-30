@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_QPACK_SETTINGS_H
 #define QUIC_H3_QPACK_SETTINGS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 5. QPACK SETTINGS parameters carried in the HTTP/3 SETTINGS frame. */
 #define QUIC_H3_SETTINGS_QPACK_MAX_TABLE_CAPACITY 0x01

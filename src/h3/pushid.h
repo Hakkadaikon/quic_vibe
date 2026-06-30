@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_PUSHID_H
 #define QUIC_H3_PUSHID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.6. The server may push a response only with a Push ID below the
  * maximum the client granted via MAX_PUSH_ID. The maximum starts at zero and

@@ -1,7 +1,7 @@
 #include "lhdr/lhdr_parse.h"
 #include "packet/header.h"
 #include "packet/inittoken.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* RFC 9000 17.2: byte 0 must have the high (header form) bit set for a long
  * header. */

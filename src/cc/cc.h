@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_CC_H
 #define QUIC_CC_CC_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7: NewReno-style congestion control. Sizes in bytes. */
 

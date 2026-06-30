@@ -1,7 +1,7 @@
 #ifndef QUIC_SENTMETA_RECORD_H
 #define QUIC_SENTMETA_RECORD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 A.1: real sent-packet metadata. Fixed-length ring, no dynamic
  * allocation. Tracks per-PN time_sent / ack_eliciting / in_flight / sent_bytes

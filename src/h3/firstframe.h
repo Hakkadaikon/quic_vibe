@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_FIRSTFRAME_H
 #define QUIC_H3_FIRSTFRAME_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "h3/frame_permit.h"
 
 /* RFC 9114 6.2.1. The first frame on the control stream must be SETTINGS; the

@@ -1,7 +1,7 @@
 #ifndef QUIC_CONNRUNNER_LEVEL_H
 #define QUIC_CONNRUNNER_LEVEL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2 / RFC 9001 4: map a raw packet's first byte to the protection
  * level it is processed at. Long-header Initial/Handshake map to the matching

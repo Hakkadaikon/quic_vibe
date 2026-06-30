@@ -1,7 +1,7 @@
 #ifndef QUIC_ASN1_DERSEQ_H
 #define QUIC_ASN1_DERSEQ_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* X.690 8.9. Cursor over the elements inside a SEQUENCE value. */
 

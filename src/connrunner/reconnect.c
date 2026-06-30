@@ -10,7 +10,7 @@
 #include "tls/initial.h"
 #include "keys/keyset.h"
 #include "version/version.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 void quic_connrunner_reconnect_init(quic_connrunner *r)
 {

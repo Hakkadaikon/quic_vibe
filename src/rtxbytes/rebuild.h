@@ -1,7 +1,7 @@
 #ifndef QUIC_RTXBYTES_REBUILD_H
 #define QUIC_RTXBYTES_REBUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 13.3: when a packet is lost, frames it carried are retransmitted
  * in a new packet, except ACK and PADDING frames, which are not

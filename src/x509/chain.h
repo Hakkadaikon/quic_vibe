@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_CHAIN_H
 #define QUIC_X509_CHAIN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1.2.4 / 4.1.2.6. Locate the issuer and subject Name SEQUENCEs
  * inside a tbsCertificate. The view (tag+length header included) points into

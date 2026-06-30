@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_PNUM_H
 #define QUIC_PACKET_PNUM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 Appendix A.2/A.3: packet number truncation and recovery.
  * Packet numbers are 62-bit and sent truncated to 1, 2, or 4 bytes. */

@@ -1,7 +1,7 @@
 #ifndef QUIC_PROTECTCS_PROTECTCS_H
 #define QUIC_PROTECTCS_PROTECTCS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.3/5.4: cipher-suite-aware packet protection. The AEAD (AES-128-GCM
  * for 0x1301, ChaCha20-Poly1305 for 0x1303) and the header-protection mask are

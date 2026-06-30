@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_STREAM_READ_H
 #define QUIC_FLOW_STREAM_READ_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "flow/reassemble.h"
 
 /* RFC 9000 2.2: deliver received STREAM data to the application as an ordered

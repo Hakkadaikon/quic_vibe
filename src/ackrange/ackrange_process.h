@@ -1,7 +1,7 @@
 #ifndef QUIC_ACKRANGE_ACKRANGE_PROCESS_H
 #define QUIC_ACKRANGE_ACKRANGE_PROCESS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "sentpkt/sentpkt.h"
 
 /* RFC 9002 6 / RFC 9000 19.3: decode a received ACK frame and acknowledge

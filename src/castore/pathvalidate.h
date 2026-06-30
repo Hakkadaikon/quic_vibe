@@ -1,7 +1,7 @@
 #ifndef QUIC_CASTORE_PATHVALIDATE_H
 #define QUIC_CASTORE_PATHVALIDATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "castore/castore.h"
 
 /* RFC 5280 6.1. Validate a certificate path certs[0..n_certs) ordered leaf

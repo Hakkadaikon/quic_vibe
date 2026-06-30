@@ -1,5 +1,5 @@
 #include "vndrive/accept.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 int quic_vndrive_accept(int handshake_complete, u32 sent_version,
                         const u32 *offered, usz n)

@@ -1,5 +1,5 @@
 #include "shorthdr/shorthdr.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 17.3.1: 0 1 S R R K P P, reserved bits left clear. */
 u8 quic_shorthdr_byte0(int spin, int key_phase, u8 pn_len)

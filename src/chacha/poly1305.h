@@ -1,7 +1,7 @@
 #ifndef QUIC_CHACHA_POLY1305_H
 #define QUIC_CHACHA_POLY1305_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8439 2.5 Poly1305 one-time authenticator. 32-byte key, 16-byte tag. */
 

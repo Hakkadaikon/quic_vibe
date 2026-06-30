@@ -1,7 +1,7 @@
 #ifndef QUIC_CLOSELIFE_KEEPALIVE_H
 #define QUIC_CLOSELIFE_KEEPALIVE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.1.2: to keep a connection alive an endpoint sends a packet (e.g.
  * PING) before the idle timeout expires. We send once half the idle timeout

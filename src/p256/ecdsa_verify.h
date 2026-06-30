@@ -1,7 +1,7 @@
 #ifndef QUIC_P256_ECDSA_VERIFY_H
 #define QUIC_P256_ECDSA_VERIFY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* FIPS 186-4 Section 6.4.2 ECDSA signature verification on P-256.
  * All inputs are big-endian 32-byte integers. The public key is the affine

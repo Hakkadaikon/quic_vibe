@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSION_VERINFO_H
 #define QUIC_VERSION_VERINFO_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9368 3: the Version Information structure carried in the
  * version_information transport parameter. It is the Chosen Version (4 bytes)

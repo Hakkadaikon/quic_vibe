@@ -1,7 +1,7 @@
 #ifndef QUIC_SRVFIN_HSDONE_H
 #define QUIC_SRVFIN_HSDONE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 4.1.2 / RFC 9000 19.20: the server sends a HANDSHAKE_DONE frame
  * (type 0x1e) once the handshake is complete, to signal confirmation to the

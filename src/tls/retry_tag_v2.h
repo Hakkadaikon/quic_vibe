@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_RETRY_TAG_V2_H
 #define QUIC_TLS_RETRY_TAG_V2_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9369 3.3.3 fixed key and nonce for the QUIC v2 Retry Integrity Tag. */
 

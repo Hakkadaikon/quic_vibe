@@ -1,7 +1,7 @@
 #ifndef QUIC_INITPKT_INITOPEN_H
 #define QUIC_INITPKT_INITOPEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.2: open an AEAD-protected Initial packet built by
  * quic_initpkt_build. Re-derives the Initial keys from dcid, removes header

@@ -1,6 +1,6 @@
 #include "h3/stream_type.h"
 #include "h3/frame.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 int quic_h3_stream_type_parse(const u8 *buf, usz n, u64 *type, usz *consumed)
 {

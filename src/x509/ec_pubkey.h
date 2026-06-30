@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_EC_PUBKEY_H
 #define QUIC_X509_EC_PUBKEY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* SEC1 2.3.3. Uncompressed P-256 point 0x04 || X(32) || Y(32). spki_key is
  * the BIT STRING value of an id-ecPublicKey subjectPublicKey, leading 0x00

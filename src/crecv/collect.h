@@ -1,7 +1,7 @@
 #ifndef QUIC_CRECV_COLLECT_H
 #define QUIC_CRECV_COLLECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.6 / 7.5: reassemble CRYPTO frames received in a Handshake (or
  * Initial) packet payload into a single in-order byte stream of TLS handshake

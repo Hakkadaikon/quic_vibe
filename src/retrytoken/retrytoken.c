@@ -1,6 +1,6 @@
 #include "retrytoken/retrytoken.h"
 #include "hash/hmac.h"
-#include "util/ct.h"
+#include "common/bytes/util/ct.h"
 
 #define QUIC_RETRYTOKEN_MSG 64 /* addr + odcid, both bounded small */
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_ACKGEN_ACKGEN_H
 #define QUIC_ACKGEN_ACKGEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 13.2.1 / 13.2.2: an endpoint sends an ACK on receiving an
  * ack-eliciting packet, within its advertised max_ack_delay. After a second

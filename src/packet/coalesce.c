@@ -1,5 +1,5 @@
 #include "packet/coalesce.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 void quic_coalesce_begin(quic_coalesce_iter *it, const u8 *dgram, usz total)
 {

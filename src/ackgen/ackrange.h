@@ -1,7 +1,7 @@
 #ifndef QUIC_ACKGEN_ACKRANGE_H
 #define QUIC_ACKGEN_ACKRANGE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.3: an ACK frame reports the Largest Acknowledged packet number
  * and a descending list of contiguous ranges separated by gaps. This builds

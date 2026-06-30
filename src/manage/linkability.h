@@ -1,7 +1,7 @@
 #ifndef QUIC_MANAGE_LINKABILITY_H
 #define QUIC_MANAGE_LINKABILITY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9312 5.3: an on-path observer links a connection's activity by its
  * connection ID. Changing the connection ID breaks that linkability; an

@@ -2,7 +2,7 @@
 #include "tls/handshake.h"
 #include "tls/ext_block.h"
 #include "tls/ext_versions.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* RFC 8446 4.1.3 prefix: legacy_version(2) random(32) session_id(1+sid_len)
  * cipher_suite(2) legacy_compression_method(1). Returns the offset past it. */

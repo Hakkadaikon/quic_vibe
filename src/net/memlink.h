@@ -1,7 +1,7 @@
 #ifndef QUIC_NET_MEMLINK_H
 #define QUIC_NET_MEMLINK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* An in-process datagram link: a fixed-capacity FIFO of byte buffers that
  * carries packets between two endpoints entirely in user memory. No socket,

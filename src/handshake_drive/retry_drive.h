@@ -1,7 +1,7 @@
 #ifndef QUIC_HANDSHAKE_DRIVE_RETRY_DRIVE_H
 #define QUIC_HANDSHAKE_DRIVE_RETRY_DRIVE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2.5: client reception of a Retry packet. Verify the Retry
  * Integrity Tag (RFC 9001 5.8) against the original DCID, extract the token,

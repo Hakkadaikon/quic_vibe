@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_NCID_H
 #define QUIC_FRAME_NCID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.15 NEW_CONNECTION_ID: issues a new connection ID with a
  * stateless reset token. */

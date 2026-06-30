@@ -1,7 +1,7 @@
 #ifndef QUIC_KEYUPDATE_KEYUPDATE_H
 #define QUIC_KEYUPDATE_KEYUPDATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6: 1-RTT key update. The send key generation is a monotonic
  * counter; the Key Phase bit is its low bit. At most two adjacent

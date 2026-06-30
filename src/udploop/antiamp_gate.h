@@ -1,7 +1,7 @@
 #ifndef QUIC_UDPLOOP_ANTIAMP_GATE_H
 #define QUIC_UDPLOOP_ANTIAMP_GATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 8.1: on an unvalidated path an endpoint may send at most three
  * times the bytes it has received. Once the path is validated the limit no

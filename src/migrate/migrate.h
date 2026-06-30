@@ -1,7 +1,7 @@
 #ifndef QUIC_MIGRATE_MIGRATE_H
 #define QUIC_MIGRATE_MIGRATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 9: connection migration on top of path validation. A new path is
  * confirmed only after the peer's address change is detected, a

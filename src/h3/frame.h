@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_FRAME_H
 #define QUIC_H3_FRAME_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 7.2. HTTP/3 frame: Type (varint) Length (varint) Payload.
  * DATA, HEADERS and PUSH_PROMISE carry opaque payload bytes (HEADERS holds a

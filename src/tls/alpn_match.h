@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_ALPN_MATCH_H
 #define QUIC_TLS_ALPN_MATCH_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 7301 3.2: the selected protocol must match one the client offered. */
 

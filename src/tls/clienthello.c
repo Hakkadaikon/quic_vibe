@@ -7,7 +7,7 @@
 #include "tls/sni.h"
 #include "tls/alpn.h"
 #include "tls/tpext.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* legacy_version(2) random(32) session_id_len(1)=0 cipher_suites(2+2)
  * compression(1+1). RFC 8446 4.1.2. */

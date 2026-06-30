@@ -31,7 +31,7 @@
 #include "server/server.h"
 #include "srvloop/send.h"
 #include "srvloop/srvloop.h"
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tls/x25519.h"
 
 #define PORT 4433

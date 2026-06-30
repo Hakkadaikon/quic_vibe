@@ -1,6 +1,6 @@
 #include "tls/alpn.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* A single protocol name fits one byte and leaves room for the 3-byte head. */
 static int alpn_fits(usz proto_len, usz cap)

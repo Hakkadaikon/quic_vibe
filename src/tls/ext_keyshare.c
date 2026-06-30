@@ -1,6 +1,6 @@
 #include "tls/ext_keyshare.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 8446 4.2.8: type(2) ext_len(2) shares_len(2) group(2) ke_len(2) key(32). */
 usz quic_tls_ext_key_share(u8 *buf, usz cap, const u8 pub[32])

@@ -1,5 +1,5 @@
 #include "retrytoken/tokentype.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 8.1.1/8.1.3: prefix the body with one type-tag byte. */
 static usz tag(u8 *out, usz cap, u8 t, const u8 *body, usz body_len)

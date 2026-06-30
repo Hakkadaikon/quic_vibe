@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_STREAM_BOUNDS_H
 #define QUIC_FRAME_STREAM_BOUNDS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.8 / 4.5: a STREAM frame's final size (offset + length) must not
  * exceed 2^62-1; otherwise FRAME_ENCODING_ERROR. */

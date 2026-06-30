@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_INFLIGHT_H
 #define QUIC_RECOVERY_INFLIGHT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 2/A.5: ack-eliciting, in-flight, and byte-counting classification. */
 

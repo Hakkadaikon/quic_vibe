@@ -1,7 +1,7 @@
 #ifndef QUIC_SHBUILD_H
 #define QUIC_SHBUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.3: build a complete TLS 1.3 ServerHello handshake message
  * (msg_type 0x02 | length(3) | body) carrying supported_versions (the

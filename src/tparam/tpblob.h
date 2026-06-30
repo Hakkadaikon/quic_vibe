@@ -1,7 +1,7 @@
 #ifndef QUIC_TPARAM_TPBLOB_H
 #define QUIC_TPARAM_TPBLOB_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tparam/tparam.h"
 
 /* RFC 9000 18.2 transport parameters whose value is not a single varint:

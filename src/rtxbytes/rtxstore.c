@@ -1,6 +1,6 @@
 #include "rtxbytes/rtxstore.h"
 
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 void quic_rtxbytes_init(quic_rtxbytes *st)
 {

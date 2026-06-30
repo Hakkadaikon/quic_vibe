@@ -1,7 +1,7 @@
 #ifndef QUIC_MANAGE_OBSERVABLE_H
 #define QUIC_MANAGE_OBSERVABLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9312 2/3: which header fields an on-path observer can read in the
  * clear. Long-header Version and Connection IDs are exposed; the spin bit

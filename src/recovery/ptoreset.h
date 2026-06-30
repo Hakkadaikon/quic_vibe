@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_PTORESET_H
 #define QUIC_RECOVERY_PTORESET_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.2.1: the PTO backoff is reset when an ack-eliciting packet is
  * acknowledged. Returns 1 when the count and timer should be reset. */

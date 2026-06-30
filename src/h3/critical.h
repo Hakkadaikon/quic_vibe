@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_CRITICAL_H
 #define QUIC_H3_CRITICAL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 6.2. The control, QPACK encoder and QPACK decoder streams are
  * critical: closing any of them is an H3_CLOSED_CRITICAL_STREAM connection

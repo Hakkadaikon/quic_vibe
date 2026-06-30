@@ -1,6 +1,6 @@
 #include "sreset/sreset.h"
 #include "hash/hmac.h"
-#include "util/ct.h"
+#include "common/bytes/util/ct.h"
 
 void quic_sreset_token(const u8 key[QUIC_SRESET_KEY],
                        const u8 *cid, usz cid_len,

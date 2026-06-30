@@ -1,7 +1,7 @@
 #ifndef QUIC_ASN1_DERVAL_H
 #define QUIC_ASN1_DERVAL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* X.690 8.3 / 8.19. Value extraction for INTEGER and OBJECT IDENTIFIER. */
 

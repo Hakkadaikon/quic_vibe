@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_CCLOSS_H
 #define QUIC_CC_CCLOSS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.3.2: window reduction on loss and recovery-period membership.
  * Sizes in bytes. */

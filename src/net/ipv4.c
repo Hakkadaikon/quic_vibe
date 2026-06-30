@@ -1,6 +1,6 @@
 #include "net/ipv4.h"
 #include "net/checksum.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 #define put_be16 quic_put_be16
 #define put_be32 quic_put_be32

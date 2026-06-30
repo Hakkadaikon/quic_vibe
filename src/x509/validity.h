@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_VALIDITY_H
 #define QUIC_X509_VALIDITY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1.2.5. Validity ::= SEQUENCE { notBefore Time, notAfter Time }.
  * Descends tbsCertificate, parses both Time values (UTCTime YYMMDDHHMMSSZ or

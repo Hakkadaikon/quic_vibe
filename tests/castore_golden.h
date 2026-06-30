@@ -1,7 +1,7 @@
 #ifndef QUIC_TEST_CASTORE_GOLDEN_H
 #define QUIC_TEST_CASTORE_GOLDEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Real 2-level ECDSA P-256 chain (OpenSSL 3.0.13):
  *   ca.der:   self-signed root, CN=Test Root CA, basicConstraints CA:TRUE

@@ -1,7 +1,7 @@
 #ifndef QUIC_H3SRV_CONTROL_H
 #define QUIC_H3SRV_CONTROL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "h3srv/state.h"
 
 /* RFC 9114 6.2.1 / 7.2.4. Open the server's single local control stream and

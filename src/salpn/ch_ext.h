@@ -1,7 +1,7 @@
 #ifndef QUIC_SALPN_CH_EXT_H
 #define QUIC_SALPN_CH_EXT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.2: locate one extension inside a ClientHello handshake message.
  * ch_msg points at the message (msg_type(1) length(3) body). The body is

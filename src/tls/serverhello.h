@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_SERVERHELLO_H
 #define QUIC_TLS_SERVERHELLO_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.3: parse a ServerHello handshake message. */
 

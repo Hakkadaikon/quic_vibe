@@ -1,7 +1,7 @@
 #ifndef QUIC_RETRYTOKEN_TOKENTYPE_H
 #define QUIC_RETRYTOKEN_TOKENTYPE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 8.1.1/8.1.3: a token a client sends in an Initial may come from a
  * Retry (address validation, must be present) or from a NEW_TOKEN frame (a

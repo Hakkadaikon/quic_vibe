@@ -1,7 +1,7 @@
 #ifndef QUIC_H3SETTINGS_CONTROL_SETTINGS_H
 #define QUIC_H3SETTINGS_CONTROL_SETTINGS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 6.2.1 / 7.2.4: the opening bytes of an HTTP/3 control stream:
  * stream type 0x00 followed by a SETTINGS frame with default values.

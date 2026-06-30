@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_X25519_H
 #define QUIC_TLS_X25519_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 7748 X25519: scalar multiplication on Curve25519 for ECDHE. */
 

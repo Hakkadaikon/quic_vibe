@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_GOAWAY_CHECK_H
 #define QUIC_H3_GOAWAY_CHECK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 5.2. A GOAWAY sent by a server carries a client-initiated
  * bidirectional Stream ID (the low two bits are 00, i.e. id % 4 == 0); one sent

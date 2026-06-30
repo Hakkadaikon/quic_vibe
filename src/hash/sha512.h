@@ -1,7 +1,7 @@
 #ifndef QUIC_HASH_SHA512_H
 #define QUIC_HASH_SHA512_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* FIPS 180-4 SHA-512. Produces a 64-byte digest. */
 

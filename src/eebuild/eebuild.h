@@ -1,7 +1,7 @@
 #ifndef QUIC_EEBUILD_EEBUILD_H
 #define QUIC_EEBUILD_EEBUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.3.1: build the server EncryptedExtensions message (type 0x08)
  * carrying BOTH the negotiated ALPN extension ("h3", RFC 7301 / RFC 9001 8.1)

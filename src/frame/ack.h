@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_ACK_H
 #define QUIC_FRAME_ACK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.3 ACK frame. Acknowledged packet numbers are encoded as a
  * descending walk from Largest Acknowledged: First Range, then (Gap, Range

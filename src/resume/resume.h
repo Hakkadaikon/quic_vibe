@@ -1,7 +1,7 @@
 #ifndef QUIC_RESUME_RESUME_H
 #define QUIC_RESUME_RESUME_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Resumption driver: hold a TLS session ticket (RFC 8446 4.6.1) across
  * connections and decide whether 0-RTT may be attempted on a later connection

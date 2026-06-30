@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_PREFIX_H
 #define QUIC_QPACK_PREFIX_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5.1. The Encoded Field Section Prefix: an 8-bit-prefix Required
  * Insert Count followed by a Sign bit (S) and a 7-bit-prefix Delta Base.

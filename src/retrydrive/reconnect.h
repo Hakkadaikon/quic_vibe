@@ -1,7 +1,7 @@
 #ifndef QUIC_RETRYDRIVE_RECONNECT_H
 #define QUIC_RETRYDRIVE_RECONNECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "packet/header.h"
 
 /* RFC 9000 17.2.5: reconnection state after a client accepts a Retry. Holds

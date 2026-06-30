@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_ALPN_H
 #define QUIC_TLS_ALPN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 7301 3.1: ALPN extension, extension_type 0x0010. ProtocolNameList =
  * list length(2) + (name length(1) + name)*. */

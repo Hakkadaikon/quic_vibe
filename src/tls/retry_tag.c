@@ -1,6 +1,6 @@
 #include "tls/retry_tag.h"
 #include "gcm/gcm.h"
-#include "util/ct.h"
+#include "common/bytes/util/ct.h"
 
 /* RFC 9001 5.8 fixed key and nonce for the v1 Retry Integrity Tag. */
 static const u8 RETRY_KEY[16] = {

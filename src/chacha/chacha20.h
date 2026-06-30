@@ -1,7 +1,7 @@
 #ifndef QUIC_CHACHA_CHACHA20_H
 #define QUIC_CHACHA_CHACHA20_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8439 ChaCha20. 256-bit key, 96-bit nonce, 32-bit block counter. */
 

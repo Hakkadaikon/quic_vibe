@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_STREAM_TYPE_H
 #define QUIC_H3_STREAM_TYPE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 6.2. A unidirectional stream begins with a varint stream type:
  * 0x00 control, 0x01 push, 0x02 QPACK encoder, 0x03 QPACK decoder. */

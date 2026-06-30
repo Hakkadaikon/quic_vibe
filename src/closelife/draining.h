@@ -1,7 +1,7 @@
 #ifndef QUIC_CLOSELIFE_DRAINING_H
 #define QUIC_CLOSELIFE_DRAINING_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.2.2: after an immediate close the endpoint enters the draining
  * period of 3*PTO, during which it sends no new packets and only receives. */

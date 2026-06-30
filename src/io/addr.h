@@ -1,7 +1,7 @@
 #ifndef QUIC_IO_ADDR_H
 #define QUIC_IO_ADDR_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* IPv4 address and port helpers. Addresses are big-endian (network order). */
 

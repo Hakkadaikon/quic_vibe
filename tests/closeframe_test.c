@@ -1,7 +1,7 @@
 #include "test.h"
 #include "flowviol/closeframe.h"
 #include "frame/frame.h"
-#include "error/codes.h"
+#include "common/diag/error/codes.h"
 
 static void test_closeframe_wire(void)
 {

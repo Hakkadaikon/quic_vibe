@@ -1,7 +1,7 @@
 #ifndef QUIC_CC_PERSISTENT_H
 #define QUIC_CC_PERSISTENT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.6: persistent congestion. Sizes in bytes, durations in the
  * caller's time unit. */

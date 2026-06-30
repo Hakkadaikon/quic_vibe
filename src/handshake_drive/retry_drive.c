@@ -1,7 +1,7 @@
 #include "handshake_drive/retry_drive.h"
 #include "packet/retry.h"
 #include "tls/retry_tag.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* Copy the parsed token and the Retry SCID (the next DCID) to the outputs. */
 static void retry_emit(const quic_retry_packet *r, u8 *out_token,

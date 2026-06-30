@@ -1,5 +1,5 @@
 #include "tls/ext_algs.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* RFC 8446 4.2.7: type(2) + ext_data length(2) + list length(2) + groups. */
 usz quic_tls_ext_supported_groups(u8 *buf, usz cap)

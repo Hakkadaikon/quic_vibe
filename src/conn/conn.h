@@ -1,7 +1,7 @@
 #ifndef QUIC_CONN_CONN_H
 #define QUIC_CONN_CONN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 handshake phase + connection lifecycle. Forward-only through the
  * open phases; any open phase may move to closing/draining, both -> closed. */

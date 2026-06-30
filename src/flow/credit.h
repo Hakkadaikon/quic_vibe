@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_CREDIT_H
 #define QUIC_FLOW_CREDIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.1: connection-level receive credit. The receiver advertises a
  * max_data limit covering all streams and advances it as data is consumed. A

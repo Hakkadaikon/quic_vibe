@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_CERT_H
 #define QUIC_TLS_CERT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4.2/4.4.3: the Certificate and CertificateVerify handshake
  * messages. Certificate carries a request context and a chain of entries,

@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_FRAME_H
 #define QUIC_FRAME_FRAME_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19: frame types. The type itself is a varint; the common ones
  * below fit in a single byte. */

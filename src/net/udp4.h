@@ -1,7 +1,7 @@
 #ifndef QUIC_NET_UDP4_H
 #define QUIC_NET_UDP4_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 768 UDP over IPv4. The checksum covers an IPv4 pseudo-header
  * (src, dst, zero, protocol=17, UDP length) plus the UDP header and data. */

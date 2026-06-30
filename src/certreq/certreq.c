@@ -1,6 +1,6 @@
 #include "certreq/certreq.h"
 #include "tls/handshake.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 #define QUIC_HS_CERTIFICATE_REQUEST 0x0d
 #define QUIC_EXT_SIGNATURE_ALGORITHMS 0x000d

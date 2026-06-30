@@ -1,7 +1,7 @@
 #ifndef QUIC_CID_CIDPOOL_H
 #define QUIC_CID_CIDPOOL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Connection ID issuance/retirement bookkeeping (RFC 9000 5.1.1, 5.1.2).
  *

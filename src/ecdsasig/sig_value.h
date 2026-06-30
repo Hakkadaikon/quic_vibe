@@ -1,7 +1,7 @@
 #ifndef QUIC_ECDSASIG_SIG_VALUE_H
 #define QUIC_ECDSASIG_SIG_VALUE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* SEC1 C.5 ECDSA-Sig-Value: SEQUENCE { INTEGER r, INTEGER s }. DER-encodes the
  * two 32-octet big-endian scalars into out (cap octets) and sets *out_len (the

@@ -1,7 +1,7 @@
 #ifndef QUIC_SERVER_SERVER_H
 #define QUIC_SERVER_SERVER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "io/udp.h"
 #include "sdrv/sdrv.h"
 #include "srvfin/complete.h"

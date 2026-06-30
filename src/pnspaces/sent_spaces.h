@@ -1,7 +1,7 @@
 #ifndef QUIC_PNSPACES_SENT_SPACES_H
 #define QUIC_PNSPACES_SENT_SPACES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "conn/pnspace.h"
 #include "sentpkt/sentpkt.h"
 

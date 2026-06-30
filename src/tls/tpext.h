@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_TPEXT_H
 #define QUIC_TLS_TPEXT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 8.2: QUIC carries transport parameters in a TLS extension
  * (quic_transport_parameters, extension_type 0x39). The wire form is the

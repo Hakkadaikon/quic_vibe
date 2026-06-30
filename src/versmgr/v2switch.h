@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSMGR_V2SWITCH_H
 #define QUIC_VERSMGR_V2SWITCH_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9369 3: when the negotiated version is v2, the endpoint switches to v2
  * Initial salt and HKDF-Expand-Label prefix. */

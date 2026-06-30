@@ -1,7 +1,7 @@
 #include "selfcert/tbs.h"
 #include "selfcert/derenc.h"
 #include "asn1/der.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 8410 3. id-Ed25519 OID 1.3.101.112. */
 static const u8 oid_ed25519[] = {0x2b, 0x65, 0x70};

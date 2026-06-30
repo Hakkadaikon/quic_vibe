@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_PTYPE_H
 #define QUIC_PACKET_PTYPE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2: a long header's logical packet type, from bits 5-4 of
  * byte 0. QUIC_PT_NONE marks a byte that is not a (valid-form) long header. */

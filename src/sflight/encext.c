@@ -1,7 +1,7 @@
 #include "sflight/encext.h"
 #include "tls/handshake.h"
 #include "tls/tpext.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* Body = extensions<2> wrapping one quic_transport_parameters extension.
  * Header(4) + ext_list_len(2) precede the extension's 4-byte header + tp_len. */

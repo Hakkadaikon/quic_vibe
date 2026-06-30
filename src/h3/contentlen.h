@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_CONTENTLEN_H
 #define QUIC_H3_CONTENTLEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1.2. A request or response with a Content-Length header must
  * carry exactly that many DATA payload bytes; a mismatch is a malformed

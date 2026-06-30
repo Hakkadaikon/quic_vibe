@@ -1,7 +1,7 @@
 #ifndef QUIC_SALPN_SNI_EXTRACT_H
 #define QUIC_SALPN_SNI_EXTRACT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 6066 3: extract the host_name from a server_name extension's data
  * (extension_type 0x0000). sni_ext_data is the ServerNameList:

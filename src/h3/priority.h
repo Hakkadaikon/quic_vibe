@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_PRIORITY_H
 #define QUIC_H3_PRIORITY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9218 4. HTTP/3 Extensible Priorities: urgency (u, 0-7, default 3) and
  * incremental (i, 0/1, default 0). Lower urgency value is higher priority. */

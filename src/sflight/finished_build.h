@@ -1,7 +1,7 @@
 #ifndef QUIC_SFLIGHT_FINISHED_BUILD_H
 #define QUIC_SFLIGHT_FINISHED_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4.4: build the server Finished message (type 0x14). Computes
  * verify_data = HMAC(HKDF-Expand-Label(finished_key, "finished"),

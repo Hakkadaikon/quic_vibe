@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_RTTSAMPLE_H
 #define QUIC_RECOVERY_RTTSAMPLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 5.1/5.3: min_rtt tracking and ack_delay adjustment. */
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_H3CANCEL_H
 #define QUIC_H3CANCEL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1.1. A client that no longer needs the response to a request
  * cancels it by resetting the request stream: RESET_STREAM abruptly ends the

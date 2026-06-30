@@ -1,7 +1,7 @@
 #ifndef QUIC_GREASE_GREASE_H
 #define QUIC_GREASE_GREASE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9287 Greasing the QUIC Bit. The "QUIC Bit" is the second-most
  * significant bit of the first byte (0x40, the fixed bit). When both peers

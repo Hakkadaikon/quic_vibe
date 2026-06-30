@@ -1,5 +1,5 @@
 #include "frame/flowctl.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* Append a varint at *off, returning 0 to halt a put chain on overflow. */
 static int put_at(u8 *buf, usz cap, usz *off, u64 v)

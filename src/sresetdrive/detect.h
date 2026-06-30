@@ -1,7 +1,7 @@
 #ifndef QUIC_SRESETDRIVE_DETECT_H
 #define QUIC_SRESETDRIVE_DETECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.3.1 detecting a stateless reset. A packet that fails to
  * decrypt is checked against the expected Stateless Reset Token: its trailing

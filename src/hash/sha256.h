@@ -1,7 +1,7 @@
 #ifndef QUIC_HASH_SHA256_H
 #define QUIC_HASH_SHA256_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* FIPS 180-4 SHA-256. Produces a 32-byte digest. */
 

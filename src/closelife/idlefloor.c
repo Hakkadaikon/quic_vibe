@@ -1,5 +1,5 @@
 #include "closelife/idlefloor.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 /* RFC 9000 10.1: effective idle timeout is at least 3*PTO. */
 u64 quic_idle_floor(u64 idle_timeout, u64 pto)

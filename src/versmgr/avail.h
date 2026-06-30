@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSMGR_AVAIL_H
 #define QUIC_VERSMGR_AVAIL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9368 5: an endpoint keeps the set of QUIC versions it supports, in
  * preference order, and matches it against a peer's Available Versions to pick

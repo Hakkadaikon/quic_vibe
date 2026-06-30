@@ -1,7 +1,7 @@
 #ifndef QUIC_SHORTHDR_SHORTHDR_H
 #define QUIC_SHORTHDR_SHORTHDR_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.3.1: build a 1-RTT short header. */
 

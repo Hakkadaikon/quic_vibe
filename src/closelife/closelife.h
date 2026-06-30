@@ -1,7 +1,7 @@
 #ifndef QUIC_CLOSELIFE_CLOSELIFE_H
 #define QUIC_CLOSELIFE_CLOSELIFE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10: connection close lifecycle driven by timer ticks and
  * CONNECTION_CLOSE / stateless-reset events. The open phases (Initial,

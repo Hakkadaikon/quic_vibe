@@ -1,7 +1,7 @@
 #ifndef QUIC_RTXBYTES_COLLECT_H
 #define QUIC_RTXBYTES_COLLECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 #include "rtxbytes/rtxstore.h"
 

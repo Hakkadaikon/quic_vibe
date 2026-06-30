@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_INTEGER_H
 #define QUIC_QPACK_INTEGER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.1.1 / RFC 7541 5.1. Prefixed variable-length integer. The first
  * byte holds prefix_bits low bits of the value (prefix_value occupies the high

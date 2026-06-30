@@ -1,7 +1,7 @@
 #ifndef QUIC_TLSEXT_EARLYDATA_H
 #define QUIC_TLSEXT_EARLYDATA_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.2.10: early_data, extension_type 0x002a. The body is empty in
  * ClientHello and EncryptedExtensions, and a 4-byte max_early_data_size in

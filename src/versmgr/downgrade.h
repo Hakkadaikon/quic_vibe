@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSMGR_DOWNGRADE_H
 #define QUIC_VERSMGR_DOWNGRADE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9368 6: the negotiated version must be consistent with the server's
  * Available Versions. A downgrade is detected when negotiated is absent from

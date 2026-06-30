@@ -1,7 +1,7 @@
 #ifndef QUIC_APPDATA_STREAM_SEND_H
 #define QUIC_APPDATA_STREAM_SEND_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.8: encode application data as a STREAM frame (type 0x08 base,
  * OFF/LEN/FIN bits set as needed) into out (cap bytes); length to *out_len.

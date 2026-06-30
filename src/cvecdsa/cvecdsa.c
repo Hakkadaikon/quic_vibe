@@ -5,7 +5,7 @@
 #include "hash/sha256.h"
 #include "p256sign/sign.h"
 #include "ecdsasig/sig_value.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 #define QUIC_HS_CERTIFICATE_VERIFY 15
 

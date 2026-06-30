@@ -1,7 +1,7 @@
 #ifndef QUIC_ERROR_ERROR_H
 #define QUIC_ERROR_ERROR_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 20.1 transport error codes, carried in CONNECTION_CLOSE (0x1c). */
 

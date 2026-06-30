@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_PSEUDOHEADER_H
 #define QUIC_H3_PSEUDOHEADER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.3.1. Request and response control data is carried in
  * pseudo-header fields whose names begin with ':'. All pseudo-header fields

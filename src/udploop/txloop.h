@@ -1,7 +1,7 @@
 #ifndef QUIC_UDPLOOP_TXLOOP_H
 #define QUIC_UDPLOOP_TXLOOP_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "io/udp.h"
 
 /* RFC 9000 12.2: several QUIC packets may be coalesced into one UDP datagram.

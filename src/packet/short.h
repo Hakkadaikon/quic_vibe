@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_SHORT_H
 #define QUIC_PACKET_SHORT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.3. Build a short header (1-RTT) packet header into buf.
  * byte0 = 0x40 (fixed bit) | spin<<5 | key_phase<<2 | (pn_len-1),

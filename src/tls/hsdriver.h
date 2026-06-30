@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_HSDRIVER_H
 #define QUIC_TLS_HSDRIVER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4 / RFC 9001 4: order-driven TLS 1.3 handshake state machine.
  * Feeds received handshake messages in flight order and rejects any

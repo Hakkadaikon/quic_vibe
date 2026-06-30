@@ -1,6 +1,6 @@
 #include "datagram/datagram.h"
-#include "varint/varint.h"
-#include "util/bytes.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/bytes.h"
 
 /* Type 0x31 carries an explicit length varint; 0x30 does not. */
 static u8 datagram_type(int with_len)

@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQENC_PSEUDO_ENCODE_H
 #define QUIC_H3REQENC_PSEUDO_ENCODE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5 / RFC 9114 4.3.1. Encode a request field section carrying the
  * four request pseudo-headers (:method, :scheme, :authority, :path): the empty

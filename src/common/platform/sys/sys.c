@@ -1,4 +1,4 @@
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Freestanding entry point. No libc, no crt. */
 void _start(void)

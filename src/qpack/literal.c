@@ -2,7 +2,7 @@
 #include "qpack/integer.h"
 #include "qpack/string.h"
 #include "qpack/huffman.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9204 4.5.4 first-byte bits. */
 #define QPACK_NAMREF 0x40

@@ -1,6 +1,6 @@
 #include "frame/connctl.h"
-#include "varint/varint.h"
-#include "util/bytes.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/bytes.h"
 
 /* --- NEW_TOKEN (19.7) --- */
 

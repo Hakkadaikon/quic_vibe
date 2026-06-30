@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_FIELDLINE_H
 #define QUIC_QPACK_FIELDLINE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5.2. Indexed Field Line: pattern 1Tiiiiii, where T=1 selects the
  * static table and the index is a 6-bit prefixed integer. The dynamic table

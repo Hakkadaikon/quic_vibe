@@ -1,7 +1,7 @@
 #ifndef QUIC_CONN_DEMUX_H
 #define QUIC_CONN_DEMUX_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 5.1/5.2: route an incoming packet to a connection by its
  * Destination Connection ID. Returns 1 if the packet's DCID exactly matches

@@ -1,7 +1,7 @@
 #ifndef QUIC_RSA_PSS_H
 #define QUIC_RSA_PSS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8017 9.1.2. EMSA-PSS-VERIFY with SHA-256 and salt length 32. em is the
  * encoded message of em_len octets; em_bits is the modulus bit length minus 1;

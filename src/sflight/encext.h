@@ -1,7 +1,7 @@
 #ifndef QUIC_SFLIGHT_ENCEXT_H
 #define QUIC_SFLIGHT_ENCEXT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.3.1: build the server EncryptedExtensions message (type 0x08)
  * carrying a single quic_transport_parameters extension (0x39, RFC 9001 8.2)

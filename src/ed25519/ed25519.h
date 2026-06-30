@@ -1,7 +1,7 @@
 #ifndef QUIC_ED25519_ED25519_H
 #define QUIC_ED25519_ED25519_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8032 Section 5.1: Ed25519 signing and verification (PureEdDSA). */
 

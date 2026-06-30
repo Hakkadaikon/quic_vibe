@@ -1,5 +1,5 @@
 #include "sresetdrive/detect.h"
-#include "util/ct.h"
+#include "common/bytes/util/ct.h"
 
 /* RFC 9000 10.3.1 */
 int quic_sresetdrive_is_reset(const u8 *packet, usz len,

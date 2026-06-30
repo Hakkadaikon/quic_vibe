@@ -1,7 +1,7 @@
 #ifndef QUIC_VNDRIVE_SELECT_H
 #define QUIC_VNDRIVE_SELECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8999 6 / RFC 9000 6.2: from a VN packet the client selects, in its own
  * preference order, the first version present in both its supported set and

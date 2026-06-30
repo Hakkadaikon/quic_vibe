@@ -1,7 +1,7 @@
 #ifndef QUIC_PNSPACES_RECV_SPACES_H
 #define QUIC_PNSPACES_RECV_SPACES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "conn/pnspace.h"
 #include "recvpn/recvpn.h"
 

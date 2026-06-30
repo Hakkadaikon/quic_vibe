@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSION_V2TYPES_H
 #define QUIC_VERSION_V2TYPES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9369 3.2: QUIC v2 encodes the long header packet types with different
  * wire values than v1. This maps between the version-independent logical type

@@ -1,7 +1,7 @@
 #ifndef QUIC_HP_HP_CHACHA_H
 #define QUIC_HP_HP_CHACHA_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.4.2 ChaCha20-based header protection. The 16-byte sample
  * splits into a little-endian 32-bit counter (sample[0..3]) and a 96-bit

@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_DUAL_FLOW_H
 #define QUIC_FLOW_DUAL_FLOW_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.1: each byte counts against both the stream limit and the
  * connection limit. Accepting data requires staying within both. */

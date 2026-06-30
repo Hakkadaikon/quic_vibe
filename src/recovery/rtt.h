@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_RTT_H
 #define QUIC_RECOVERY_RTT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 5: RTT estimation. Times are in microseconds. */
 

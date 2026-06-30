@@ -1,7 +1,7 @@
 #ifndef QUIC_SRESET_SRESET_H
 #define QUIC_SRESET_SRESET_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.3 stateless reset. An endpoint derives a 16-byte Stateless
  * Reset Token for each connection ID it issues, advertising it; a peer that

@@ -1,7 +1,7 @@
 #ifndef QUIC_KUSWITCH_PHASEBIT_H
 #define QUIC_KUSWITCH_PHASEBIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6.2: the Key Phase bit of a short-header packet reflects the send
  * key generation's low bit and flips on each key update. */

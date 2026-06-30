@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQ_REQORDER_H
 #define QUIC_H3REQ_REQORDER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. A request stream carries, in order: a leading HEADERS frame,
  * then zero or more DATA frames, then an optional trailing HEADERS frame.

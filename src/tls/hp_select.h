@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_HP_SELECT_H
 #define QUIC_TLS_HP_SELECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.4.3: header protection algorithm per cipher suite. */
 

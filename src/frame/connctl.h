@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_CONNCTL_H
 #define QUIC_FRAME_CONNCTL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19: connection and path management frames. */
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_DATAGRAM_DGCC_H
 #define QUIC_DATAGRAM_DGCC_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 5.3: DATAGRAM frames are not subject to flow control. */
 int quic_datagram_flow_controlled(void);

@@ -1,7 +1,7 @@
 #ifndef QUIC_PNSPACES_SPACES_H
 #define QUIC_PNSPACES_SPACES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "conn/pnspace.h"
 
 /* RFC 9000 12.3: three independent packet number spaces, each numbering from

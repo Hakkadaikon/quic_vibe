@@ -1,7 +1,7 @@
 #ifndef QUIC_TLSEXT_PRESHARED_H
 #define QUIC_TLSEXT_PRESHARED_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.2.11: pre_shared_key, extension_type 0x0029. The ClientHello body
  * is an OfferedPsks: an identities list (each a {opaque identity,

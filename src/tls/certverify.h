@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_CERTVERIFY_H
 #define QUIC_TLS_CERTVERIFY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4.3. SignatureScheme codepoints handled here. */
 #define QUIC_TLS_SCHEME_RSA_PSS_SHA256 0x0804

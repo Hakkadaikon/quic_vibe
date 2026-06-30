@@ -1,7 +1,7 @@
 #ifndef QUIC_TBSCERT_SIGALG_H
 #define QUIC_TBSCERT_SIGALG_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tbscert/fields.h"
 
 /* RFC 5280 4.1.2.3. The OID inside the tbs signature AlgorithmIdentifier.

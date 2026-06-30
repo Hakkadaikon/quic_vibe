@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACKDYN_INSERT_ENCODE_H
 #define QUIC_QPACKDYN_INSERT_ENCODE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.3.3. Insert With Literal Name (encoder stream): first byte
  * 01Hxxxxx with a 5-bit prefixed name length (H=0, raw), then the name octets,

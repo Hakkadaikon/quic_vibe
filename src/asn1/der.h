@@ -1,7 +1,7 @@
 #ifndef QUIC_ASN1_DER_H
 #define QUIC_ASN1_DER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* X.690 8.1. DER TLV: tag (1 octet) + length + value.
  * Length short form (<128) and long form 0x81/0x82 (1/2 octet length). */

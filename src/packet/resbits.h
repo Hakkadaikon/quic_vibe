@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_RESBITS_H
 #define QUIC_PACKET_RESBITS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2 / 17.3.1: after removing header protection, the Reserved Bits
  * of the first byte must be zero. In a long header they are bits 0x0c; in a

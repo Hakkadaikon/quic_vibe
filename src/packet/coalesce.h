@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_COALESCE_H
 #define QUIC_PACKET_COALESCE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 12.2: several QUIC packets may be coalesced into one UDP
  * datagram. Long-header packets carry a Length field that bounds them;

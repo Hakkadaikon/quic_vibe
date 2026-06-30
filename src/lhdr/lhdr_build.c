@@ -2,7 +2,7 @@
 #include "packet/header.h"
 #include "packet/inittoken.h"
 #include "packet/pnum.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* RFC 9000 17.2: low two bits of byte0 hold pn_len-1 (1->0, 2->1, 4->3). */
 u8 quic_lhdr_byte0_pnlen(u8 byte0, u8 pn_len)

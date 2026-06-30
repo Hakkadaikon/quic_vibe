@@ -1,7 +1,7 @@
 #ifndef QUIC_RSA_RSA_PSS_VERIFY_H
 #define QUIC_RSA_RSA_PSS_VERIFY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8017 8.1.2. RSASSA-PSS verification with SHA-256, MGF1-SHA-256 and salt
  * length 32 (TLS rsa_pss_rsae_sha256). n and sig are big-endian; mhash is the

@@ -1,7 +1,7 @@
 #ifndef QUIC_RNG_RNG_H
 #define QUIC_RNG_RNG_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* CSPRNG via the Linux getrandom syscall. No libc. */
 

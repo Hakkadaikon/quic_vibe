@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOWVIOL_H
 #define QUIC_FLOWVIOL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.1/4.6: detect a flow-control violation and pick the transport
  * error code to close with. Connection-level or per-stream data over the

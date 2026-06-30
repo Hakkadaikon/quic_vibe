@@ -1,7 +1,7 @@
 #ifndef QUIC_H3CONN_REQUEST_H
 #define QUIC_H3CONN_REQUEST_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. Build an HTTP/3 request (a HEADERS frame carrying the
  * QPACK-encoded field section, plus a DATA frame when body_len > 0) and wrap it

@@ -1,6 +1,6 @@
 #include "tls/sni.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 6066 3: name_type(1)=host_name + name length(2) + host. */
 usz quic_tls_sni_encode(u8 *buf, usz cap, const u8 *host, usz host_len)

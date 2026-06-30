@@ -1,7 +1,7 @@
 #ifndef QUIC_DATAGRAM_DGCHECK_H
 #define QUIC_DATAGRAM_DGCHECK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 3: receiving a DATAGRAM frame without having advertised
  * max_datagram_frame_size, or one exceeding the advertised size, is a

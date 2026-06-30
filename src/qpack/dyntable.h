@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_DYNTABLE_H
 #define QUIC_QPACK_DYNTABLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 3.2. QPACK dynamic table: a fixed-capacity ring of inserted
  * (name, value) entries. Absolute indices grow from 0 with each insert; old

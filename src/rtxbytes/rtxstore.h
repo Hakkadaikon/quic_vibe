@@ -1,7 +1,7 @@
 #ifndef QUIC_RTXBYTES_RTXSTORE_H
 #define QUIC_RTXBYTES_RTXSTORE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 13.3: to retransmit the contents of a lost packet, the sender
  * keeps the actual frame bytes it sent, keyed by packet number, until the

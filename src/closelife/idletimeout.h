@@ -1,7 +1,7 @@
 #ifndef QUIC_CLOSELIFE_IDLETIMEOUT_H
 #define QUIC_CLOSELIFE_IDLETIMEOUT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.1: the effective idle timeout is the minimum of the two
  * endpoints' max_idle_timeout values, where 0 means "no advertised limit". */

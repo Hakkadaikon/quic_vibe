@@ -1,5 +1,5 @@
 #include "datagram/dgsize.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* RFC 9221 5. Largest payload whose own length varint still fits in room.
  * The length varint widens with the payload, so each varint width caps a

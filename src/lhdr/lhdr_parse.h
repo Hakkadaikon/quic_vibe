@@ -1,7 +1,7 @@
 #ifndef QUIC_LHDR_PARSE_H
 #define QUIC_LHDR_PARSE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2: parse a complete long header up to the start of the packet
  * number. Header protection is still applied at this layer, so the packet

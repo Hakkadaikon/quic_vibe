@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_LOSSTIMER_H
 #define QUIC_RECOVERY_LOSSTIMER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.2 loss detection timer selection. Times in us. */
 

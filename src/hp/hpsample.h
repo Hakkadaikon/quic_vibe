@@ -1,7 +1,7 @@
 #ifndef QUIC_HP_HPSAMPLE_H
 #define QUIC_HP_HPSAMPLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.4.2: the 16-byte header-protection sample starts 4 bytes after
  * the start of the packet number field (sample_offset = pn_offset + 4). */

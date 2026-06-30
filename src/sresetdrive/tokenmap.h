@@ -1,7 +1,7 @@
 #ifndef QUIC_SRESETDRIVE_TOKENMAP_H
 #define QUIC_SRESETDRIVE_TOKENMAP_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 10.3 associating a Stateless Reset Token with a connection ID.
  * An endpoint records, per CID it uses to reach a peer, the token the peer

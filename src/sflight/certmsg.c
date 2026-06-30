@@ -1,7 +1,7 @@
 #include "sflight/certmsg.h"
 #include "tls/handshake.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 8446 4.4.2 CertificateEntry: cert_data<3> + extensions<2>=empty. */
 #define QUIC_HS_CERTIFICATE 11

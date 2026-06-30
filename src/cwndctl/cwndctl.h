@@ -1,7 +1,7 @@
 #ifndef QUIC_CWNDCTL_CWNDCTL_H
 #define QUIC_CWNDCTL_CWNDCTL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 7.7: send control. Admission against the congestion window and the
  * pacing interval that smooths bursts. Delegates to cc/cwndcheck and

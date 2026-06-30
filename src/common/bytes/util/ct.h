@@ -1,7 +1,7 @@
 #ifndef QUIC_UTIL_CT_H
 #define QUIC_UTIL_CT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Constant-time 16-byte compare used by AEAD tag verification.
  * Returns 0 if equal, nonzero otherwise. Inline so both AEADs share it

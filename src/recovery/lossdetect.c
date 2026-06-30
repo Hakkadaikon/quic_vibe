@@ -1,5 +1,5 @@
 #include "recovery/lossdetect.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 int quic_loss_by_packet(u64 largest_acked, u64 pn)
 {

@@ -1,7 +1,7 @@
 #ifndef QUIC_SALPN_NEGOTIATE_H
 #define QUIC_SALPN_NEGOTIATE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 7301: server-side ALPN. The client offers a ProtocolNameList in its
  * ALPN extension (extension_type 0x0010); the server picks one and echoes it

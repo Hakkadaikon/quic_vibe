@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_SHUTDOWN_H
 #define QUIC_H3_SHUTDOWN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 5.2: graceful shutdown via GOAWAY. A server sends GOAWAY with a
  * large request id, then retransmits a smaller id to narrow the shutdown.

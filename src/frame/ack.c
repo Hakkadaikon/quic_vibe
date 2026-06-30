@@ -1,5 +1,5 @@
 #include "frame/ack.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* Encode the (Gap, Range Length) pair for range i (i >= 1). Gap counts the
  * unacknowledged packets between the previous range's low and this range's

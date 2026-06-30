@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_REASSEMBLE_H
 #define QUIC_FLOW_REASSEMBLE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 2.2: STREAM/CRYPTO data arrives out of order at byte offsets.
  * The reassembler delivers only the contiguous prefix from offset 0;

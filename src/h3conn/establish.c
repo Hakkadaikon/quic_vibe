@@ -2,7 +2,7 @@
 #include "h3/frame.h"
 #include "h3run/settings_seq.h"
 #include "h3settings/control_settings.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* RFC 9114 6.2.1: control stream type. */
 #define QUIC_H3_CONTROL_STREAM_TYPE 0x00

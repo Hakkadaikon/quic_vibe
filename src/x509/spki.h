@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_SPKI_H
 #define QUIC_X509_SPKI_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1.2.7. subjectPublicKeyInfo ::= SEQUENCE {
  *   algorithm AlgorithmIdentifier, subjectPublicKey BIT STRING }.

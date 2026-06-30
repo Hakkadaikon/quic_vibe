@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_DGRAM_H
 #define QUIC_H3_DGRAM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114. An HTTP/3 datagram carries a Quarter Stream ID: the stream ID of
  * the associated request stream divided by four. Since request streams are

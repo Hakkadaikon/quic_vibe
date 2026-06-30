@@ -1,7 +1,7 @@
 #ifndef QUIC_CONN_CIDNEGO_H
 #define QUIC_CONN_CIDNEGO_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 7.2: a peer's Source Connection ID becomes the Destination
  * Connection ID we put on packets we send to it. */

@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSION_V2KEYS_H
 #define QUIC_VERSION_V2KEYS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "version/version.h"
 
 /* RFC 9369 3.3: QUIC v2 uses a different Initial salt and HKDF-Expand-Label

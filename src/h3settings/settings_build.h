@@ -1,7 +1,7 @@
 #ifndef QUIC_H3SETTINGS_SETTINGS_BUILD_H
 #define QUIC_H3SETTINGS_SETTINGS_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 7.2.4: build a SETTINGS frame carrying the three common settings
  * (MAX_FIELD_SECTION_SIZE 0x06, QPACK_MAX_TABLE_CAPACITY 0x01,

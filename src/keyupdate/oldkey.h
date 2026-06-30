@@ -1,7 +1,7 @@
 #ifndef QUIC_KEYUPDATE_OLDKEY_H
 #define QUIC_KEYUPDATE_OLDKEY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6.1/6.5: after a key update the prior key is retained for three
  * times the PTO so that delayed packets protected with it can still be

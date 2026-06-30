@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_LITERAL_H
 #define QUIC_QPACK_LITERAL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5.4. Literal Field Line With Name Reference: pattern 01NTiiii,
  * N=never-indexed, T=static, a 4-bit prefixed name index, then a value string

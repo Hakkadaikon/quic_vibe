@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_RSA_PUBKEY_H
 #define QUIC_X509_RSA_PUBKEY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8017 A.1.1. RSAPublicKey ::= SEQUENCE { modulus INTEGER (n),
  * publicExponent INTEGER (e) }. spki_key is the BIT STRING value of an

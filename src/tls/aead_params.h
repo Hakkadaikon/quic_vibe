@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_AEAD_PARAMS_H
 #define QUIC_TLS_AEAD_PARAMS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 5.3: AEAD parameters per TLS 1.3 cipher suite. */
 

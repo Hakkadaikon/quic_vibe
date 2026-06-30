@@ -1,7 +1,7 @@
 #ifndef QUIC_BIGNUM_BIGNUM_H
 #define QUIC_BIGNUM_BIGNUM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Fixed 2048-bit unsigned big integer as 32 little-endian u64 limbs.
  * Minimal operations for RSA signature verification (RFC 8017). */

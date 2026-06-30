@@ -1,7 +1,7 @@
 #ifndef QUIC_UTIL_NUM_H
 #define QUIC_UTIL_NUM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Tiny scalar helpers shared across domains. Inline so they need no TU. */
 

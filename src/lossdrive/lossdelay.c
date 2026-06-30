@@ -1,6 +1,6 @@
 #include "lossdrive/lossdelay.h"
 #include "recovery/lossdetect.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 u64 quic_lossdrive_loss_delay(u64 smoothed_rtt, u64 latest_rtt, u64 granularity)
 {

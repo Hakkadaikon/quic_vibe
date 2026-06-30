@@ -1,7 +1,7 @@
 #ifndef QUIC_TLSDRIVER_TLSDRIVER_H
 #define QUIC_TLSDRIVER_TLSDRIVER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "crypto_stream/crypto_rx.h"
 #include "crypto_stream/ecdhe.h"
 #include "tls/hsdriver.h"

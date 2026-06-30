@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQDRIVE_REQUEST_DRIVE_H
 #define QUIC_H3REQDRIVE_REQUEST_DRIVE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1 / 4.3.1, RFC 9204 4.5. Drive an HTTP/3 GET request end to end:
  * QPACK-encode the request pseudo-headers (h3reqenc), wrap them in a HEADERS

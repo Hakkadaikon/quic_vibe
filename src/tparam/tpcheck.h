@@ -1,7 +1,7 @@
 #ifndef QUIC_TPARAM_TPCHECK_H
 #define QUIC_TPARAM_TPCHECK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 7.3 / 18.2: connection-ID transport parameters must be
  * authenticated against the connection IDs actually observed on the wire.

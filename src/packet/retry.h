@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_RETRY_H
 #define QUIC_PACKET_RETRY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "packet/header.h"
 
 #define QUIC_RETRY_TAG_LEN 16

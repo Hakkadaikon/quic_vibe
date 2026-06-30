@@ -1,7 +1,7 @@
 #ifndef QUIC_CASTORE_CASTORE_H
 #define QUIC_CASTORE_CASTORE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 6.1. A trust anchor store: a fixed-size set of root CA
  * certificates (DER). Entries view the caller's buffers; nothing is copied. */

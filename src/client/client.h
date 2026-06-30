@@ -1,7 +1,7 @@
 #ifndef QUIC_CLIENT_CLIENT_H
 #define QUIC_CLIENT_CLIENT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "io/udp.h"
 #include "tlsdriver/tlsdriver.h"
 #include "fullhs/fullhs.h"

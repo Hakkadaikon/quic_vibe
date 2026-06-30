@@ -1,5 +1,5 @@
 #include "packet/short.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* True if the short header arguments are in range and fit in cap. */
 static int short_ok(usz cap, u8 dcid_len, usz pn_len)

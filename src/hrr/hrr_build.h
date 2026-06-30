@@ -1,7 +1,7 @@
 #ifndef QUIC_HRR_BUILD_H
 #define QUIC_HRR_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.4: HelloRetryRequest is a ServerHello (msg_type 0x02) whose
  * random is the fixed value SHA-256("HelloRetryRequest"). It carries

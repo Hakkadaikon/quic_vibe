@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACKDYN_CSTR_H
 #define QUIC_QPACKDYN_CSTR_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Length of a NUL-terminated string (static-table names/values are C strings).
  * Inline to avoid a libc strlen dependency. */

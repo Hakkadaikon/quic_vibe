@@ -1,7 +1,7 @@
 #ifndef QUIC_LHDR_BUILD_H
 #define QUIC_LHDR_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2: assemble a complete long header up to (not including) the
  * packet payload. Covers Initial (17.2.2) and Handshake (17.2.4): byte0,

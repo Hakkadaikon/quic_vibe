@@ -1,7 +1,7 @@
 #ifndef QUIC_P256SIGN_SIGN_H
 #define QUIC_P256SIGN_SIGN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* FIPS 186-4 Section 6.3 ECDSA signature generation on P-256 with the
  * RFC 6979 deterministic nonce. priv and hash are big-endian 32-byte; hash is

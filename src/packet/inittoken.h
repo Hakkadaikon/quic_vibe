@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_INITTOKEN_H
 #define QUIC_PACKET_INITTOKEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 17.2.2: an Initial packet carries a Token Length (varint) followed
  * by that many Token bytes. An empty token (length 0) is valid. This codec

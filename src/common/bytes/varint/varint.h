@@ -1,7 +1,7 @@
 #ifndef QUIC_VARINT_H
 #define QUIC_VARINT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 16. Variable-length integer encoding.
  * 2-bit prefix in MSB of first byte selects length 1/2/4/8. */

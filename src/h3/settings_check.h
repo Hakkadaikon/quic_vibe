@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_SETTINGS_CHECK_H
 #define QUIC_H3_SETTINGS_CHECK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 7.2.4.1 / 11.2.2. Setting identifiers 0x02, 0x03, 0x04 and 0x05 are
  * reserved: they were used by HTTP/2 and their receipt on an HTTP/3 connection

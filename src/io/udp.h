@@ -1,7 +1,7 @@
 #ifndef QUIC_IO_UDP_H
 #define QUIC_IO_UDP_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* UDP over IPv4 via direct x86_64 syscalls. No libc. */
 

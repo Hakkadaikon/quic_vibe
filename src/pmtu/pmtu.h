@@ -1,7 +1,7 @@
 #ifndef QUIC_PMTU_PMTU_H
 #define QUIC_PMTU_PMTU_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 14.3 / RFC 8899 DPLPMTUD: a sender probes for the largest packet
  * the path carries, starting from the 1200-byte base and raising the

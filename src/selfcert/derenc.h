@@ -1,7 +1,7 @@
 #ifndef QUIC_SELFCERT_DERENC_H
 #define QUIC_SELFCERT_DERENC_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* X.690 8.1. Emit one DER TLV: tag + length (short / 0x81 / 0x82) + value.
  * Writes into out (cap octets) and sets *out_len to the whole TLV length.

@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_SNI_H
 #define QUIC_TLS_SNI_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 6066 3: server_name extension, extension_type 0x0000. host_name only. */
 

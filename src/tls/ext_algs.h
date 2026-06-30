@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_EXT_ALGS_H
 #define QUIC_TLS_EXT_ALGS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.2.7: supported_groups, extension_type 0x000a.
  * RFC 8446 4.2.3: signature_algorithms, extension_type 0x000d. Both bodies are

@@ -3,7 +3,7 @@
 #include "frame/frame.h"
 #include "h3srv/respond.h"
 #include "pipeline/framewalk.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* RFC 9000 19.8: STREAM frame types occupy 0x08..0x0f. */
 static int is_stream(u64 type)

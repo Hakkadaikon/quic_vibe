@@ -1,5 +1,5 @@
 #include "recovery/rttsample.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 /* RFC 9002 5.1: min_rtt is the minimum observed latest_rtt. */
 u64 quic_rtt_min_update(u64 min_rtt, u64 latest_rtt)

@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_PTO_H
 #define QUIC_RECOVERY_PTO_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.2.1: PTO computation and exponential backoff. Times in us. */
 

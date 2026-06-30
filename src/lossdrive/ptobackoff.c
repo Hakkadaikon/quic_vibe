@@ -1,6 +1,6 @@
 #include "lossdrive/ptobackoff.h"
 #include "recovery/pto.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 u64 quic_lossdrive_pto(u64 smoothed_rtt, u64 rttvar, u64 max_ack_delay,
                        u32 pto_count, u64 granularity)

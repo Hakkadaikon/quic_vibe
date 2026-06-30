@@ -1,7 +1,7 @@
 #ifndef QUIC_DGDELIVER_DG_SEND_H
 #define QUIC_DGDELIVER_DG_SEND_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 5: build a DATAGRAM frame for immediate delivery (no queueing, no
  * retransmit tracking by the caller). with_length picks type 0x31 (explicit

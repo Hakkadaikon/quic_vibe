@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_SAN_H
 #define QUIC_X509_SAN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.2.1.6 / RFC 6125. 1 if a subjectAltName dNSName matches the
  * hostname; 0 otherwise. A leading "*." wildcard matches one label only. */

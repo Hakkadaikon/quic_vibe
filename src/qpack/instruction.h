@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_INSTRUCTION_H
 #define QUIC_QPACK_INSTRUCTION_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.3 / 4.4. QPACK encoder- and decoder-stream instructions. The
  * dynamic table itself is out of scope here: only the type-pattern prefix and

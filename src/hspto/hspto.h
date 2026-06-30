@@ -1,7 +1,7 @@
 #ifndef QUIC_HSPTO_HSPTO_H
 #define QUIC_HSPTO_HSPTO_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.2.2.1: handshake-space PTO. Before the handshake is confirmed
  * max_ack_delay is excluded from the PTO. Times in us. Extends pto.c. */

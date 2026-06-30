@@ -1,5 +1,5 @@
 #include "gcm/gcm.h"
-#include "util/ct.h"
+#include "common/bytes/util/ct.h"
 
 /* XOR 16 bytes of src into dst. */
 static void xor16(u8 *dst, const u8 *src)

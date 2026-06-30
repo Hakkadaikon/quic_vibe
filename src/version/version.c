@@ -1,6 +1,6 @@
 #include "version/version.h"
-#include "varint/varint.h"
-#include "util/be.h"
+#include "common/bytes/varint/varint.h"
+#include "common/bytes/util/be.h"
 
 int quic_version_is_reserved(u32 version)
 {

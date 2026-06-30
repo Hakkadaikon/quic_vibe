@@ -2,7 +2,7 @@
 #include "salpn/negotiate.h"
 #include "tls/handshake.h"
 #include "tls/tpext.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* Body = extensions<2> wrapping the 9-byte ALPN extension ("h3") followed by
  * the quic_transport_parameters extension. Header(4) + ext_list_len(2) precede

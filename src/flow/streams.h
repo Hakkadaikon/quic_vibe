@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_STREAMS_H
 #define QUIC_FLOW_STREAMS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.6: an endpoint limits how many streams its peer may open of each
  * type via the initial_max_streams transport parameters and MAX_STREAMS

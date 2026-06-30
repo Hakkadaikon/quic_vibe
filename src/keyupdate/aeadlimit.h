@@ -1,7 +1,7 @@
 #ifndef QUIC_KEYUPDATE_AEADLIMIT_H
 #define QUIC_KEYUPDATE_AEADLIMIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6.6 AEAD confidentiality limit. AES-GCM may protect at most
  * 2^23 packets with one key; AEAD_CHACHA20_POLY1305 is bounded only by the

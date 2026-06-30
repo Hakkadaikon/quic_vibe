@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_COALORDER_H
 #define QUIC_PACKET_COALORDER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 12.2: a short-header packet carries no Length field, so when
  * packets are coalesced into one datagram a short header can only be the

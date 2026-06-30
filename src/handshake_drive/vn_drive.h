@@ -1,7 +1,7 @@
 #ifndef QUIC_HANDSHAKE_DRIVE_VN_DRIVE_H
 #define QUIC_HANDSHAKE_DRIVE_VN_DRIVE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8999 6 / RFC 9000 6: client reception of a Version Negotiation packet.
  * Pick a mutually supported version and reject VN once the handshake has

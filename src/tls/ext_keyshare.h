@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_EXT_KEYSHARE_H
 #define QUIC_TLS_EXT_KEYSHARE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tls/handshake.h"
 
 /* RFC 8446 4.2.8: key_share, extension_type 0x0033 (QUIC_EXT_KEY_SHARE). The

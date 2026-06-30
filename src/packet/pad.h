@@ -1,7 +1,7 @@
 #ifndef QUIC_PACKET_PAD_H
 #define QUIC_PACKET_PAD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 14.1: a datagram containing an Initial packet must be at least
  * 1200 bytes; a client pads to that minimum. */

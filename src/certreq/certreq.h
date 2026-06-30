@@ -1,7 +1,7 @@
 #ifndef QUIC_CERTREQ_H
 #define QUIC_CERTREQ_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.3.2: CertificateRequest (handshake type 0x0d). Sent by a server
  * that wants client authentication (mTLS). The body is a

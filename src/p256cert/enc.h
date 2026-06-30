@@ -2,7 +2,7 @@
 #define QUIC_P256CERT_ENC_H
 
 #include "selfcert/derenc.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* X.690 append cursor shared by the P-256 cert encoders. Inline so spki.c and
  * tbs.c share one definition under the unity build (no duplicate static). */

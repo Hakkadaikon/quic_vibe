@@ -1,5 +1,5 @@
 #include "recovery/largestacked.h"
-#include "util/num.h"
+#include "common/bytes/util/num.h"
 
 u64 quic_largest_acked_update(u64 current, u64 new_largest)
 {

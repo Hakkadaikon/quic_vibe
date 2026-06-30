@@ -1,7 +1,7 @@
 #ifndef QUIC_FLOW_STREAM_FLOW_H
 #define QUIC_FLOW_STREAM_FLOW_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.1: per-stream receive flow control. The receiver advertises a
  * MAX_STREAM_DATA limit and slides it forward as the application consumes. */

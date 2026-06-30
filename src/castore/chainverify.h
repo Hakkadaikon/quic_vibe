@@ -1,7 +1,7 @@
 #ifndef QUIC_CASTORE_CHAINVERIFY_H
 #define QUIC_CASTORE_CHAINVERIFY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 6.1.3. Verify that cert (DER, cert..+cert_len) carries a valid
  * signature by issuer_cert's public key: SHA-256 over cert's tbsCertificate,

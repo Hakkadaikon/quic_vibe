@@ -1,5 +1,5 @@
 #include "frame/stream_ctl.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* Write type then stream_id (two varints). Returns 1 ok, 0 on overflow. */
 static int put_rs_head(u8 *buf, usz cap, usz *off,

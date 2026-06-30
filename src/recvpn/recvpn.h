@@ -1,7 +1,7 @@
 #ifndef QUIC_RECVPN_RECVPN_H
 #define QUIC_RECVPN_RECVPN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 13.2: a receiver tracks which packet numbers it has seen so it can
  * drop duplicates and acknowledge the rest. We keep the largest number seen

@@ -1,5 +1,5 @@
 #include "frame/frame.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* Append len bytes at buf+off (cap total). Returns off+len or 0 if no room. */
 static usz write_bytes(u8 *buf, usz cap, usz off, const u8 *src, u64 len)

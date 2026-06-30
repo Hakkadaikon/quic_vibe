@@ -1,7 +1,7 @@
 #ifndef QUIC_POLL_DEADLINE_H
 #define QUIC_POLL_DEADLINE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Timer-to-timeout helpers for the connection loop (no syscalls). */
 

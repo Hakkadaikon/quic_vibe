@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_HEADERCASE_H
 #define QUIC_H3_HEADERCASE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.3. Field names in HTTP/3 MUST be lowercase. A field name that
  * contains an uppercase letter MUST be treated as malformed (H3_MESSAGE_ERROR).

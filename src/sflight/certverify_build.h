@@ -1,7 +1,7 @@
 #ifndef QUIC_SFLIGHT_CERTVERIFY_BUILD_H
 #define QUIC_SFLIGHT_CERTVERIFY_BUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.4.3: build the server CertificateVerify message (type 0x0f).
  * Signs (Ed25519, scheme 0x0807) the content 64*0x20 + "TLS 1.3, server

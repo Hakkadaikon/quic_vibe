@@ -1,7 +1,7 @@
 #ifndef QUIC_NET_CHECKSUM_H
 #define QUIC_NET_CHECKSUM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Internet checksum (RFC 1071): the 16-bit one's-complement of the
  * one's-complement sum of the data as 16-bit big-endian words. Used by both

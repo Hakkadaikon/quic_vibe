@@ -1,5 +1,5 @@
 #include "selfcert/derenc.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 /* X.690 8.1.3. Length-field octet count for len: 1 short, 2 (0x81), 3 (0x82).
  * 0 if len exceeds the supported 0x82 long-form ceiling (65535). */

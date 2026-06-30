@@ -1,7 +1,7 @@
 #ifndef QUIC_KEYS_KEYSET_H
 #define QUIC_KEYS_KEYSET_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tls/initial.h"
 
 /* RFC 9001 4: per-protection-level key sets. Levels: 0=Initial, 1=Handshake,

@@ -1,7 +1,7 @@
 #ifndef QUIC_HRR_GROUP_H
 #define QUIC_HRR_GROUP_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.4: extract the key_share selected_group from a HelloRetryRequest
  * (handshake message type 0x02 | length(3) | body). The client must resend its

@@ -1,7 +1,7 @@
 #ifndef QUIC_CRECV_MESSAGE_H
 #define QUIC_CRECV_MESSAGE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "crecv/collect.h"
 
 /* RFC 9000 7.5: hand TLS only the in-order contiguous prefix of the crypto

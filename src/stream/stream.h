@@ -1,7 +1,7 @@
 #ifndef QUIC_STREAM_STREAM_H
 #define QUIC_STREAM_STREAM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 3.1: sending part of a stream. */
 typedef enum {

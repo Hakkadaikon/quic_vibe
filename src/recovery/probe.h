@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_PROBE_H
 #define QUIC_RECOVERY_PROBE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.2.4: on PTO expiry send probe packets to elicit an ACK. */
 

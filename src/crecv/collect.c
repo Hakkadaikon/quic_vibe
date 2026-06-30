@@ -1,7 +1,7 @@
 #include "crecv/collect.h"
 #include "pipeline/framewalk.h"
 #include "frame/frame.h"
-#include "util/bytes.h"
+#include "common/bytes/util/bytes.h"
 
 void quic_crecv_init(quic_crecv *s)
 {

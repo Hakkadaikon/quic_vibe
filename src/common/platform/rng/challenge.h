@@ -1,7 +1,7 @@
 #ifndef QUIC_RNG_CHALLENGE_H
 #define QUIC_RNG_CHALLENGE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* PATH_CHALLENGE data (RFC 9000 8.2) and stateless reset tokens (RFC 9000 10.3). */
 

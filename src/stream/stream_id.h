@@ -1,7 +1,7 @@
 #ifndef QUIC_STREAM_STREAM_ID_H
 #define QUIC_STREAM_STREAM_ID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 2.1: the two least-significant bits of a stream ID encode who
  * initiated it (bit 0: 0=client, 1=server) and its directionality (bit 1:

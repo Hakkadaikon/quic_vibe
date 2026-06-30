@@ -1,7 +1,7 @@
 #ifndef QUIC_TBSCERT_VERSION_SERIAL_H
 #define QUIC_TBSCERT_VERSION_SERIAL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tbscert/fields.h"
 
 /* RFC 5280 4.1.2.1. version: v1=0, v2=1, v3=2. Absent [0] defaults to v1 (0). */

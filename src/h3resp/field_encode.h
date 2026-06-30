@@ -1,7 +1,7 @@
 #ifndef QUIC_H3RESP_FIELD_ENCODE_H
 #define QUIC_H3RESP_FIELD_ENCODE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 4.5. Encode a response field section carrying a single :status
  * pseudo-header: the Encoded Field Section Prefix (Required Insert Count 0,

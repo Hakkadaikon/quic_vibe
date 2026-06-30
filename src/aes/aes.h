@@ -1,7 +1,7 @@
 #ifndef QUIC_AES_AES_H
 #define QUIC_AES_AES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* FIPS 197 AES-128. 128-bit block, 128-bit key, 10 rounds. Encryption only
  * (QUIC packet protection and header protection never decrypt with raw AES;

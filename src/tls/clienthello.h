@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_CLIENTHELLO_H
 #define QUIC_TLS_CLIENTHELLO_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.2 / RFC 9001 8.2: a complete TLS 1.3 ClientHello carrying
  * supported_versions, supported_groups, signature_algorithms, key_share, the

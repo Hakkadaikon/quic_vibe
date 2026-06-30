@@ -1,7 +1,7 @@
 #ifndef QUIC_QPACK_RELINDEX_H
 #define QUIC_QPACK_RELINDEX_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9204 3.2.5. A relative index in a field section counts back from Base:
  * the absolute index is base - rel - 1. */

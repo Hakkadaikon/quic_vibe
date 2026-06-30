@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_RTTINIT_H
 #define QUIC_RECOVERY_RTTINIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 5.2: seeding the estimator from the first RTT sample. */
 

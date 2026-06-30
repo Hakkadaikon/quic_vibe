@@ -1,5 +1,5 @@
 #include "version/verinfo.h"
-#include "util/be.h"
+#include "common/bytes/util/be.h"
 
 /* RFC 9368 3: value length is Chosen Version (4) + 4 per Available Version. */
 static int encode_room(usz cap, usz count, usz n)

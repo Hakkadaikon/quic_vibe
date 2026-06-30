@@ -1,7 +1,7 @@
 #ifndef QUIC_LOSSTIME_LOSSTIME_H
 #define QUIC_LOSSTIME_LOSSTIME_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.1.2: time-threshold loss detection.
  * loss_delay = max(9/8 * max(srtt, latest_rtt), granularity). */

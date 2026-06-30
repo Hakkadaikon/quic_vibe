@@ -1,7 +1,7 @@
 #ifndef QUIC_H3CONN_ESTABLISH_H
 #define QUIC_H3CONN_ESTABLISH_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 6.2 / 7.2.4. Open the local HTTP/3 control stream: the unidirectional
  * stream type 0x00 followed by a SETTINGS frame. Returns 1 with *out_len set,

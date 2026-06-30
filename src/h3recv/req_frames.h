@@ -1,7 +1,7 @@
 #ifndef QUIC_H3RECV_REQ_FRAMES_H
 #define QUIC_H3RECV_REQ_FRAMES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. A request stream begins with a HEADERS frame whose payload is
  * a QPACK-encoded field section. View the first HEADERS frame's payload in

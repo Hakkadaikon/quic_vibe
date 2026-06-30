@@ -1,7 +1,7 @@
 #ifndef QUIC_KUDRIVE_DISCARD_TIMING_H
 #define QUIC_KUDRIVE_DISCARD_TIMING_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6.5: after a key update completes the prior keys are retained for
  * three times the PTO; once that elapses they may be discarded. Returns 1 when

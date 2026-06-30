@@ -1,6 +1,6 @@
 #include "packet/vneg.h"
-#include "util/be.h"
-#include "util/bytes.h"
+#include "common/bytes/util/be.h"
+#include "common/bytes/util/bytes.h"
 
 /* Append a length-prefixed CID at *off; returns 1 ok, 0 if no room. */
 static int vneg_put_cid(u8 *buf, usz cap, usz *off, const u8 *cid, u8 len)

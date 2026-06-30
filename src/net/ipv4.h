@@ -1,7 +1,7 @@
 #ifndef QUIC_NET_IPV4_H
 #define QUIC_NET_IPV4_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 791 IPv4. Minimal 20-byte header (no options), protocol 17 = UDP. */
 

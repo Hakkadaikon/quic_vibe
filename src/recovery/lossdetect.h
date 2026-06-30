@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_LOSSDETECT_H
 #define QUIC_RECOVERY_LOSSDETECT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 6.1: a packet is lost by the packet threshold or the time
  * threshold. Times are in microseconds. */

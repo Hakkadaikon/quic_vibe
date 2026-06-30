@@ -1,7 +1,7 @@
 #ifndef QUIC_ACKGEN_ACKFREQ_H
 #define QUIC_ACKGEN_ACKFREQ_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 13.2.1: rather than acking every ack-eliciting packet, an endpoint
  * may ack once two are outstanding, or once max_ack_delay has elapsed since the

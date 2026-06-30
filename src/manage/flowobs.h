@@ -1,7 +1,7 @@
 #ifndef QUIC_MANAGE_FLOWOBS_H
 #define QUIC_MANAGE_FLOWOBS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9312 3.3/3.4: heuristics an on-path observer uses to bound a flow.
  * A flow start is observable as the first Initial packet (long header,

@@ -1,7 +1,7 @@
 #ifndef QUIC_TPVERIFY_CTCID_H
 #define QUIC_TPVERIFY_CTCID_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 7.3: connection-ID transport parameters are matched in constant
  * time so a mismatch reveals nothing through timing. Variable-length CIDs

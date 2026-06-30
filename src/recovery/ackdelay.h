@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_ACKDELAY_H
 #define QUIC_RECOVERY_ACKDELAY_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 13.2.5 / 18.2: the ACK Delay field is a time in microseconds
  * scaled down by 2^ack_delay_exponent before encoding, and scaled back up on

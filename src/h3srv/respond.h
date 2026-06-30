@@ -1,7 +1,7 @@
 #ifndef QUIC_H3SRV_RESPOND_H
 #define QUIC_H3SRV_RESPOND_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "h3srv/state.h"
 #include "h3reqdrive/request_drive.h"
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_RNG_CIDGEN_H
 #define QUIC_RNG_CIDGEN_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Connection ID generation (RFC 9000 5.1). */
 

@@ -6,7 +6,7 @@
 #include "tls/hsdriver.h"
 #include "tls/handshake.h"
 #include "tls/x25519.h"
-#include "rng/rng.h"
+#include "common/platform/rng/rng.h"
 
 #define QUIC_CLIENT_CRYPTO_FRAME 256
 

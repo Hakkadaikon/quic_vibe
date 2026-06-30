@@ -1,7 +1,7 @@
 #ifndef QUIC_ERROR_CODES_H
 #define QUIC_ERROR_CODES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 20.1 transport error codes. The 0x00-0x10 range and CRYPTO_ERROR
  * (0x0100-0x01ff) are also defined in error/error.h; this file completes the

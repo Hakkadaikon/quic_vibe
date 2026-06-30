@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_EXT_BLOCK_H
 #define QUIC_TLS_EXT_BLOCK_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 4.1.2: the ClientHello extensions field is a 2-byte total length
  * followed by the concatenated extensions. Build it by reserving the length,

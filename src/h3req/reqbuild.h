@@ -1,7 +1,7 @@
 #ifndef QUIC_H3REQ_REQBUILD_H
 #define QUIC_H3REQ_REQBUILD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.1. Assemble a request stream byte sequence: a HEADERS frame
  * carrying the QPACK-encoded field section, followed by a DATA frame carrying

@@ -1,7 +1,7 @@
 #ifndef QUIC_IO_RETRANSMIT_H
 #define QUIC_IO_RETRANSMIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* A fixed-capacity FIFO of frame payloads awaiting retransmission. When a
  * packet is declared lost (RFC 9002 6), its frames are queued here and later

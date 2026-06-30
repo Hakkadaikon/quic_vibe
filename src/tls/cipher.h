@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_CIPHER_H
 #define QUIC_TLS_CIPHER_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 8446 B.4 cipher suite code points. */
 #define QUIC_TLS_AES_128_GCM_SHA256       0x1301

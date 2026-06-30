@@ -1,7 +1,7 @@
 #ifndef QUIC_RECOVERY_LARGESTACKED_H
 #define QUIC_RECOVERY_LARGESTACKED_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9002 A.7: tracking the largest acknowledged packet number. */
 

@@ -1,7 +1,7 @@
 #ifndef QUIC_TPARAM_TPARAM_H
 #define QUIC_TPARAM_TPARAM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 18: transport parameters are a sequence of
  * (id: varint)(length: varint)(value: length bytes).

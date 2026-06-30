@@ -1,7 +1,7 @@
 #ifndef QUIC_VERSION_VERSION_H
 #define QUIC_VERSION_VERSION_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* QUIC version numbers and the version_information transport parameter
  * (RFC 9368) used for compatible version negotiation. */

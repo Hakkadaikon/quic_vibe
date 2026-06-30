@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_EXT_VERSIONS_H
 #define QUIC_TLS_EXT_VERSIONS_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 #include "tls/handshake.h"
 
 /* RFC 8446 4.2.1: supported_versions, extension_type 0x002b. In ClientHello

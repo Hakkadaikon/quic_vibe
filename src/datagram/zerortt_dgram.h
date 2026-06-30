@@ -1,7 +1,7 @@
 #ifndef QUIC_DATAGRAM_ZERORTT_DGRAM_H
 #define QUIC_DATAGRAM_ZERORTT_DGRAM_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9221 3: a client may send DATAGRAM frames in 0-RTT only if it remembered
  * the peer's max_datagram_frame_size from a previous connection and the frame

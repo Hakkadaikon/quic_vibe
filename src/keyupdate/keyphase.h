@@ -1,7 +1,7 @@
 #ifndef QUIC_KEYUPDATE_KEYPHASE_H
 #define QUIC_KEYUPDATE_KEYPHASE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9001 6: the Key Phase bit (0x04) in a short header's first byte
  * carries the low bit of the send key generation, toggling on each update. */

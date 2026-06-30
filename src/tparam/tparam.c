@@ -1,5 +1,5 @@
 #include "tparam/tparam.h"
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* id + len(=value's varint length) + value, all varints. */
 usz quic_tparam_put_int(u8 *buf, usz cap, u64 id, u64 value)

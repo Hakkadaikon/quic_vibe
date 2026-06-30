@@ -1,7 +1,7 @@
 #ifndef QUIC_FRAME_FLOWCTL_H
 #define QUIC_FRAME_FLOWCTL_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 19.9-19.14 flow control frames. Every field is a varint. */
 

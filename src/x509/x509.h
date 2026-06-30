@@ -1,7 +1,7 @@
 #ifndef QUIC_X509_X509_H
 #define QUIC_X509_X509_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1. Certificate ::= SEQUENCE {
  *   tbsCertificate, signatureAlgorithm, signatureValue }.

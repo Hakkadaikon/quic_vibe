@@ -1,7 +1,7 @@
 #ifndef QUIC_UTIL_BYTES_H
 #define QUIC_UTIL_BYTES_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Cursor byte-copy helpers shared by the frame codecs. Inline so multiple
  * codec translation units can use them without redefining a static helper. */

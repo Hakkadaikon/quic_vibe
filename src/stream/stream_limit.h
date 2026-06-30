@@ -1,7 +1,7 @@
 #ifndef QUIC_STREAM_STREAM_LIMIT_H
 #define QUIC_STREAM_STREAM_LIMIT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9000 4.6: a MAX_STREAMS / initial_max_streams value of N permits the
  * peer to open streams with sequence indices 0..N-1 of that type. The highest

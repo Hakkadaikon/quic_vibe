@@ -1,7 +1,7 @@
 #ifndef QUIC_PATH_ANTIAMP_H
 #define QUIC_PATH_ANTIAMP_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* Anti-amplification limit (RFC 9000 8.1): before a path is validated, an
  * endpoint may send at most three times the number of bytes it has received

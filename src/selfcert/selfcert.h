@@ -1,7 +1,7 @@
 #ifndef QUIC_SELFCERT_SELFCERT_H
 #define QUIC_SELFCERT_SELFCERT_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 5280 4.1 / RFC 8410. Build a self-signed Ed25519 X.509 certificate from
  * a 32-byte seed into cert_out (cap octets). Sets *cert_len. Returns 1 ok,

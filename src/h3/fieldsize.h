@@ -1,7 +1,7 @@
 #ifndef QUIC_H3_FIELDSIZE_H
 #define QUIC_H3_FIELDSIZE_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9114 4.2.2: a field section larger than SETTINGS_MAX_FIELD_SECTION_SIZE
  * is an H3_MESSAGE_ERROR. A max of 0 means the limit is unset (unlimited). */

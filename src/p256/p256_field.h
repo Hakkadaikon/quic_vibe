@@ -1,7 +1,7 @@
 #ifndef QUIC_P256_FIELD_H
 #define QUIC_P256_FIELD_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* FIPS 186-4 D.1.2.3 P-256 field GF(p), p = 2^256 - 2^224 + 2^192 + 2^96 - 1.
  * 256-bit values as four little-endian 64-bit limbs (p256_fe[0] is least

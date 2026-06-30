@@ -1,6 +1,6 @@
 #include "h3settings/control_open.h"
 #include "h3/frame.h" /* QUIC_H3_STREAM_CONTROL */
-#include "varint/varint.h"
+#include "common/bytes/varint/varint.h"
 
 /* RFC 9114 6.2.1 */
 int quic_h3settings_control_prefix(u8 *out, usz cap, usz *out_len)

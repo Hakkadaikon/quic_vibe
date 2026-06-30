@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_TICKETVERSION_H
 #define QUIC_TLS_TICKETVERSION_H
 
-#include "sys/syscall.h"
+#include "common/platform/sys/syscall.h"
 
 /* RFC 9369 5 / RFC 9001: a session ticket records the QUIC version of the
  * connection it was issued on. On resumption the recorded version must match
