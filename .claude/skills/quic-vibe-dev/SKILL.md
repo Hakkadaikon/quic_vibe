@@ -5,9 +5,12 @@ description: >
   QUIC SDK in C — covers its libc-free / CCN<=3 / unity-build constraints, the
   three-point verification gate, the unity-build name-collision pitfalls, the
   view-API and freestanding-_start traps, and the parallel-implement /
-  serial-wire workflow. Trigger on any change under src/ or tests/, on "add a
-  domain", "wire a test", "why does run.c fail to build", "obj count mismatch",
-  "CCN too high", or before committing C changes in this repo.
+  serial-wire workflow, plus how to diagnose a slow handshake (profile-first,
+  peer qlog, stage timestamps, microbenchmarks) and speed up crypto safely.
+  Trigger on any change under src/ or tests/, on "add a domain", "wire a test",
+  "why does run.c fail to build", "obj count mismatch", "CCN too high", on
+  "handshake is slow" / "appconnect takes seconds" / "why is it slow" / "speed
+  up", or before committing C changes in this repo.
 ---
 
 # quic_vibe developer guide
@@ -179,6 +182,16 @@ search tools truncated RFC 9001 Appendix A and returned a wrong nonce once
 round-trip equality + tamper detection + a hand-computable intermediate value
 (successes #7).
 
+- **Speeding up a crypto primitive -> differential test against the slow one.**
+  Keep the slow-but-obviously-correct implementation as an oracle and check the
+  fast version on random + boundary inputs (e.g. `modulus-1`). Hand-derived
+  reductions (Solinas word rearrangement, Montgomery CIOS carries) are easy to
+  get subtly wrong; the diff test catches it in one run. If the oracle is
+  expensive (the generic Fermat inverse was ~91ms each), spot-check a handful
+  rather than the whole batch, or the test itself times out. Recompute any
+  baked-in constants in a second tool (Python) and verify the limbs match the
+  existing ones before committing them.
+
 ## 6. Parallel workflow (fast and collision-free)
 
 - **Implement in parallel, wire in serial.** Independent domains (separate new
@@ -188,3 +201,40 @@ round-trip equality + tamper detection + a hand-computable intermediate value
   split because `run.c` and the git index are shared resources (#2, #18, #21).
 - After wiring, run the full section-3 gate (all-TU build + all-freestanding
   build + `lizard src` + count check) once, then commit.
+
+## 7. Performance diagnosis (measure before you touch anything)
+
+A "the handshake is slow" report once cost two wasted deploy round-trips: the
+4.6s appconnect *looked* like PTO backoff (333ms × exponential ≈ 4.6s), so two
+real-but-unrelated bugs (a fixed-PN-0 Finished ACK, a sub-1200 server Initial)
+were fixed first. The actual cause was a 885ms P-256 scalar multiply — server
+compute, not the network. The fix that mattered was a faster field reducer.
+Diagnose in this order; each step turns a guess into a fact:
+
+- **Profile before guessing.** A matching number (4.6s ≈ PTO累積) is circumstantial,
+  not a cause: PTO is the *symptom* (curl waited), not the thing that made it
+  wait. Every guess-fix burns a rebuild+redeploy+remeasure round-trip whether it
+  hits or misses. Take the measurement first.
+- **The peer's qlog is the fastest oracle.** Encrypted wire hides meaning; a
+  capture shows reachability only. Pass `QLOGDIR` to the client (curl/quiche
+  emit JSON-SEQ) and read it: it showed curl sent its ClientHello at t=0.25ms,
+  got the first server packet at t=4839ms, and never retransmitted — proving the
+  stall was server-side compute, not loss or the network. (`SSLKEYLOGFILE` for
+  keys.)
+- **Stage timestamps pinpoint the gap.** Once it's "inside the server", build
+  with `-DQUIC_DEBUG` (each log line carries a CLOCK_REALTIME stamp) and read the
+  *deltas* between pipeline boundaries (`Initial received` → `ClientHello
+  received` → `flight built`). One run shows which two lines the time vanishes
+  between — faster than suspecting one function at a time.
+- **In-process microbenchmarks confirm the culprit.** Write a tiny
+  `clock_gettime` loop in `$TMPDIR` over each primitive (x25519 / sha256 /
+  fp_mul / fp_inv / ec_mul / sign) and read the ms. This is first-choice over a
+  profiler: faster to write, and the libc-free core compiles fine under host
+  clang for measurement. It put 98% of signing on `fp_inv mod n` immediately,
+  with no remote access.
+- **Stop at the dominant term.** After killing the big one, measure whether the
+  next term shows up in the SLA before touching it. Here the field reducer took
+  the scalar mul 885ms→1ms (Solinas mod p) and the order inverse 91ms→0.02ms
+  (Montgomery mod n): appconnect 4.6s→17ms (~260×), test suite 3m31s→2s. The
+  remaining 17ms is network RTT — the real floor; a comb-table ec_mul (1.5→0.5ms)
+  was dropped as YAGNI. See `tasks/lessons/performance.md`.
