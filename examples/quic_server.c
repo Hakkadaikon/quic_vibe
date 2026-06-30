@@ -36,6 +36,69 @@
 
 #define PORT 4433
 
+static void die(const char *msg);
+
+/* In-memory message store. POST bodies are appended here (newline-separated);
+ * GET returns the whole log. ponytail: fixed 8 KiB, in-RAM only — a POST past
+ * the cap is silently truncated; persistence/eviction would need a real store. */
+#define HISTORY_MAX 8192
+static u8 g_history[HISTORY_MAX];
+static usz g_history_len;
+
+/* RFC 9110 9.3.3: append the POST body (a view into per-step scratch) to the
+ * history, newline-separated, truncating at the cap. */
+static void history_append(const u8 *body, usz n)
+{
+    usz i;
+    if (g_history_len < HISTORY_MAX)
+        g_history[g_history_len++] = '\n';
+    for (i = 0; i < n && g_history_len < HISTORY_MAX; i++)
+        g_history[g_history_len++] = body[i];
+}
+
+/* Copy up to cap bytes of src into dst, returning the count copied. */
+static usz copy_capped(u8 *dst, usz cap, const u8 *src, usz n)
+{
+    usz i;
+    for (i = 0; i < n && i < cap; i++)
+        dst[i] = src[i];
+    return i;
+}
+
+/* RFC 9110 9.3.1 (GET) returns the whole message log; 9.3.3 (POST) appends the
+ * body and echoes it back. The request body is a scratch view, so both paths
+ * copy out before returning. Returns 1 (always sends a body). */
+static int app_on_request(void *ctx, const quic_h3reqdrive_req *req,
+                          u8 *body_out, usz cap, usz *body_len)
+{
+    (void)ctx;
+    if (req->method_len == 4 && req->method[0] == 'P') {
+        history_append(req->body, req->body_len);
+        *body_len = copy_capped(body_out, cap, req->body, req->body_len);
+        return 1;
+    }
+    *body_len = copy_capped(body_out, cap, g_history, g_history_len);
+    return 1;
+}
+
+/* Self-check (ponytail: the only non-trivial logic here is the store/echo). */
+static void app_selfcheck(void)
+{
+    u8 out[64];
+    usz n = 0;
+    quic_h3reqdrive_req post = {(const u8 *)"POST", 4, 0, 0, 0, 0, 0, 0,
+                               (const u8 *)"hi", 2};
+    quic_h3reqdrive_req get = {(const u8 *)"GET", 3, 0, 0, 0, 0, 0, 0, 0, 0};
+    g_history_len = 0;
+    app_on_request(0, &post, out, sizeof out, &n);
+    if (n != 2 || out[0] != 'h')
+        die("selfcheck: echo failed\n");
+    app_on_request(0, &get, out, sizeof out, &n);
+    if (n != 3 || out[1] != 'h' || out[2] != 'i')
+        die("selfcheck: history failed\n");
+    g_history_len = 0;
+}
+
 /* The server's chosen Source Connection ID, echoed in every header it sends
  * (RFC 9000 17.2) and the DCID a peer writes back. Fixed for a demo. */
 static const u8 SERVER_SCID[6] = {'C', 'L', 'I', 'S', 'C', 'I'};
@@ -168,7 +231,10 @@ static int init_server(quic_server *s, quic_srvloop *l, const u8 *dcid,
     quic_server_init(s, priv, pub, seed, 0, 0);
     if (!quic_server_set_cids(s, dcid, dcid_len, SERVER_SCID, sizeof SERVER_SCID))
         return 0;
-    return quic_srvloop_init(l, scid, scid_len);
+    if (!quic_srvloop_init(l, scid, scid_len))
+        return 0;
+    quic_srvloop_set_handler(l, app_on_request, 0);
+    return 1;
 }
 
 /* The client opens with its first Initial at packet number 0 (the start of the
@@ -290,12 +356,14 @@ static void serve(i64 fd, const quic_sockaddr_in *peer, quic_server *s,
  * x25519/AEAD do not fault. */
 __attribute__((force_align_arg_pointer)) void _start(void)
 {
-    i64 fd = listen_udp();
+    i64 fd;
     quic_sockaddr_in peer;
     quic_server s;
     quic_srvloop l;
     u8 buf[2048];
     int up = 0;
+    app_selfcheck();
+    fd = listen_udp();
     for (;;) {
         i64 r = quic_udp_recvfrom(fd, buf, sizeof buf, &peer);
         if (r > 0)
