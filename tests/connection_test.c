@@ -1,6 +1,6 @@
 #include "test.h"
 #include "connection/connection.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "tls/initial.h"
 #include "frame/frame.h"
 

@@ -4,7 +4,7 @@
 #include "endpoint/endpoint.h"
 #include "conn/conn.h"
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 #include "net/memlink.h"
 #include "frame/frame.h"
 

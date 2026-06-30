@@ -1,6 +1,6 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "x509/san.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/san.h"
 #include "chain_golden.h"
 
 /* cert1 SAN lists example.com and *.example.com. */

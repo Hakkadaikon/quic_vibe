@@ -1,5 +1,5 @@
 #include "test.h"
-#include "p256/p256_field.h"
+#include "crypto/asymmetric/ecc/p256/p256_field.h"
 
 static void p256_hb32(const char *hex, u8 out[32])
 {

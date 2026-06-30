@@ -1,8 +1,8 @@
 #ifndef QUIC_SRVFIN_VERIFY_H
 #define QUIC_SRVFIN_VERIFY_H
 
-#include "hash/sha256.h"
-#include "hkdf/hkdf.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 
 /* RFC 8446 4.4.4 / RFC 9001 4.1.2: server-side verification of the client's
  * Finished. Parses the received client Finished handshake message and checks

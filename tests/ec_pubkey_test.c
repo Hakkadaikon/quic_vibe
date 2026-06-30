@@ -1,5 +1,5 @@
 #include "test.h"
-#include "x509/ec_pubkey.h"
+#include "crypto/pki/encoding/x509/ec_pubkey.h"
 
 /* SEC1 2.3.3. 0x00 (unused bits) || 0x04 || X(32) || Y(32) splits into X, Y. */
 static void test_ec_pubkey_extract(void)

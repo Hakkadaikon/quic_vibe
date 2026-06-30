@@ -2,8 +2,8 @@
 #include "pipeline/txpacket.h"
 #include "pipeline/rxpacket.h"
 #include "pipeline/framewalk.h"
-#include "keys/keyset.h"
-#include "aes/aes.h"
+#include "crypto/kdf/keys/keyset.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9000 17.2: the Initial level carries a Token (17.2.2); Handshake and the
  * long-header pipeline form used for 1-RTT here do not (17.2.4). */

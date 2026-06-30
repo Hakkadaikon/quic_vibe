@@ -1,6 +1,6 @@
 #include "sflight/certverify_build.h"
 #include "tls/handshake.h"
-#include "ed25519/ed25519.h"
+#include "crypto/asymmetric/ecc/ed25519/ed25519.h"
 #include "common/bytes/util/be.h"
 
 #define QUIC_HS_CERTIFICATE_VERIFY 15

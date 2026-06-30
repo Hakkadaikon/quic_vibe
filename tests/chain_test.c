@@ -1,6 +1,6 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "x509/chain.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/chain.h"
 #include "chain_golden.h"
 
 /* A self-signed cert: its own issuer equals its own subject (byte for byte). */

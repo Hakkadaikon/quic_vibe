@@ -1,6 +1,6 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "x509/validity.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/validity.h"
 #include "x509_golden.h"
 
 /* The golden cert is valid 20260628030430 .. 20270628030430 (UTCTime). */

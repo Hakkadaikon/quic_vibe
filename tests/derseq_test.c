@@ -1,6 +1,6 @@
 #include "test.h"
-#include "asn1/derseq.h"
-#include "asn1/der.h"
+#include "crypto/pki/encoding/asn1/derseq.h"
+#include "crypto/pki/encoding/asn1/der.h"
 
 /* X.690 8.9. Walk a SEQUENCE of two INTEGERs. */
 static void test_derseq_two_ints(void)

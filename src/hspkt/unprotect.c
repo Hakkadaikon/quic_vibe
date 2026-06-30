@@ -1,6 +1,6 @@
 #include "hspkt/unprotect.h"
 #include "protect/protect.h"
-#include "gcm/gcm.h"
+#include "crypto/symmetric/aead/gcm/gcm.h"
 #include "hp/hp.h"
 #include "hp/hpapply.h"
 #include "packet/pnum.h"

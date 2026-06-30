@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_MASTER_H
 #define QUIC_TLS_MASTER_H
 
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 
 /* RFC 8446 7.1: Master Secret from the Handshake Secret.
  * derived = Derive-Secret(Handshake, "derived", ""); then

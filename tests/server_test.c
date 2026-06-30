@@ -10,7 +10,7 @@
 #include "tls/appkeys.h"
 #include "tls/x25519.h"
 #include "schedule_drive/keyschedule.h"
-#include "ed25519/ed25519.h"
+#include "crypto/asymmetric/ecc/ed25519/ed25519.h"
 #include "crypto_stream/crypto_tx.h"
 
 /* RFC 8446 4 / RFC 9001 4.1.2: drive the server orchestrator through a full

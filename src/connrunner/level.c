@@ -1,6 +1,6 @@
 #include "connrunner/level.h"
 #include "packet/ptype.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 
 /* RFC 9000 17.2: a long-header Initial or Handshake type maps to its keyset
  * level; 0-RTT and Retry are not driven by this loop. */

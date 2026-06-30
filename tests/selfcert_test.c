@@ -1,11 +1,11 @@
 #include "test.h"
-#include "selfcert/selfcert.h"
-#include "selfcert/tbs.h"
-#include "selfcert/derenc.h"
-#include "asn1/der.h"
-#include "x509/x509.h"
-#include "x509/spki.h"
-#include "ed25519/ed25519.h"
+#include "crypto/pki/cert/selfcert/selfcert.h"
+#include "crypto/pki/cert/selfcert/tbs.h"
+#include "crypto/pki/cert/selfcert/derenc.h"
+#include "crypto/pki/encoding/asn1/der.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/spki.h"
+#include "crypto/asymmetric/ecc/ed25519/ed25519.h"
 
 /* X.690 8.1. der_tlv emits a well-formed TLV that der_read parses back. */
 static void test_der_tlv_roundtrip(void)

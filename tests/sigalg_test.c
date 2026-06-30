@@ -1,7 +1,7 @@
 #include "test.h"
-#include "tbscert/fields.h"
-#include "tbscert/sigalg.h"
-#include "asn1/derval.h"
+#include "crypto/pki/cert/tbscert/fields.h"
+#include "crypto/pki/cert/tbscert/sigalg.h"
+#include "crypto/pki/encoding/asn1/derval.h"
 #include "x509_golden.h"
 
 /* RFC 5280 4.1.2.3. The tbs signature OID is ecdsa-with-SHA256. */

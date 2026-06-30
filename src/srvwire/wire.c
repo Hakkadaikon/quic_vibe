@@ -8,7 +8,7 @@
 #include "pipeline/rxpacket.h"
 #include "frame/frame.h"
 #include "frame/ack.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* Recover the TLS flight from a packet's CRYPTO frame bytes (RFC 9000 19.6).
  * The CRYPTO frame is emitted first (any ACK frame follows it), so the type

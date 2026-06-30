@@ -1,5 +1,5 @@
 #include "test.h"
-#include "x509/rsa_pubkey.h"
+#include "crypto/pki/encoding/x509/rsa_pubkey.h"
 
 /* RFC 8017 A.1.1. A minimal RSAPublicKey: SEQUENCE { INTEGER n, INTEGER e }
  * wrapped in a BIT STRING value (0x00 unused-bits prefix). n carries a 0x00

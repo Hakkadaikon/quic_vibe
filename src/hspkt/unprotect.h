@@ -2,7 +2,7 @@
 #define QUIC_HSPKT_UNPROTECT_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9001 5.4/5.3 / RFC 9000 A.3: remove header protection over the sample at
  * pn_off+4, recover the FULL packet number from the (1..4-byte) truncated value

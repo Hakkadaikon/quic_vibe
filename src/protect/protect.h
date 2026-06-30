@@ -1,7 +1,7 @@
 #ifndef QUIC_PROTECT_PROTECT_H
 #define QUIC_PROTECT_PROTECT_H
 
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 #include "tls/initial.h"
 
 /* RFC 9001 5.3/5.4 packet protection pipeline for AES-128-GCM Initial

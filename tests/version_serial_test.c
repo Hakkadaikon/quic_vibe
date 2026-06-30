@@ -1,6 +1,6 @@
 #include "test.h"
-#include "tbscert/fields.h"
-#include "tbscert/version_serial.h"
+#include "crypto/pki/cert/tbscert/fields.h"
+#include "crypto/pki/cert/tbscert/version_serial.h"
 #include "x509_golden.h"
 
 /* RFC 5280 4.1.2.1/4.1.2.2. version and serialNumber off the real tbs. */

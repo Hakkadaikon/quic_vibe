@@ -1,6 +1,6 @@
 #include "test.h"
-#include "ecdsasig/der_int.h"
-#include "asn1/der.h"
+#include "crypto/asymmetric/ecc/ecdsasig/der_int.h"
+#include "crypto/pki/encoding/asn1/der.h"
 
 /* SEC1 C.5. Leading-bit-clear value encodes as 0x02 0x20 <32 bytes> verbatim. */
 static void test_der_int_no_pad(void)

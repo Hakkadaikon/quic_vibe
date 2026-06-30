@@ -1,5 +1,5 @@
 #include "tls/retry_tag.h"
-#include "gcm/gcm.h"
+#include "crypto/symmetric/aead/gcm/gcm.h"
 #include "common/bytes/util/ct.h"
 
 /* RFC 9001 5.8 fixed key and nonce for the v1 Retry Integrity Tag. */

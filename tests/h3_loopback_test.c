@@ -11,7 +11,7 @@
 #include "tls/transcript.h"
 #include "tls/finished.h"
 #include "tls/x25519.h"
-#include "ed25519/ed25519.h"
+#include "crypto/asymmetric/ecc/ed25519/ed25519.h"
 #include "h3reqdrive/request_drive.h"
 #include "h3conn/response.h"
 #include "udploop/rxloop.h"

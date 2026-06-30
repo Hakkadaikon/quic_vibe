@@ -5,7 +5,7 @@
 #include "appdata/stream_send.h"
 #include "frame/frame.h"
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 #include "qpack/dyntable.h"
 #include "qpack/dynfind.h"
 #include "qpackdyn/field_encode.h"

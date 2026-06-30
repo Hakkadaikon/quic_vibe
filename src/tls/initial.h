@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_INITIAL_H
 #define QUIC_TLS_INITIAL_H
 
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 
 /* RFC 9001 5.2: Initial packet protection keys derived from the client's
  * Destination Connection ID. AES-128-GCM, so key=16, iv=12, hp=16. */

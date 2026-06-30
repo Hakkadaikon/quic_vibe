@@ -1,9 +1,9 @@
 #include "test.h"
-#include "cvecdsa/cvecdsa.h"
-#include "cvecdsa/signed.h"
+#include "crypto/asymmetric/ecc/cvecdsa/cvecdsa.h"
+#include "crypto/asymmetric/ecc/cvecdsa/signed.h"
 #include "tls/handshake.h"
-#include "hash/sha256.h"
-#include "p256/ecdsa_verify.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
+#include "crypto/asymmetric/ecc/p256/ecdsa_verify.h"
 
 /* RFC 6979 A.2.5 keypair: priv X, public point (QX, QY). */
 static const char *CV_X  = "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721";

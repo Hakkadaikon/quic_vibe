@@ -2,7 +2,7 @@
 #define QUIC_APPDATA_APP_RECV_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9001 5: open a 1-RTT packet with the 1-RTT keys and decode the STREAM
  * frame (RFC 9000 19.8) it carries. On success *data points into pkt and the

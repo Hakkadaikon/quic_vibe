@@ -1,7 +1,7 @@
 #include "test.h"
-#include "castore/castore.h"
-#include "x509/x509.h"
-#include "x509/chain.h"
+#include "crypto/pki/trust/castore/castore.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/chain.h"
 #include "castore_golden.h"
 
 /* Subject Name of the registered root (CN=Test Root CA). */

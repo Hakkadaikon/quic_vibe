@@ -2,7 +2,7 @@
 #define QUIC_HSPKT_HSPKT_BUILD_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9000 17.2.4 / RFC 9001 5: build one AEAD-protected Handshake packet.
  * The Handshake long header carries no token (unlike Initial). The payload

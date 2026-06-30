@@ -2,7 +2,7 @@
 #define QUIC_SRVWIRE_WIRE_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9000 17.2 / RFC 9001 5: server-direction handshake wire codec. Wraps a
  * TLS flight in CRYPTO frames and seals it into an Initial or Handshake packet,

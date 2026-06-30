@@ -1,7 +1,7 @@
 #ifndef QUIC_HP_HP_H
 #define QUIC_HP_HP_H
 
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9001 5.4 header protection for AES-based suites. The mask is
  * AES-ECB(hp_key, sample); sample is 16 ciphertext bytes taken at

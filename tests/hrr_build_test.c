@@ -1,7 +1,7 @@
 #include "test.h"
 #include "hrr/hrr_build.h"
 #include "tls/handshake.h"
-#include "hash/sha256.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
 
 static u16 hrrt_rd16(const u8 *p) { return (u16)((p[0] << 8) | p[1]); }
 

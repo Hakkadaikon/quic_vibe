@@ -1,6 +1,6 @@
 #include "test.h"
-#include "castore/pathvalidate.h"
-#include "castore/castore.h"
+#include "crypto/pki/trust/castore/pathvalidate.h"
+#include "crypto/pki/trust/castore/castore.h"
 #include "castore_golden.h"
 
 static void store_with_root(quic_castore *s)

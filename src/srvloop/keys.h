@@ -1,7 +1,7 @@
 #ifndef QUIC_SRVLOOP_KEYS_H
 #define QUIC_SRVLOOP_KEYS_H
 
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 #include "server/server.h"
 
 /* RFC 9001 5.1 directionality. The server seals with its own-direction key and

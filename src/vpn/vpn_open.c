@@ -2,7 +2,7 @@
 #include "hp/hp.h"
 #include "hp/hpapply.h"
 #include "hp/hpsample.h"
-#include "gcm/gcm.h"
+#include "crypto/symmetric/aead/gcm/gcm.h"
 #include "protect/protect.h"
 
 /* RFC 9001 5.4.1: pn_len lives in byte0's low two bits once unmasked. */

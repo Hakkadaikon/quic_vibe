@@ -2,7 +2,7 @@
 #define QUIC_FULLHS_FULLHS_H
 
 #include "tlsdriver/tlsdriver.h"
-#include "hash/sha256.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
 
 /* Upper bound on the buffered handshake transcript (CH..our Finished). */
 #define QUIC_FULLHS_TRANSCRIPT_MAX 4096

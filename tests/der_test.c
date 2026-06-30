@@ -1,5 +1,5 @@
 #include "test.h"
-#include "asn1/der.h"
+#include "crypto/pki/encoding/asn1/der.h"
 
 /* X.690 8.1. Short-form length: INTEGER 0x02 len 0x01 value 0x05. */
 static void test_der_short_form(void)

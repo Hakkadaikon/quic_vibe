@@ -2,7 +2,7 @@
 #define QUIC_SDRV_SDRV_H
 
 #include "tls/transcript.h"
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 
 /* RFC 8446 4 / RFC 9001 4: server-side handshake driver. Receives the client
  * ClientHello and emits the real TLS bytes of the server flight (ServerHello +

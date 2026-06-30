@@ -1,7 +1,7 @@
 #ifndef QUIC_CONNLOOP_CONNLOOP_H
 #define QUIC_CONNLOOP_CONNLOOP_H
 
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "sentpkt/sentpkt.h"
 
 /* RFC 9000 12 / RFC 9001 4 / RFC 9002 6: the send/receive loop that gates one

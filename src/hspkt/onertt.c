@@ -1,7 +1,7 @@
 #include "hspkt/onertt.h"
 #include "hspkt/unprotect.h"
 #include "protect/protect.h"
-#include "gcm/gcm.h"
+#include "crypto/symmetric/aead/gcm/gcm.h"
 #include "hp/hp.h"
 
 /* RFC 9000 17.3: short-header byte0 has high bit 0 (short form), fixed bit

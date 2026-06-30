@@ -1,6 +1,6 @@
 #include "srvloop/send.h"
 #include "hspkt/onertt.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "srvloop/keys.h"
 #include "srvwire/wire.h"
 

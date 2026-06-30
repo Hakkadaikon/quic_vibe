@@ -2,7 +2,7 @@
 #define QUIC_HSPKT_ONERTT_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9000 17.3 / RFC 9001 5: 1-RTT (short header) packet protection. The
  * short header is byte0 (high bit 0, fixed bit set), the Destination

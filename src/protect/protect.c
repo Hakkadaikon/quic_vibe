@@ -1,5 +1,5 @@
 #include "protect/protect.h"
-#include "gcm/gcm.h"
+#include "crypto/symmetric/aead/gcm/gcm.h"
 #include "hp/hp.h"
 
 void quic_protect_nonce(const u8 iv[QUIC_INITIAL_IV], u64 pn,

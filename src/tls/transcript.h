@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_TRANSCRIPT_H
 #define QUIC_TLS_TRANSCRIPT_H
 
-#include "hash/sha256.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
 
 /* RFC 8446 4.4.1: cumulative Transcript-Hash over handshake messages. */
 

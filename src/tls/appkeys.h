@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_APPKEYS_H
 #define QUIC_TLS_APPKEYS_H
 
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 #include "tls/initial.h"
 
 /* RFC 9001 4.1 / RFC 8446 7.1: 1-RTT (application) packet protection keys.

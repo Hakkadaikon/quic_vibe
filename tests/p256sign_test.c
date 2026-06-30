@@ -1,7 +1,7 @@
 #include "test.h"
-#include "p256sign/sign.h"
-#include "p256/ecdsa_verify.h"
-#include "hash/sha256.h"
+#include "crypto/asymmetric/ecc/p256sign/sign.h"
+#include "crypto/asymmetric/ecc/p256/ecdsa_verify.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
 
 static void psign_hb32(const char *hex, u8 out[32])
 {

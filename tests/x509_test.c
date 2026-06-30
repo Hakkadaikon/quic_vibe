@@ -1,6 +1,6 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "asn1/derval.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/asn1/derval.h"
 #include "x509_golden.h"
 
 /* RFC 5280 4.1. The three top-level fields are split out of a real cert. */

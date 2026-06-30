@@ -1,5 +1,5 @@
 #include "test.h"
-#include "p256/p256_point.h"
+#include "crypto/asymmetric/ecc/p256/p256_point.h"
 
 /* G lies on the curve. */
 static void test_p256_g_on_curve(void)

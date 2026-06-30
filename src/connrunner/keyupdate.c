@@ -5,7 +5,7 @@
 #include "kuswitch/derive.h"
 #include "kuswitch/phasebit.h"
 #include "keyupdate/keyphase.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 
 /* The current generation's installed 1-RTT keys, or a zeroed set if none. */
 static void cur_keys(const quic_connrunner *r, quic_initial_keys *out)

@@ -2,7 +2,7 @@
 #define QUIC_HSPKT_HSPKT_OPEN_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9001 5: open a Handshake packet built by quic_hspkt_build. Removes
  * header protection, recovers the packet number from the header, and AEAD-opens

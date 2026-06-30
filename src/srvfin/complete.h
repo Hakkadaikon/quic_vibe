@@ -2,7 +2,7 @@
 #define QUIC_SRVFIN_COMPLETE_H
 
 #include "schedule_drive/keyschedule.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 
 /* RFC 9001 4.1.2: after the client Finished verifies, the server completes
  * the handshake: derive the application (1-RTT) secrets from the transcript

@@ -2,7 +2,7 @@
 #define QUIC_APPDATA_APP_SEND_H
 
 #include "tls/initial.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9001 5: carry application data in a 1-RTT (short header) packet. The
  * data is framed as a STREAM frame (RFC 9000 19.8) and sealed with the 1-RTT

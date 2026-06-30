@@ -6,7 +6,7 @@
 #include "crypto_stream/ecdhe.h"
 #include "tls/hsdriver.h"
 #include "schedule_drive/keyschedule.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 
 /* RFC 9001 4 / RFC 8446 4: real-TLS handshake driver. Unlike the type-byte
  * driver, this carries actual ClientHello/ServerHello bytes in CRYPTO frames

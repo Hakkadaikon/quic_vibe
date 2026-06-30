@@ -1,5 +1,5 @@
 #include "tls/cert.h"
-#include "ed25519/ed25519.h"
+#include "crypto/asymmetric/ecc/ed25519/ed25519.h"
 
 /* TLS uses fixed big-endian length prefixes. A small cursor reads them and
  * bounds every access against the message end. */

@@ -1,5 +1,5 @@
 #include "srvloop/keys.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "schedule_drive/keyschedule.h"
 
 /* RFC 9001 5.1: own-direction `which` for sealing, indexed by level-1 (only the

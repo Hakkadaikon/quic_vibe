@@ -1,5 +1,5 @@
 #include "test.h"
-#include "p256sign/rfc6979.h"
+#include "crypto/asymmetric/ecc/p256sign/rfc6979.h"
 
 static void r6979_hb32(const char *hex, u8 out[32])
 {

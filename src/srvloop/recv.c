@@ -3,7 +3,7 @@
 #include "hspkt/hspkt_open.h"
 #include "hspkt/onertt.h"
 #include "initpkt/initopen.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "srvloop/keys.h"
 
 /* RFC 9001 5.1: open a received Initial under the keys derived from the client's

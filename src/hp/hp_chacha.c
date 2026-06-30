@@ -1,5 +1,5 @@
 #include "hp/hp_chacha.h"
-#include "chacha/chacha20.h"
+#include "crypto/symmetric/aead/chacha/chacha20.h"
 
 void quic_hp_chacha_mask(const u8 hp_key[32], const u8 sample[16], u8 mask[5])
 {

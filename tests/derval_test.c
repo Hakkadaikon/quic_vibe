@@ -1,5 +1,5 @@
 #include "test.h"
-#include "asn1/derval.h"
+#include "crypto/pki/encoding/asn1/derval.h"
 
 /* rsaEncryption 1.2.840.113549.1.1.1 = OID value 2a 86 48 86 f7 0d 01 01 01. */
 static void test_derval_oid_equal(void)

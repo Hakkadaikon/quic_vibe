@@ -1,5 +1,5 @@
 #include "keyupdate/kuderive.h"
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 
 void quic_ku_next_secret(const u8 cur[32], u8 next[32])
 {

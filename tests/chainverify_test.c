@@ -1,5 +1,5 @@
 #include "test.h"
-#include "castore/chainverify.h"
+#include "crypto/pki/trust/castore/chainverify.h"
 #include "castore_golden.h"
 
 /* RFC 5280 6.1.3. The leaf is signed by the root's key. */

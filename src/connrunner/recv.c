@@ -4,7 +4,7 @@
 #include "connrunner/reconnect.h"
 #include "udploop/rxloop.h"
 #include "sentmeta/on_ack.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 
 #define QUIC_CONNRUNNER_MAXPKTS 8 /* coalesced packets per datagram */
 

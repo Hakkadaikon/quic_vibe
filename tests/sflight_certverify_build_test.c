@@ -2,7 +2,7 @@
 #include "sflight/certverify_build.h"
 #include "tls/handshake.h"
 #include "tls/cert.h"
-#include "ed25519/ed25519.h"
+#include "crypto/asymmetric/ecc/ed25519/ed25519.h"
 
 /* RFC 8446 4.4.3: rebuild the signed content (64*0x20 + context + 0x00 +
  * transcript_hash) and confirm the built signature verifies under the seed's

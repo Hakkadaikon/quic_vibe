@@ -1,6 +1,6 @@
 #include "test.h"
-#include "ecdsasig/sig_value.h"
-#include "asn1/der.h"
+#include "crypto/asymmetric/ecc/ecdsasig/sig_value.h"
+#include "crypto/pki/encoding/asn1/der.h"
 #include "x509_golden.h"
 
 /* The ECDSA-Sig-Value SEQUENCE sits inside the cert's signatureValue BIT STRING

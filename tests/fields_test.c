@@ -1,8 +1,8 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "x509/spki.h"
-#include "x509/chain.h"
-#include "tbscert/fields.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/spki.h"
+#include "crypto/pki/encoding/x509/chain.h"
+#include "crypto/pki/cert/tbscert/fields.h"
 #include "x509_golden.h"
 
 /* RFC 5280 4.1.2. Every field boundary is pulled from the real tbs. The

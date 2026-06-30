@@ -1,7 +1,7 @@
 #ifndef QUIC_CONNECTION_CONNECTION_H
 #define QUIC_CONNECTION_CONNECTION_H
 
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "conn/conn.h"
 #include "net/memlink.h"
 #include "pipeline/framewalk.h"

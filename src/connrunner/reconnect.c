@@ -8,7 +8,7 @@
 #include "packet/ptype.h"
 #include "packet/vneg.h"
 #include "tls/initial.h"
-#include "keys/keyset.h"
+#include "crypto/kdf/keys/keyset.h"
 #include "version/version.h"
 #include "common/bytes/util/bytes.h"
 

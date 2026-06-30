@@ -1,6 +1,6 @@
 #include "test.h"
-#include "p256/ecdsa_verify.h"
-#include "hash/sha256.h"
+#include "crypto/asymmetric/ecc/p256/ecdsa_verify.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
 
 static void ecdsa_hb32(const char *hex, u8 out[32])
 {

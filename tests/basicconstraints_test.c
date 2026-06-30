@@ -1,6 +1,6 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "x509/basicconstraints.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/basicconstraints.h"
 #include "chain_golden.h"
 
 /* cert1 carries basicConstraints with cA TRUE. */

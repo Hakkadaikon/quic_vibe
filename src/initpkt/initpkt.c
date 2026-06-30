@@ -2,7 +2,7 @@
 #include "initpkt/initkeys.h"
 #include "crypto_stream/crypto_tx.h"
 #include "pipeline/txpacket.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9000 14.1: the protected datagram must reach 1200 bytes. The complete
  * 17.2.2 header (byte0+version+DCID+SCID+empty Token+2-byte Length+4-byte PN)

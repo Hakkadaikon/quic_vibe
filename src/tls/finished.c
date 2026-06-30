@@ -1,5 +1,5 @@
 #include "tls/finished.h"
-#include "hash/hmac.h"
+#include "crypto/symmetric/hash/hash/hmac.h"
 
 void quic_tls_finished_verify_data(const u8 base_key[QUIC_HKDF_PRK],
                                    const u8 transcript_hash[QUIC_SHA256_DIGEST],

@@ -1,7 +1,7 @@
 #include "protect_suite/aead_suite.h"
 #include "tls/cipher.h"
-#include "gcm/gcm.h"
-#include "chacha/aead.h"
+#include "crypto/symmetric/aead/gcm/gcm.h"
+#include "crypto/symmetric/aead/chacha/aead.h"
 
 /* RFC 9001 5.3 nonce: iv with pn XORed into the low 8 bytes. */
 static void suite_nonce(const u8 *iv, u64 pn, u8 nonce[12])

@@ -6,8 +6,8 @@
 #include "tls/hsdriver.h"
 #include "tls/hs_message.h"
 #include "schedule_drive/keyschedule.h"
-#include "keys/keyset.h"
-#include "keys/discard_driver.h"
+#include "crypto/kdf/keys/keyset.h"
+#include "crypto/kdf/keys/discard_driver.h"
 
 /* RFC 8446 4.4 / RFC 9001 4.1: full handshake orchestration. */
 

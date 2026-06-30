@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_SCHEDULE_H
 #define QUIC_TLS_SCHEDULE_H
 
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 #include "tls/initial.h"
 
 /* RFC 8446 7.1 key schedule (the handshake portion QUIC needs) plus the

@@ -1,6 +1,6 @@
 #include "test.h"
-#include "x509/x509.h"
-#include "x509/spki.h"
+#include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/encoding/x509/spki.h"
 #include "x509_golden.h"
 
 /* RFC 5280 4.1.2.7. The EC public key is pulled out of the real tbs. */

@@ -1,7 +1,7 @@
 #ifndef QUIC_TLS_FINISHED_H
 #define QUIC_TLS_FINISHED_H
 
-#include "hkdf/hkdf.h"
+#include "crypto/kdf/hkdf/hkdf.h"
 
 /* RFC 8446 4.1.2 / 4.4.4: the Finished message proves possession of the
  * handshake traffic secret and authenticates the handshake transcript.

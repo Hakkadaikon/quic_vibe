@@ -1,7 +1,7 @@
 #ifndef QUIC_VPN_VPN_OPEN_H
 #define QUIC_VPN_VPN_OPEN_H
 
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 #include "tls/initial.h"
 
 /* RFC 9001 5.4.1: remove header protection on a long-header Initial whose

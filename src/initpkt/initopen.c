@@ -1,7 +1,7 @@
 #include "initpkt/initopen.h"
 #include "initpkt/initkeys.h"
 #include "pipeline/rxpacket.h"
-#include "aes/aes.h"
+#include "crypto/symmetric/aead/aes/aes.h"
 
 /* RFC 9001 5.2 */
 int quic_initpkt_open(const u8 *dcid, u8 dcid_len, u8 *pkt, usz len, u64 pn,
