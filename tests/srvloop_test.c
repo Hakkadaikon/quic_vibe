@@ -1,6 +1,8 @@
 #include "ed25519/ed25519.h"
+#include "appdata/stream_send.h"
 #include "frame/ack.h"
 #include "frame/frame.h"
+#include "h3/frame.h"
 #include "pipeline/framewalk.h"
 #include "h3conn/response.h"
 #include "h3reqdrive/request_drive.h"
@@ -711,6 +713,52 @@ static void test_srvloop_dispatch_get_after_uni_streams(void)
     CHECK(got == 1);
 }
 
+/* RFC 9000 2.2 / RFC 9114 4.1: curl may carry a request's HEADERS frame and its
+ * DATA frame in two separate STREAM frames (one datagram, contiguous offsets)
+ * rather than one. Split a one-STREAM-frame POST at the HTTP/3 HEADERS/DATA
+ * boundary into [STREAM off 0: HEADERS][STREAM off=hb: DATA] and return the
+ * combined payload length. */
+static usz lp_split_post_streams(u8 *out, usz cap)
+{
+    u8 reqb[256];
+    usz rlen = 0, p = 0, n0, n1;
+    quic_stream_frame sf;
+    u64 type = 0, plen = 0;
+    const u8 *body = (const u8 *)"hi";
+    const u8 *pl = 0;
+    CHECK(quic_h3reqdrive_send_method(0, (const u8 *)"POST", 4, (const u8 *)"/", 1,
+                                      (const u8 *)"h", 1, body, 2,
+                                      reqb, sizeof reqb, &rlen));
+    CHECK(quic_frame_get_stream(reqb, rlen, &sf) > 0);
+    /* hb = length of the leading HEADERS frame inside the stream data. */
+    usz hb = quic_h3_frame_get(sf.data, (usz)sf.length, &type, &pl, &plen);
+    CHECK(hb > 0 && type == QUIC_H3_FRAME_HEADERS);
+    CHECK(quic_appdata_stream_frame(0, 0, sf.data, hb, 0, out, cap, &n0));
+    p = n0;
+    CHECK(quic_appdata_stream_frame(0, hb, sf.data + hb, (usz)sf.length - hb, 1,
+                                    out + p, cap - p, &n1));
+    return p + n1;
+}
+
+/* RFC 9000 2.2 / RFC 9114 4.1: a POST whose HEADERS and DATA arrive as two
+ * separate request STREAM frames (contiguous offsets, one datagram) is
+ * reassembled in offset order and the body recovered — not dropped as body 0. */
+static void test_srvloop_dispatch_split_request_streams(void)
+{
+    struct lp_fix f;
+    u8 payload[512], scratch[512];
+    usz plen;
+    quic_h3reqdrive_req req;
+    int got = 0;
+    lp_make_client_hello(&f);
+    lp_drive_to_flight(&f);
+    plen = lp_split_post_streams(payload, sizeof payload);
+    CHECK(quic_srvloop_dispatch(&f.s, &f.l.h3, payload, plen,
+                                scratch, sizeof scratch, &got, &req) == 1);
+    CHECK(got == 1);
+    CHECK(req.body_len == 2 && req.body[0] == 'h' && req.body[1] == 'i');
+}
+
 /* A test handler: echo the request body into body_out (RFC 9110 9.3.3 POST
  * semantics — the resource is the message). Also accumulates every body it
  * sees into a history buffer the GET case can return, exercising the contract
@@ -777,6 +825,7 @@ void test_srvloop(void)
     test_srvloop_handler_body_echoed();
     test_srvloop_dispatch_uni_streams_not_request();
     test_srvloop_dispatch_get_after_uni_streams();
+    test_srvloop_dispatch_split_request_streams();
     test_srvloop_send_initial_roundtrip();
     test_srvloop_wrong_direction_open_fails();
     test_srvloop_no_onertt_seal_before_confirm();

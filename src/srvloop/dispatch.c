@@ -1,7 +1,9 @@
 #include "srvloop/dispatch.h"
+#include "appdata/stream_send.h"
 #include "frame/frame.h"
 #include "h3srv/respond.h"
 #include "pipeline/framewalk.h"
+#include "util/bytes.h"
 
 /* RFC 9000 19.8: STREAM frame types occupy 0x08..0x0f. */
 static int is_stream(u64 type)
@@ -32,7 +34,8 @@ static int is_request_frame(u64 type, const u8 *frame, usz rem)
     return is_stream(type) && stream_is_request(frame, rem);
 }
 
-/* RFC 9114 4.1: hand the whole STREAM frame to the HTTP/3 request decoder. */
+/* RFC 9114 4.1: hand the (reassembled) request STREAM frame to the HTTP/3
+ * request decoder. */
 static int dispatch_stream(quic_h3srv_state *h3, const u8 *frame, usz len,
                            u8 *scratch, usz scap,
                            int *got_request, quic_h3reqdrive_req *req)
@@ -43,18 +46,56 @@ static int dispatch_stream(quic_h3srv_state *h3, const u8 *frame, usz len,
     return 1;
 }
 
-/* RFC 9000 12.4 / 2.1, RFC 9114 6.2: find the first STREAM frame on a client
- * bidirectional (request) stream, skipping leading PADDING/ACK and any
- * unidirectional STREAM frames (control / QPACK) that curl sends first. On a
- * hit, point *frame at it and write its remaining length. Returns 1/0. */
-static int find_stream(const u8 *payload, usz len, const u8 **frame, usz *rem)
+/* RFC 9000 2.2: append one request STREAM frame's data to buf at *off, OR-ing
+ * its FIN into *fin. Frames arrive in offset order on a single stream (curl),
+ * so arrival order is the reassembly order. */
+static void gather_one(const u8 *frame, usz rem, u8 *buf, usz cap, usz *off,
+                       u8 *fin)
+{
+    quic_stream_frame sf;
+    if (!quic_frame_get_stream(frame, rem, &sf))
+        return;
+    quic_put_bytes(buf, cap, off, sf.data, (usz)sf.length);
+    *fin |= sf.fin;
+}
+
+/* RFC 9000 2.2 / 12.4, RFC 9114 6.2: concatenate the data of every client bidi
+ * (request) STREAM frame in the payload into buf, skipping PADDING/ACK and the
+ * unidirectional STREAM frames (control / QPACK) curl sends first. curl may
+ * split one request's HEADERS and DATA across two STREAM frames; both are
+ * joined here. Returns the joined length (0 if no request stream is present).
+ * ponytail: joins only what is in this one datagram; a body fragmented across
+ * datagrams is not reassembled — add a per-stream buffer if a client does that. */
+static usz gather_request(const u8 *payload, usz len, u8 *buf, usz cap, u8 *fin)
 {
     quic_framewalk it;
     u64 type;
+    const u8 *frame;
+    usz rem, off = 0;
     quic_framewalk_init(&it, payload, len);
-    while (quic_framewalk_next(&it, &type, frame, rem))
-        if (is_request_frame(type, *frame, *rem)) return 1;
-    return 0;
+    while (quic_framewalk_next(&it, &type, &frame, &rem))
+        if (is_request_frame(type, frame, rem))
+            gather_one(frame, rem, buf, cap, &off, fin);
+    return off;
+}
+
+/* RFC 9000 2.2 / RFC 9114 4.1: reassemble the request stream's data, re-wrap it
+ * as a single STREAM frame (offset 0) and drive the HTTP/3 request decoder.
+ * Returns 1 if a request was found and decoded, 0 otherwise. */
+static int reassemble_and_drive(quic_h3srv_state *h3, const u8 *payload,
+                                usz len, u8 *scratch, usz scap,
+                                int *got_request, quic_h3reqdrive_req *req)
+{
+    u8 data[1500], wrap[1536];
+    usz dlen, wlen = 0;
+    u8 fin = 0;
+    dlen = gather_request(payload, len, data, sizeof data, &fin);
+    if (!dlen)
+        return 0;
+    if (!quic_appdata_stream_frame(0, 0, data, dlen, fin, wrap, sizeof wrap,
+                                   &wlen))
+        return 0;
+    return dispatch_stream(h3, wrap, wlen, scratch, scap, got_request, req);
 }
 
 /* 1 if the payload carries a STREAM frame of any kind (request or uni). Such a
@@ -109,9 +150,7 @@ int quic_srvloop_dispatch(quic_server *s, quic_h3srv_state *h3,
                           u8 *scratch, usz scap,
                           int *got_request, quic_h3reqdrive_req *req)
 {
-    const u8 *frame;
-    usz rem;
-    if (find_stream(payload, len, &frame, &rem))
-        return dispatch_stream(h3, frame, rem, scratch, scap, got_request, req);
+    if (reassemble_and_drive(h3, payload, len, scratch, scap, got_request, req))
+        return 1;
     return dispatch_non_request(s, payload, len);
 }
