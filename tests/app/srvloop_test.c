@@ -20,6 +20,7 @@
 #include "tls/handshake/core/tls/x25519.h"
 #include "tls/keys/schedule_drive/keyschedule.h"
 #include "transport/io/udp/udploop/rxloop.h"
+#include "transport/packet/build/hspkt/hspkt_open.h"
 #include "transport/packet/build/hspkt/onertt.h"
 #include "transport/packet/frame/frame/ack.h"
 #include "transport/packet/frame/frame/frame.h"
@@ -155,6 +156,22 @@ static usz client_seal_handshake(
   quic_aes128_init(&hp, k->hp);
   CHECK(quic_srvwire_seal_handshake(
       k, &hp, f->s.sdrv.iscid, f->s.sdrv.iscid_len, g_cli_scid, 6, 0, -1, msg,
+      mlen, pkt, cap, &total));
+  return total;
+}
+
+/* Client role: seal a Handshake packet at an explicit packet number. curl does
+ * not send its Finished at PN 0 — it leads with an ACK-only Handshake packet, so
+ * the Finished lands at a later PN. */
+static usz client_seal_handshake_pn(
+    struct lp_fix *f, u64 pn, const u8 *msg, usz mlen, u8 *pkt, usz cap) {
+  const quic_initial_keys *k;
+  quic_aes128              hp;
+  usz                      total = 0;
+  CHECK(quic_keysched_get(&f->s.sched, QUIC_KS_CLIENT_HS, &k) == 1);
+  quic_aes128_init(&hp, k->hp);
+  CHECK(quic_srvwire_seal_handshake(
+      k, &hp, f->s.sdrv.iscid, f->s.sdrv.iscid_len, g_cli_scid, 6, pn, -1, msg,
       mlen, pkt, cap, &total));
   return total;
 }
@@ -428,6 +445,42 @@ static void test_srvloop_onertt_get_is_acked(void) {
       1);
   CHECK(client_open_onertt(&f, out, out_len, &pl, &pll) == 1);
   check_acks_pn(pl, pll, 7);
+}
+
+/* Open a server-sealed Handshake packet with the client's peer key (SERVER_HS)
+ * and return its raw decrypted frame payload (quic_hspkt_open, not srvwire's
+ * CRYPTO extractor — the ACK-only flight carries no CRYPTO frame). */
+static int client_open_handshake(
+    struct lp_fix *f, const u8 *pkt, usz len, const u8 **pl, usz *pll) {
+  const quic_initial_keys *k;
+  quic_aes128              hp;
+  CHECK(quic_keysched_get(&f->s.sched, QUIC_KS_SERVER_HS, &k) == 1);
+  quic_aes128_init(&hp, k->hp);
+  return quic_hspkt_open(k, &hp, (u8 *)pkt, len, 6, pl, pll);
+}
+
+/* REGRESSION (appconnect stall): a client Finished at a non-zero Handshake PN
+ * must be acknowledged at that PN. The server previously ACKed a fixed PN 0, so
+ * a Finished at any other PN went unacknowledged and the client PTO-
+ * retransmitted it for ~4s (RFC 9000 13.2.1). */
+static void test_srvloop_handshake_ack_tracks_pn(void) {
+  struct lp_fix f;
+  u8            cpkt[1024], out[1024];
+  usz           clen, out_len = 0;
+  const u8     *pkts[4], *pl;
+  usz           offs[4], lens[4], np, pll;
+  lp_make_client_hello(&f);
+  lp_drive_to_flight(&f);
+  lp_make_client_finished(&f);
+  clen = client_seal_handshake_pn(
+      &f, 3, f.cli_fin, f.cli_fin_len, cpkt, sizeof cpkt);
+  CHECK(
+      quic_srvloop_step(&f.l, &f.s, cpkt, clen, out, sizeof out, &out_len) == 1);
+  np = quic_udploop_split(out, out_len, pkts, offs, lens, 4);
+  CHECK(np == 2);
+  CHECK((out[offs[0]] & 0x80) != 0); /* slice 0: long-header Handshake ACK */
+  CHECK(client_open_handshake(&f, out + offs[0], lens[0], &pl, &pll) == 1);
+  check_acks_pn(pl, pll, 3); /* ACKs the Finished's PN 3, not the fixed 0 */
 }
 
 /* Walk a 1-RTT payload and assert it carries all three: the control-stream
@@ -850,6 +903,7 @@ void test_srvloop(void) {
   test_srvloop_padding_before_stream();
   test_srvloop_coalesced_finished_behind_leading();
   test_srvloop_onertt_get_is_acked();
+  test_srvloop_handshake_ack_tracks_pn();
   test_srvloop_confirm_and_200_coalesce();
   test_srvloop_confirm_emitted_once();
 }
