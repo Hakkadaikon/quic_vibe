@@ -28,3 +28,30 @@ int quic_h3srv_build_response(const quic_h3srv_state *st, u64 stream_id,
     return quic_h3conn_send_response(stream_id, status, body, body_len, out,
                                      cap, len);
 }
+
+/* RFC 9110 9.3.2: method == "HEAD" (exact, case-sensitive per RFC 9110 9.1).
+ * XOR-accumulate avoids a per-octet branch; only the length guard and the loop
+ * count toward complexity. */
+static int is_head(const u8 *method, usz m_len)
+{
+    static const u8 head[4] = {'H', 'E', 'A', 'D'};
+    u8 diff = (m_len != 4);
+    for (usz i = 0; i < 4 && i < m_len; i++)
+        diff |= method[i] ^ head[i];
+    return diff == 0;
+}
+
+/* RFC 9110 9.3.2: drop the body for a HEAD response (HEADERS only, no DATA). */
+int quic_h3srv_build_response_for_method(const quic_h3srv_state *st,
+                                         u64 stream_id, const u8 *method,
+                                         usz m_len, u16 status, const u8 *body,
+                                         usz body_len, u8 *out, usz cap,
+                                         usz *len)
+{
+    if (is_head(method, m_len)) {
+        body = 0;
+        body_len = 0;
+    }
+    return quic_h3srv_build_response(st, stream_id, status, body, body_len, out,
+                                     cap, len);
+}

@@ -19,4 +19,15 @@ int quic_h3srv_build_response(const quic_h3srv_state *st, u64 stream_id,
                               u16 status, const u8 *body, usz body_len,
                               u8 *out, usz cap, usz *len);
 
+/* RFC 9110 9.3.2. Build a response for a request whose method is method[0..m_len),
+ * suppressing the response body (no DATA frame) when the method is HEAD: a HEAD
+ * response carries the same :status and header fields as the GET would but MUST
+ * NOT include message content. All other methods behave as quic_h3srv_build_response.
+ * Returns 1 with *len set, 0 on a precondition failure or overflow. */
+int quic_h3srv_build_response_for_method(const quic_h3srv_state *st,
+                                         u64 stream_id, const u8 *method,
+                                         usz m_len, u16 status, const u8 *body,
+                                         usz body_len, u8 *out, usz cap,
+                                         usz *len);
+
 #endif
