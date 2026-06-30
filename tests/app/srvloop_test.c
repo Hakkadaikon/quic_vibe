@@ -202,9 +202,12 @@ static void test_srvloop_send_initial_roundtrip(void) {
   lp_drive_to_flight(&f);
   CHECK(quic_srvloop_send_initial(
       &f.s, g_cli_scid, 6, 1, -1, f.sh, f.sh_len, pkt, sizeof pkt, &total));
+  /* RFC 9000 14.1: the Initial datagram is padded to >= 1200, else curl drops
+   * it and PTO-retransmits its own Initial for ~4s (the appconnect stall). */
+  CHECK(total >= 1200);
   CHECK(quic_srvwire_open_initial(
       f.s.sdrv.odcid, f.s.sdrv.odcid_len, pkt, total, 1, &tls, &tls_len));
-  CHECK(tls_len == f.sh_len);
+  CHECK(tls_len == f.sh_len); /* PADDING after CRYPTO is ignored on open */
 }
 
 /* DIRECTION SAFETY: a server-sealed Handshake packet (SERVER_HS) opens with the
