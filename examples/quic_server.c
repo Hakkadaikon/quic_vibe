@@ -351,49 +351,31 @@ static i64 listen_udp(void)
     return fd;
 }
 
-/* Equal-length byte compare for two connection IDs. Plain (not constant-time):
- * this is demo connection routing, not a secret comparison. */
-static int cid_eq(const u8 *a, u8 alen, const u8 *b, u8 blen)
-{
-    usz i;
-    if (alen != blen)
-        return 0;
-    for (i = 0; i < alen; i++)
-        if (a[i] != b[i])
-            return 0;
-    return 1;
-}
-
-/* Self-check for the reconnect routing predicate: same CID is a retransmit,
- * a differing CID (length or bytes) is a new connection. */
+/* Self-check for the Initial-routing predicate: an Initial (0xc0) can start a
+ * new connection, but a Handshake packet (0xe0) and a short header (0x40) are
+ * the live connection continuing and must never be taken for a new Initial. */
 static void cid_selfcheck(void)
 {
-    static const u8 a[2] = {1, 2}, b[2] = {1, 3}, c[3] = {1, 2, 3};
-    if (!cid_eq(a, 2, a, 2))
-        die("selfcheck: cid_eq same failed\n");
-    if (cid_eq(a, 2, b, 2) || cid_eq(a, 2, c, 3))
-        die("selfcheck: cid_eq diff failed\n");
-    /* Initial (0xc0) is a new connection candidate; Handshake (0xe0) and a
-     * short header (0x40) are the connection continuing, never a new Initial. */
     if (!is_long_initial(0xc0) || is_long_initial(0xe0) || is_long_initial(0x40))
         die("selfcheck: is_long_initial type bits failed\n");
 }
 
-/* RFC 9000 7: each connection is independent, keyed by its original DCID. A
- * long-header Initial whose DCID differs from the live connection's ODCID is a
- * NEW connection (a reconnect or a different client), not a retransmit of the
- * current one (curl resends its Initial under the SAME DCID until ServerHello
- * lands). Returns 1 to (re)open as a fresh connection.
+/* RFC 9000 7: each connection is independent. A long-header Initial only starts
+ * a NEW connection (a reconnect or a different client) once the live one has
+ * reached HANDSHAKE_DONE. While a connection is still establishing, every Initial
+ * is the same connection continuing — and its DCID legitimately changes from the
+ * client's original DCID to the server's chosen SCID once ServerHello lands
+ * (RFC 9000 7.2), so an ODCID comparison would wrongly see it as new. Gate the
+ * reconnect decision on confirmation, not on the DCID, to avoid that.
  * ponytail: one connection at a time — reconnects are handled in arrival order,
  * not concurrent peers. A per-peer/per-DCID state table is out of scope. */
 static int is_new_initial(int up, quic_server *s, u8 *dg, usz len)
 {
-    quic_header h;
-    if (!valid_initial(dg, len) || !quic_header_parse(dg, len, &h))
+    if (!valid_initial(dg, len))
         return 0;
     if (!up)
         return 1;
-    return !cid_eq(h.dcid, h.dcid_len, s->sdrv.odcid, s->sdrv.odcid_len);
+    return quic_server_is_confirmed(s);
 }
 
 /* Drive one datagram: a new Initial (re)opens a connection and sends the flight;
