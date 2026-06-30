@@ -35,7 +35,16 @@ int quic_srvloop_init(quic_srvloop *l, const u8 *cli_scid, u8 cli_scid_len)
     l->app_rx_pn = 0;
     l->app_rx_seen = 0;
     l->hs_done_sent = 0;
+    l->on_request = 0;
+    l->req_ctx = 0;
+    l->got_request = 0;
     return 1;
+}
+
+void quic_srvloop_set_handler(quic_srvloop *l, quic_srvloop_handler cb, void *ctx)
+{
+    l->on_request = cb;
+    l->req_ctx = ctx;
 }
 
 /* RFC 9000 13.2.1 / 19.3: encode an ACK frame for the single packet number pn. */
@@ -105,18 +114,35 @@ static usz app_ack_append(quic_srvloop *l, u8 *buf, usz cap)
     return encode_ack_one(buf, cap, l->app_rx_pn);
 }
 
-/* RFC 9114 4.1: the 200 STREAM frame for the decoded GET (no body) when one was
- * decoded; an empty (zero-length) section otherwise. Keeps the && off the caller
- * so confirm_then_maybe_200 stays low-CCN. */
+#define QUIC_SRVLOOP_BODY_MAX 1024 /* ponytail: app response body cap; raise here if a handler needs more */
+
+/* RFC 9110 9.3: ask the registered handler to build the response body for the
+ * decoded request. No handler (or it declines) -> a body-less 200. The body is
+ * written into the caller's buffer; *body_len is 0 when there is none. */
+static const u8 *build_body(quic_srvloop *l, u8 *body, usz *body_len)
+{
+    *body_len = 0;
+    if (l->on_request && l->on_request(l->req_ctx, &l->req, body,
+                                       QUIC_SRVLOOP_BODY_MAX, body_len))
+        return body;
+    return (const u8 *)0;
+}
+
+/* RFC 9114 4.1 / 4.3.2: the 200 STREAM frame for the decoded request, carrying
+ * the handler-built body; an empty section when no request was decoded. */
 static int response_frame(quic_srvloop *l, int got_request,
                           u8 *buf, usz cap, usz *len)
 {
+    u8 body[QUIC_SRVLOOP_BODY_MAX];
+    usz body_len;
+    const u8 *b;
     if (!got_request) {
         *len = 0;
         return 1;
     }
+    b = build_body(l, body, &body_len);
     return quic_h3srv_build_response(&l->h3, QUIC_SRVLOOP_RESP_STREAM, 200,
-                                     (const u8 *)0, 0, buf, cap, len);
+                                     b, body_len, buf, cap, len);
 }
 
 /* RFC 9000 12.2 / 19.4: a short-header (1-RTT) packet carries no length and must
@@ -143,7 +169,7 @@ static int confirm_then_maybe_200(quic_srvloop *l, quic_server *s, int got_reque
 static int seal_confirm_onertt(quic_srvloop *l, quic_server *s, int got_request,
                                u8 *out, usz cap, usz *out_len)
 {
-    u8 pl[288];
+    u8 pl[QUIC_SRVLOOP_BODY_MAX + 288];
     usz pll;
     if (!confirm_then_maybe_200(l, s, got_request, pl, sizeof pl, &pll))
         return 0;
@@ -175,10 +201,9 @@ static int emit_confirm(quic_srvloop *l, quic_server *s, int got_request,
 static int emit_response(quic_srvloop *l, quic_server *s,
                          u8 *out, usz cap, usz *out_len)
 {
-    u8 pl[288];
+    u8 pl[QUIC_SRVLOOP_BODY_MAX + 288];
     usz rl;
-    if (!quic_h3srv_build_response(&l->h3, QUIC_SRVLOOP_RESP_STREAM, 200,
-                                   (const u8 *)0, 0, pl, sizeof pl, &rl))
+    if (!response_frame(l, 1, pl, sizeof pl, &rl))
         return 0;
     rl += app_ack_append(l, pl + rl, sizeof pl - rl);
     return quic_srvloop_send_onertt(s, l->cli_scid, l->cli_scid_len,
@@ -275,8 +300,6 @@ static void note_app_rx(quic_srvloop *l, quic_server *s, int level, const u8 *pk
 static void step_one(quic_srvloop *l, quic_server *s, u8 *pkt, usz len,
                      int *got_request)
 {
-    u8 scratch[QUIC_SRVLOOP_SCRATCH];
-    quic_h3reqdrive_req req;
     const u8 *payload;
     usz plen;
     int level;
@@ -285,8 +308,8 @@ static void step_one(quic_srvloop *l, quic_server *s, u8 *pkt, usz len,
     if (!opened)
         return;
     note_app_rx(l, s, level, pkt);
-    quic_srvloop_dispatch(s, &l->h3, payload, plen, scratch, sizeof scratch,
-                          got_request, &req);
+    quic_srvloop_dispatch(s, &l->h3, payload, plen, l->req_scratch,
+                          sizeof l->req_scratch, got_request, &l->req);
 }
 
 /* RFC 9000 12.2: a received datagram may coalesce several QUIC packets (e.g. an

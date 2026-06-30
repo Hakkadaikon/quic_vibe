@@ -1,8 +1,15 @@
 #ifndef QUIC_SRVLOOP_SRVLOOP_H
 #define QUIC_SRVLOOP_SRVLOOP_H
 
+#include "h3reqdrive/request_drive.h"
 #include "h3srv/state.h"
 #include "server/server.h"
+
+/* Build the response body for a decoded request. Copy from `req` (its body is a
+ * view into per-step scratch, not valid past the call) into body_out (cap),
+ * setting *body_len. Returns 1 to send the body, 0 for a body-less 200. */
+typedef int (*quic_srvloop_handler)(void *ctx, const quic_h3reqdrive_req *req,
+                                    u8 *body_out, usz cap, usz *body_len);
 
 /* RFC 9001 4 / 5 / RFC 9000 17.2: the socket-free core of the server wire loop.
  * One step opens an inbound datagram with the peer-direction key, dispatches its
@@ -19,7 +26,15 @@ typedef struct {
     u64 app_rx_pn;  /* last received 1-RTT (application) packet number to ACK */
     int app_rx_seen;/* 1 once a 1-RTT packet has been received (app_rx_pn valid) */
     int hs_done_sent;/* 1 once the confirmation (HANDSHAKE_DONE) has been emitted */
+    quic_srvloop_handler on_request; /* app response-body builder, 0 if unset */
+    void *req_ctx;                   /* opaque ctx passed to on_request */
+    int got_request;                 /* 1 when this step decoded a request */
+    quic_h3reqdrive_req req;         /* the decoded request (valid when got_request) */
+    u8 req_scratch[512];             /* backing store for req's path/body views */
 } quic_srvloop;
+
+/* Register the app response-body builder; pass 0 to clear (body-less 200). */
+void quic_srvloop_set_handler(quic_srvloop *l, quic_srvloop_handler cb, void *ctx);
 
 /* Record the client's source connection id (the DCID for server-sent packets)
  * and reset the HTTP/3 state. Returns 1, or 0 if cli_scid_len exceeds 20. */
