@@ -3,7 +3,7 @@
 
 #include "common/platform/sys/syscall.h"
 #include "transport/conn/lifecycle/conn/pnspace.h"
-#include "sentpkt/sentpkt.h"
+#include "transport/recovery/rtx/sentpkt/sentpkt.h"
 
 /* RFC 9000 13: each packet number space tracks its own sent packets and is
  * acknowledged independently; an ACK in one space never touches another. */

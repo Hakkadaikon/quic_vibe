@@ -1,8 +1,8 @@
 #include "transport/conn/loop/connrunner/send.h"
 #include "transport/packet/frame/frame/ack.h"
 #include "transport/packet/frame/frame/frame.h"
-#include "rtxdrive/build.h"
-#include "sentmeta/detect_loss.h"
+#include "transport/recovery/rtx/rtxdrive/build.h"
+#include "transport/recovery/rtx/sentmeta/detect_loss.h"
 
 /* Any ack-eliciting packet sitting in the receive queue (RFC 9000 13.2.1). */
 static int queue_has_eliciting(const quic_connrunner *r)

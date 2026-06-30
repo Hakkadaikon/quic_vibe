@@ -1,5 +1,5 @@
 #include "transport/conn/pnspace/pnspaces/recv_spaces.h"
-#include "ackgen/ackrange.h"
+#include "transport/recovery/detect/ackgen/ackrange.h"
 
 void quic_pnspaces_recv_init(quic_pnspaces_recv *s)
 {

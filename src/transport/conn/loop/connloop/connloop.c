@@ -1,7 +1,7 @@
 #include "transport/conn/loop/connloop/connloop.h"
 #include "crypto/kdf/keys/promote.h"
 #include "transport/io/udp/udploop/antiamp_gate.h"
-#include "sentpkt/ack_process.h"
+#include "transport/recovery/rtx/sentpkt/ack_process.h"
 
 /* Send level starts one below Initial so the first send must promote in. */
 #define QUIC_CONNLOOP_NO_LEVEL (-1)

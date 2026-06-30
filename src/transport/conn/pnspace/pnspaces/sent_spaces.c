@@ -1,5 +1,5 @@
 #include "transport/conn/pnspace/pnspaces/sent_spaces.h"
-#include "sentpkt/ack_process.h"
+#include "transport/recovery/rtx/sentpkt/ack_process.h"
 
 void quic_pnspaces_sent_init(quic_pnspaces_sent *s)
 {

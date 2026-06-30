@@ -3,7 +3,7 @@
 
 #include "common/platform/sys/syscall.h"
 #include "flow/stream_read.h"
-#include "sentpkt/sentpkt.h"
+#include "transport/recovery/rtx/sentpkt/sentpkt.h"
 #include "flow/credit.h"
 
 /* RFC 9000 12.4: after a payload is walked into frames, each frame is

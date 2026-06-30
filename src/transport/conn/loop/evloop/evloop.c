@@ -1,6 +1,6 @@
 #include "transport/conn/loop/evloop/evloop.h"
-#include "ackgen/ackgen.h"
-#include "cwndctl/cwndctl.h"
+#include "transport/recovery/detect/ackgen/ackgen.h"
+#include "transport/recovery/congestion/cwndctl/cwndctl.h"
 #include "transport/io/udp/udploop/antiamp_gate.h"
 #include "tls/keys/keyupdate/initiate.h"
 #include "tls/keys/keyupdate/oldkey.h"

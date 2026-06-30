@@ -4,8 +4,8 @@
 #include "transport/io/socket/io/udp.h"
 #include "transport/conn/loop/evloop/evloop.h"
 #include "transport/conn/loop/connio/connio.h"
-#include "rtxbytes/rtxstore.h"
-#include "sentmeta/record.h"
+#include "transport/recovery/rtx/rtxbytes/rtxstore.h"
+#include "transport/recovery/rtx/sentmeta/record.h"
 #include "tls/keys/kuswitch/twogen.h"
 #include "transport/conn/cid/retrydrive/reconnect.h"
 

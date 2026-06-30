@@ -3,7 +3,7 @@
 #include "transport/conn/loop/connrunner/keyupdate.h"
 #include "transport/conn/loop/connrunner/reconnect.h"
 #include "transport/io/udp/udploop/rxloop.h"
-#include "sentmeta/on_ack.h"
+#include "transport/recovery/rtx/sentmeta/on_ack.h"
 #include "crypto/kdf/keys/keyset.h"
 
 #define QUIC_CONNRUNNER_MAXPKTS 8 /* coalesced packets per datagram */

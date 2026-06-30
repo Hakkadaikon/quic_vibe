@@ -3,7 +3,7 @@
 #include "transport/packet/frame/frame/frame.h"
 #include "transport/packet/frame/frame/ack.h"
 #include "transport/packet/frame/frame/flowctl.h"
-#include "sentpkt/ack_process.h"
+#include "transport/recovery/rtx/sentpkt/ack_process.h"
 
 /* RFC 9000 19.8: feed a STREAM frame's bytes into the read buffer. */
 static int on_stream(quic_framedispatch_state *st, const u8 *frame, usz len)
