@@ -1,3 +1,9 @@
+/* Unity build: every production .c MUST be included before the *_test.c that
+ * uses its symbols, or the test sees an undeclared identifier. clang-format
+ * SortIncludes (default on) would re-sort these alphabetically and interleave
+ * each test with its source, breaking the build — keep it off for this block.
+ */
+// clang-format off
 #include "test.h"
 #include "transport/recovery/detect/ackrange/ackrange_process.c"
 #include "app/datagram/dgdeliver/dg_send.c"
@@ -834,6 +840,7 @@
 #include "tls/client_wire_test.c"
 #include "app/h3_loopback_test.c"
 #include "app/h3reqenc_test.c"
+// clang-format on
 
 int main(void) {
   test_varint();
