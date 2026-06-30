@@ -1,24 +1,24 @@
 # quic_vibe
 
-quic_vibe は、libc に依存しない QUIC / TLS 1.3 / HTTP/3 の SDK である。
-x86_64 Linux の syscall を直接呼び、独自の `_start` を持ち、標準ライブラリも外部依存も使わない。
-カーネルに任せるのは生の UDP 入出力だけで、パケット整形、暗号化、損失回復、輻輳制御、ストリーム、HTTP/3 はすべてユーザー空間で自前に実装する。
+quic_vibe is a libc-free SDK for QUIC / TLS 1.3 / HTTP/3.
+It calls x86_64 Linux syscalls directly, supplies its own `_start`, and uses neither the standard library nor any external dependency.
+The only thing it leaves to the kernel is raw UDP I/O; packet framing, encryption, loss recovery, congestion control, streams, and HTTP/3 are all implemented in user space.
 
-## ドキュメント
+## Documentation
 
-- [docs/arch/overview.md](docs/arch/overview.md)：ユーザー空間とカーネルの境界、5層構成、送信と受信とハンドシェイクのデータフロー。
-- [docs/arch/layers.md](docs/arch/layers.md)：common / crypto / transport / tls / app の各層が解く問題と設計の勘所。
-- [docs/arch/rfcs.md](docs/arch/rfcs.md)：実装した RFC と FIPS の一覧、各仕様が必要な理由。
-- [docs/usage.md](docs/usage.md)：ビルドと `just` ターゲット、ソース構成、ライブラリの使い方。
-- [docs/development.md](docs/development.md)：開発上の制約とワークフロー、ドメインの追加手順。
+- [docs/arch/overview.md](docs/arch/overview.md): the boundary between user space and the kernel, the five layers, and the data flow for sending, receiving, and the handshake.
+- [docs/arch/layers.md](docs/arch/layers.md): the problem each of the common / crypto / transport / tls / app layers solves and the key points of its design.
+- [docs/arch/rfcs.md](docs/arch/rfcs.md): the list of implemented RFCs and FIPS publications, and why each specification is needed.
+- [docs/usage.md](docs/usage.md): the build and the `just` targets, the source layout, and how to use the library.
+- [docs/development.md](docs/development.md): the development constraints and workflow, and how to add a domain.
 
 ## Quick start
 
 ```sh
-just build    # 各ドメインを freestanding でコンパイルする
-just ninja    # 差分・並列ビルド
-just test     # テストスイートを実行する
-just check    # CCN ゲートとテストスイート
+just build    # compile each domain freestanding
+just ninja    # incremental, parallel build
+just test     # run the test suite
+just check    # the CCN gate and the test suite
 ```
 
 ## License

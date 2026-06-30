@@ -1,33 +1,33 @@
-# 全体構成とデータフロー
+# Architecture and Data Flow
 
-この章は、quic_vibe がどこまでをユーザー空間で行い、カーネルに何を残すかを中心に据える。
-QUIC を初めて読む人が、各層がなぜその順序で並ぶのか、なぜそこに置かれるのかを掴めることを目指す。
+This chapter centers on how much quic_vibe does in user space and what it leaves to the kernel.
+The goal is for someone reading QUIC for the first time to grasp why each layer sits in the order it does, and why it is placed where it is.
 
-## ユーザー空間とカーネルの境界
+## The boundary between user space and the kernel
 
-TCP では、再送、順序付け、輻輳制御、接続状態のすべてをカーネルが持つ。
-アプリケーションはバイトストリームの両端を触るだけで、輻輳制御の改良も新しい損失回復も、カーネルの更新を待たなければ届かない。
-QUIC は UDP の上に立つことでこの拘束を外した。
-UDP はデータグラムを運ぶだけで、信頼性も順序も暗号化も持たないから、それらをすべてアプリケーション側に引き取れる。
-quic_vibe はこの引き取りを限界まで進め、QUIC の意味論を一切カーネルに見せない。
+In TCP, the kernel owns retransmission, ordering, congestion control, and all of the connection state.
+The application only touches the two ends of a byte stream, so a better congestion controller or a new loss-recovery scheme cannot reach it until the kernel itself is updated.
+QUIC removed that constraint by standing on top of UDP.
+Because UDP only carries datagrams — no reliability, no ordering, no encryption — all of those concerns can be pulled into the application.
+quic_vibe pushes this to the limit and shows the kernel nothing of QUIC's semantics.
 
-カーネルに残るのは、暗号化済みバイト列の運搬だけである。
-syscall を実際に発行する箇所は `syscall6` というインラインアセンブリ関数1つに集約され、ほかのすべてのコードはこの関数を通してしかカーネルに触れない。
-頼る syscall は、生の UDP 送受信（`sendto` / `recvfrom`）、ソケットの用意と待ち受け（`socket` / `bind` / `poll` / `fcntl` / `close`）、乱数（`getrandom`）に限られる。
-カーネルが運ぶのは暗号化されたバイト列であり、その中身が QUIC のどのパケットでどのフレームかをカーネルは解釈しない。
+What remains in the kernel is only the carriage of already-encrypted bytes.
+The place that actually issues a syscall is concentrated in a single inline-assembly function called `syscall6`, and every other piece of code reaches the kernel only through that function.
+The syscalls it relies on are limited to raw UDP send and receive (`sendto` / `recvfrom`), preparing and waiting on a socket (`socket` / `bind` / `poll` / `fcntl` / `close`), and randomness (`getrandom`).
+What the kernel carries is an encrypted byte string; the kernel never interprets which QUIC packet or which frame those bytes are.
 
-パケットの整形、暗号化とヘッダ保護、TLS ハンドシェイク、損失回復、輻輳制御、ストリームの多重化、HTTP/3 と QPACK、X.509 の検証、すべての暗号関数は、ユーザー空間で自前に持つ。
-インメモリでバイト列を往復させるだけのテスト経路（後述の memlink）に至っては、syscall すら一度も発行しない。
+Packet framing, encryption and header protection, the TLS handshake, loss recovery, congestion control, stream multiplexing, HTTP/3 and QPACK, X.509 verification, and every cryptographic function are all held in user space.
+The test path that merely round-trips bytes through memory (the memlink described later) never issues a single syscall at all.
 
 ```mermaid
 flowchart TB
     subgraph US["User space (quic_vibe)"]
         APP["app: HTTP/3 / QPACK"]
-        TLS["tls: TLS 1.3 ハンドシェイク・鍵スケジュール"]
-        TRANSPORT["transport: パケット保護・損失回復・輻輳制御・ストリーム"]
-        CRYPTO["crypto: AEAD / 署名 / KDF / X.509"]
-        COMMON["common: varint・バイトカーソル・乱数・syscall ラッパ"]
-        IO["io: IPv4/UDP 整形・ソケット操作"]
+        TLS["tls: TLS 1.3 handshake / key schedule"]
+        TRANSPORT["transport: packet protection / loss recovery / congestion control / streams"]
+        CRYPTO["crypto: AEAD / signatures / KDF / X.509"]
+        COMMON["common: varint / byte cursor / randomness / syscall wrapper"]
+        IO["io: IPv4/UDP framing / socket operations"]
         APP --> TLS --> TRANSPORT --> CRYPTO --> COMMON
         TRANSPORT --> IO
         IO --> COMMON
@@ -38,25 +38,25 @@ flowchart TB
     IO -- "raw encrypted bytes" --> SC
 ```
 
-libc を持たない構成は、移植性と検証可能性の両方に効く。
-標準ライブラリのどの実装にも依存しないため、`-ffreestanding -nostdlib` でコンパイルできること自体が、外部依存の不在を証明する。
-依存が syscall ラッパ1関数に閉じているので、どこでカーネルに触れるかが一望でき、それ以外の全コードを純粋な変換として扱える。
+A libc-free design helps with both portability and verifiability.
+Because it depends on no particular implementation of a standard library, the very fact that it compiles under `-ffreestanding -nostdlib` proves the absence of external dependencies.
+Since the dependency is closed to a single syscall-wrapper function, where the code touches the kernel can be seen at a glance, and every other line can be treated as a pure transformation.
 
-## 5層構成
+## The five layers
 
-ユーザー空間のコードは5つの層に分かれる。
-上の層ほど抽象度が高く、下の層ほど土台に近い。
+The user-space code is divided into five layers.
+The higher a layer sits, the more abstract it is; the lower it sits, the closer it is to the foundation.
 
-| 層 | ディレクトリ | 責務 |
+| Layer | Directory | Responsibility |
 |----|------------|------|
-| app | `src/app/` | HTTP/3 のフレームと状態機械、QPACK によるヘッダ圧縮。 |
-| tls | `src/tls/` | TLS 1.3 ハンドシェイク、鍵スケジュール、トランスポートパラメータ。 |
-| transport | `src/transport/` | パケット整形と保護、損失回復、輻輳制御、ストリーム、UDP 入出力。 |
-| crypto | `src/crypto/` | AEAD、ハッシュ、署名、鍵導出、X.509 の解析と検証。 |
-| common | `src/common/` | varint、バイトカーソル、syscall ラッパ、乱数、エラーコード。 |
+| app | `src/app/` | HTTP/3 frames and state machine, header compression with QPACK. |
+| tls | `src/tls/` | TLS 1.3 handshake, key schedule, transport parameters. |
+| transport | `src/transport/` | Packet framing and protection, loss recovery, congestion control, streams, UDP I/O. |
+| crypto | `src/crypto/` | AEAD, hashing, signatures, key derivation, X.509 parsing and verification. |
+| common | `src/common/` | varint, byte cursor, syscall wrapper, randomness, error codes. |
 
-依存はおおむね上から下へ一方向に流れる。
-ただし QUIC と TLS の統合点では、この一方向が崩れる。
+Dependencies flow mostly in one direction, from top to bottom.
+At the integration point of QUIC and TLS, however, that one-way flow breaks.
 
 ```mermaid
 graph TB
@@ -76,24 +76,24 @@ graph TB
     CRYPTO -.-> TLS
 ```
 
-点線が、層境界と鍵境界が一致しない例外を表す。
-QUIC のハンドシェイクは、TLS のメッセージを CRYPTO フレームに載せて QUIC のパケットで運ぶ。
-そのため transport は TLS のハンドシェイクを駆動するために tls を参照し、crypto の鍵導出は最初の Initial 鍵の型を tls と共有する。
-鍵を作るのは tls だが、その鍵で守るバイト列を運ぶのは transport であり、両者は互いを必要とする。
-依存を完全な下向きに揃えようとすると、この統合を不自然に切り分けることになる。
-ここでは設計の事実として相互参照を残す。
+The dotted lines mark the exception where the layer boundary and the key boundary do not coincide.
+The QUIC handshake carries TLS messages inside CRYPTO frames, transported in QUIC packets.
+So transport refers to tls in order to drive the TLS handshake, and crypto's key derivation shares the type of the initial Initial keys with tls.
+The keys are made by tls, but the bytes those keys protect are carried by transport, and the two need each other.
+Trying to force the dependencies fully downward would split this integration unnaturally.
+Here the mutual reference is left in place as a fact of the design.
 
-common はどの層にも依存しない、完全な最下層である。
-全層が同じ varint 符号化とバイトカーソルを共有し、後述する単一翻訳単位ビルドでの記号衝突を避けるため、共通の小関数はここに `inline` として置く。
+common is the complete bottom layer that depends on no other layer.
+All layers share the same varint encoding and byte cursor, and to avoid symbol collisions in the single-translation-unit build described later, the shared small functions are placed here as `inline`.
 
-## データフロー
+## Data flow
 
-3つの代表的な流れを追う。
-いずれも、順序がなぜそうでなければならないかに注目する。
+We follow three representative flows.
+In each, the focus is on why the order has to be the way it is.
 
-### 送信：GET から wire まで
+### Sending: from GET to the wire
 
-アプリケーションが GET を発行してから、暗号化済みバイト列がソケットに渡るまでの流れを示す。
+This shows the flow from an application issuing a GET to the encrypted bytes being handed to the socket.
 
 ```mermaid
 sequenceDiagram
@@ -102,25 +102,25 @@ sequenceDiagram
     participant TR as transport
     participant CR as crypto
     participant IO as io
-    App->>QP: リクエストヘッダを圧縮
-    QP->>App: ヘッダブロック
-    App->>TR: H3 フレームを STREAM フレームへ
-    TR->>TR: パケットを整形（ヘッダ確定）
-    TR->>CR: AEAD seal（AAD = ヘッダ）
-    CR->>TR: 暗号文 + 認証タグ
-    TR->>TR: ヘッダ保護（暗号文でマスク）
-    TR->>TR: 複数パケットを coalesce
+    App->>QP: compress the request headers
+    QP->>App: header block
+    App->>TR: H3 frames into STREAM frames
+    TR->>TR: frame the packet (finalize the header)
+    TR->>CR: AEAD seal (AAD = header)
+    CR->>TR: ciphertext + authentication tag
+    TR->>TR: header protection (mask with ciphertext)
+    TR->>TR: coalesce multiple packets
     TR->>IO: sendto
 ```
 
-順序を崩せないのは、保護の2段が互いの出力に依存するからである。
-AEAD はパケットヘッダを追加認証データ（AAD）として暗号化するため、ヘッダが確定してからでないと seal できない。
-ヘッダ保護は AEAD が生んだ暗号文の一部をサンプルとしてマスクを作り、パケット番号などのヘッダ部分を覆う。
-したがって、ヘッダ確定 → AEAD → ヘッダ保護の順は入れ替えられない。
+The order cannot be rearranged because the two stages of protection depend on each other's output.
+AEAD encrypts with the packet header as additional authenticated data (AAD), so it cannot seal until the header is finalized.
+Header protection samples part of the ciphertext that AEAD produced to build a mask, then covers header fields such as the packet number.
+Therefore the order — finalize the header → AEAD → header protection — cannot be swapped.
 
-### 受信：wire からアプリケーションまで
+### Receiving: from the wire to the application
 
-受信は送信の逆順を辿る。
+Receiving traces the reverse of sending.
 
 ```mermaid
 sequenceDiagram
@@ -129,45 +129,45 @@ sequenceDiagram
     participant CR as crypto
     participant App as HTTP/3
     IO->>TR: recvfrom
-    TR->>TR: coalesce されたパケットを分割
-    TR->>TR: ヘッダ保護を解除
-    TR->>CR: AEAD open（復号）
-    CR->>TR: 平文フレーム
-    TR->>TR: フレームをパース
-    TR->>TR: STREAM を再結合
-    TR->>App: HTTP/3 / QPACK へ
+    TR->>TR: split coalesced packets
+    TR->>TR: remove header protection
+    TR->>CR: AEAD open (decrypt)
+    CR->>TR: plaintext frames
+    TR->>TR: parse the frames
+    TR->>TR: reassemble STREAM
+    TR->>App: to HTTP/3 / QPACK
 ```
 
-ここでもヘッダ保護を先に剥がす理由がある。
-ヘッダ保護はパケット番号を覆っているため、これを解除しなければパケット番号が読めない。
-パケット番号は AEAD のノンスを組み立てる材料であり、ノンスが定まらなければ復号できない。
-つまり、ヘッダ保護の解除 → パケット番号の確定 → AEAD 復号という依存が、受信側の順序を決める。
+Here too there is a reason to peel off header protection first.
+Header protection covers the packet number, so without removing it the packet number cannot be read.
+The packet number is the material for assembling the AEAD nonce, and without a fixed nonce decryption is impossible.
+In other words, the dependency — remove header protection → fix the packet number → AEAD decrypt — determines the order on the receiving side.
 
-### ハンドシェイク：鍵を作りながら接続を確立する
+### The handshake: establishing the connection while making the keys
 
-ハンドシェイクは、暗号化に使う鍵そのものを作り出す過程である。
+The handshake is the process that produces the very keys used for encryption.
 
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant S as Server
     Note over C,S: INITIAL
-    C->>S: ClientHello（Initial 鍵は DCID 由来）
-    S->>C: ServerHello（key_share）
-    Note over C,S: ECDHE 共有秘密が確定し Handshake 鍵を導出
+    C->>S: ClientHello (Initial keys derived from DCID)
+    S->>C: ServerHello (key_share)
+    Note over C,S: the ECDHE shared secret is fixed, deriving the Handshake keys
     Note over C,S: AUTH
     S->>C: EncryptedExtensions / Certificate / CertificateVerify / Finished
-    Note over C: 証明書署名を検証
+    Note over C: verify the certificate signature
     C->>S: Finished
-    Note over C,S: 1-RTT（アプリケーション）鍵を導出
+    Note over C,S: derive the 1-RTT (application) keys
     Note over C,S: CONFIRMED
     S->>C: HANDSHAKE_DONE
 ```
 
-最初のパケットは、まだ鍵交換が済んでいないのに暗号化しなければならない。
-QUIC はこれを、接続先の宛先接続 ID（DCID）から決まった手順で Initial 鍵を導出することで解く。
-Initial 鍵は秘密ではなく、経路上の誰でも同じ手順で導けるが、最初のパケットを構造化し改竄を検出する役には立つ。
-ServerHello で双方の key_share が揃うと ECDHE 共有秘密が確定し、ここで初めて秘密の Handshake 鍵を導出できる。
-サーバの証明書と署名を検証して相手を認証し、Finished を交換すると、アプリケーションデータ用の 1-RTT 鍵が導出される。
-最後に HANDSHAKE_DONE を受け取ると接続は CONFIRMED に移り、Handshake 鍵は破棄される。
-INITIAL から AUTH を経て CONFIRMED へ至るこの流れは、鍵が無ければ暗号化できないという制約を、ハンドシェイク自身が鍵を生み出すことで解消する過程として読める。
+The first packet must be encrypted even though the key exchange has not yet happened.
+QUIC solves this by deriving the Initial keys through a fixed procedure from the destination connection ID (DCID) of the peer.
+The Initial keys are not secret — anyone on the path can derive them by the same procedure — but they do serve to structure the first packet and detect tampering.
+Once both sides' key_share values are present in ServerHello, the ECDHE shared secret is fixed, and only here can the secret Handshake keys be derived.
+Verifying the server's certificate and signature authenticates the peer, and exchanging Finished derives the 1-RTT keys for application data.
+Finally, receiving HANDSHAKE_DONE moves the connection to CONFIRMED and the Handshake keys are discarded.
+This flow from INITIAL through AUTH to CONFIRMED can be read as the process by which the handshake itself dissolves the constraint that nothing can be encrypted without a key — by producing the keys as it goes.
