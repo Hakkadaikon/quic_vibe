@@ -39,8 +39,11 @@
 static void die(const char *msg);
 
 /* In-memory message store. POST bodies are appended here (newline-separated);
- * GET returns the whole log. ponytail: fixed 8 KiB, in-RAM only — a POST past
- * the cap is silently truncated; persistence/eviction would need a real store. */
+ * GET returns the whole log. Lives outside the connection state on purpose:
+ * re-initing a connection (RFC 9000 7) does NOT clear it, so a POST on one
+ * connection is visible to a GET on a later reconnect.
+ * ponytail: fixed 8 KiB, in-RAM only — a POST past the cap is silently
+ * truncated; persistence/eviction would need a real store. */
 #define HISTORY_MAX 8192
 static u8 g_history[HISTORY_MAX];
 static usz g_history_len;
@@ -340,14 +343,56 @@ static i64 listen_udp(void)
     return fd;
 }
 
-/* Drive one datagram: the first (long header) opens a connection and sends the
- * flight; later (short header) ones step the real-wire loop. */
+/* Equal-length byte compare for two connection IDs. Plain (not constant-time):
+ * this is demo connection routing, not a secret comparison. */
+static int cid_eq(const u8 *a, u8 alen, const u8 *b, u8 blen)
+{
+    usz i;
+    if (alen != blen)
+        return 0;
+    for (i = 0; i < alen; i++)
+        if (a[i] != b[i])
+            return 0;
+    return 1;
+}
+
+/* Self-check for the reconnect routing predicate: same CID is a retransmit,
+ * a differing CID (length or bytes) is a new connection. */
+static void cid_selfcheck(void)
+{
+    static const u8 a[2] = {1, 2}, b[2] = {1, 3}, c[3] = {1, 2, 3};
+    if (!cid_eq(a, 2, a, 2))
+        die("selfcheck: cid_eq same failed\n");
+    if (cid_eq(a, 2, b, 2) || cid_eq(a, 2, c, 3))
+        die("selfcheck: cid_eq diff failed\n");
+}
+
+/* RFC 9000 7: each connection is independent, keyed by its original DCID. A
+ * long-header Initial whose DCID differs from the live connection's ODCID is a
+ * NEW connection (a reconnect or a different client), not a retransmit of the
+ * current one (curl resends its Initial under the SAME DCID until ServerHello
+ * lands). Returns 1 to (re)open as a fresh connection.
+ * ponytail: one connection at a time — reconnects are handled in arrival order,
+ * not concurrent peers. A per-peer/per-DCID state table is out of scope. */
+static int is_new_initial(int up, quic_server *s, u8 *dg, usz len)
+{
+    quic_header h;
+    if (!valid_initial(dg, len) || !quic_header_parse(dg, len, &h))
+        return 0;
+    if (!up)
+        return 1;
+    return !cid_eq(h.dcid, h.dcid_len, s->sdrv.odcid, s->sdrv.odcid_len);
+}
+
+/* Drive one datagram: a new Initial (re)opens a connection and sends the flight;
+ * any other datagram (short header, or a same-DCID Initial retransmit) steps the
+ * live real-wire loop. */
 static void serve(i64 fd, const quic_sockaddr_in *peer, quic_server *s,
                   quic_srvloop *l, int *up, u8 *dg, usz len)
 {
-    if (!*up)
+    if (is_new_initial(*up, s, dg, len))
         *up = on_initial(fd, peer, s, l, dg, len);
-    else
+    else if (*up)
         on_step(fd, peer, s, l, dg, len);
 }
 
@@ -363,6 +408,7 @@ __attribute__((force_align_arg_pointer)) void _start(void)
     u8 buf[2048];
     int up = 0;
     app_selfcheck();
+    cid_selfcheck();
     fd = listen_udp();
     for (;;) {
         i64 r = quic_udp_recvfrom(fd, buf, sizeof buf, &peer);
