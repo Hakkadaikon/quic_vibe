@@ -15,6 +15,26 @@ typedef u64 p256_fe[4];
 extern const p256_fe quic_p256_p;
 extern const p256_fe quic_p256_n;
 
+/* Montgomery parameters for one odd modulus m (R = 2^256): n0inv = -m[0]^-1 mod
+ * 2^64, rr = R^2 mod m (maps to Montgomery form), one = R mod m (Montgomery 1).
+ * Lets mul/inverse over m avoid the slow long-division reducer. */
+typedef struct {
+  p256_fe m;
+  p256_fe rr;
+  p256_fe one;
+  u64     n0inv;
+} quic_mont;
+
+/* Precomputed contexts for the field prime p and the group order n. */
+extern const quic_mont quic_p256_mont_p;
+extern const quic_mont quic_p256_mont_n;
+
+/* r = a * b * R^-1 mod m (Montgomery product); r = a^-1 mod m (Fermat over
+ * Montgomery mul). a,b < m. */
+void quic_mont_mul(
+    p256_fe r, const p256_fe a, const p256_fe b, const quic_mont *mont);
+void quic_mont_inv(p256_fe r, const p256_fe a, const quic_mont *mont);
+
 void quic_fp_set(p256_fe r, const p256_fe a);
 int  quic_fp_eq(const p256_fe a, const p256_fe b);
 int  quic_fp_is_zero(const p256_fe a);

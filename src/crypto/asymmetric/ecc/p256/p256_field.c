@@ -8,6 +8,25 @@ const p256_fe quic_p256_n = {
     0xf3b9cac2fc632551ULL, 0xbce6faada7179e84ULL, 0xffffffffffffffffULL,
     0xffffffff00000000ULL};
 
+/* Montgomery contexts (R = 2^256). Constants precomputed and cross-checked:
+ * n0inv = -m[0]^-1 mod 2^64, rr = R^2 mod m, one = R mod m. */
+const quic_mont quic_p256_mont_p = {
+    {0xffffffffffffffffULL, 0x00000000ffffffffULL, 0x0000000000000000ULL,
+     0xffffffff00000001ULL},
+    {0x0000000000000003ULL, 0xfffffffbffffffffULL, 0xfffffffffffffffeULL,
+     0x00000004fffffffdULL},
+    {0x0000000000000001ULL, 0xffffffff00000000ULL, 0xffffffffffffffffULL,
+     0x00000000fffffffeULL},
+    0x0000000000000001ULL};
+const quic_mont quic_p256_mont_n = {
+    {0xf3b9cac2fc632551ULL, 0xbce6faada7179e84ULL, 0xffffffffffffffffULL,
+     0xffffffff00000000ULL},
+    {0x83244c95be79eea2ULL, 0x4699799c49bd6fa6ULL, 0x2845b2392b6bec59ULL,
+     0x66e12d94f3d95620ULL},
+    {0x0c46353d039cdaafULL, 0x4319055258e8617bULL, 0x0000000000000000ULL,
+     0x00000000ffffffffULL},
+    0xccd1c8aaee00bc4fULL};
+
 void quic_fp_set(p256_fe r, const p256_fe a) {
   for (usz i = 0; i < 4; i++) r[i] = a[i];
 }
@@ -268,6 +287,85 @@ void quic_fp_inv(p256_fe r, const p256_fe a, const p256_fe m) {
   /* e = m - 2 in plain integers (m >= 3, no wrap). */
   fe_sub_raw(e, m, two);
   fp_pow(r, a, e, m);
+}
+
+/* --- Montgomery arithmetic over an arbitrary odd modulus -----------------
+ * The generic reducer above is a bit-at-a-time long division; for the group
+ * order n (no Solinas special form) a Fermat inverse over it costs ~91ms and
+ * dominates ECDSA signing. CIOS Montgomery multiplication replaces the division
+ * with shifts/adds: one mont_mul is ~the cost of a schoolbook multiply, so an
+ * inverse over n drops to a few ms. Constants (mont->n0inv = -m[0]^-1 mod 2^64,
+ * mont->rr = R^2 mod m, R = 2^256) are precomputed per modulus. */
+
+/* One CIOS round: t += a[i]*b, then fold in m to clear the low limb. t has 5
+ * active limbs (t[0..4]); the function shifts the result down by one limb. */
+static void cios_mul_row(u64 t[6], u64 ai, const p256_fe b) {
+  unsigned __int128 c = 0;
+  for (usz j = 0; j < 4; j++) {
+    c += (unsigned __int128)ai * b[j] + t[j];
+    t[j] = (u64)c;
+    c >>= 64;
+  }
+  c += t[4];
+  t[4] = (u64)c;
+  t[5] = (u64)(c >> 64);
+}
+
+static void cios_reduce_row(u64 t[6], const quic_mont *mont) {
+  u64               u = t[0] * mont->n0inv;
+  unsigned __int128 c = (unsigned __int128)u * mont->m[0] + t[0];
+  c >>= 64;
+  for (usz j = 1; j < 4; j++) {
+    c += (unsigned __int128)u * mont->m[j] + t[j];
+    t[j - 1] = (u64)c;
+    c >>= 64;
+  }
+  c += t[4];
+  t[3] = (u64)c;
+  t[4] = t[5] + (u64)(c >> 64);
+  t[5] = 0;
+}
+
+/* 1 if the CIOS result t (low 4 limbs + overflow t[4]) is >= m. */
+static int mont_needs_sub(const u64 t[6], const p256_fe m) {
+  return t[4] != 0 || fe_ge(t, m);
+}
+
+/* Move the 4 low limbs of t into r, conditionally subtracting m once so r < m. */
+static void mont_finalize(p256_fe r, const u64 t[6], const p256_fe m) {
+  int sub = mont_needs_sub(t, m);
+  for (usz i = 0; i < 4; i++) r[i] = t[i];
+  if (sub) fe_sub_raw(r, r, m);
+}
+
+/* r = a * b * R^-1 mod m (Montgomery product). a,b < m. */
+void quic_mont_mul(
+    p256_fe r, const p256_fe a, const p256_fe b, const quic_mont *mont) {
+  u64 t[6] = {0, 0, 0, 0, 0, 0};
+  for (usz i = 0; i < 4; i++) {
+    cios_mul_row(t, a[i], b);
+    cios_reduce_row(t, mont);
+  }
+  mont_finalize(r, t, mont->m);
+}
+
+/* from Montgomery form: r = a * R^-1 mod m = mont_mul(a, 1). */
+static void mont_from(p256_fe r, const p256_fe a, const quic_mont *mont) {
+  p256_fe one = {1, 0, 0, 0};
+  quic_mont_mul(r, a, one, mont);
+}
+
+/* a^(m-2) mod m via Montgomery mul (Fermat inverse). */
+void quic_mont_inv(p256_fe r, const p256_fe a, const quic_mont *mont) {
+  p256_fe e, base, acc, two = {2, 0, 0, 0};
+  fe_sub_raw(e, mont->m, two);            /* exponent m-2 */
+  quic_mont_mul(base, a, mont->rr, mont); /* base = a*R mod m (to Montgomery) */
+  quic_fp_set(acc, mont->one);            /* acc = R mod m (Montgomery one) */
+  for (usz bit = 0; bit < 256; bit++) {
+    if ((e[bit / 64] >> (bit & 63)) & 1) quic_mont_mul(acc, acc, base, mont);
+    quic_mont_mul(base, base, base, mont);
+  }
+  mont_from(r, acc, mont); /* back from Montgomery form */
 }
 
 /* a^(p-2) mod p via the fast Solinas mul/sqr: Fermat inverse specialised to p.
