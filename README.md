@@ -16,7 +16,6 @@ The only thing it leaves to the kernel is raw UDP I/O; packet framing, encryptio
 ## Quick start
 
 ```sh
-# compile each domain freestanding
 just build
 
 # Run the sample
