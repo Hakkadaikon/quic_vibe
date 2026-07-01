@@ -68,19 +68,20 @@ static u64 hs_largest_pn(const quic_srvloop *l) {
   return l->hs_rx_seen ? l->hs_rx_pn : 0;
 }
 
-/* RFC 9000 13.2.1: after a Handshake packet is opened (header protection removed
- * in place), re-parse its long header for the packet-number offset and record
- * the recovered PN. The client Finished does not always arrive at PN 0 (curl
- * leads with an ACK-only Handshake packet), so a fixed ACK of 0 leaves the
- * Finished unacknowledged and the client PTO-retransmits it for seconds. */
+/* RFC 9000 13.2.1: after a Handshake packet is opened (header protection
+ * removed in place), re-parse its long header for the packet-number offset and
+ * record the recovered PN. The client Finished does not always arrive at PN 0
+ * (curl leads with an ACK-only Handshake packet), so a fixed ACK of 0 leaves
+ * the Finished unacknowledged and the client PTO-retransmits it for seconds. */
 static void note_hs_rx(quic_srvloop *l, int level, const u8 *pkt, usz len) {
   const u8 *dcid, *scid, *token;
   u8        dcl, scl;
   usz       tkl, pn_off;
   u64       length;
   if (level != QUIC_LEVEL_HANDSHAKE) return;
-  if (!quic_lhdr_parse(pkt, len, 0, &dcid, &dcl, &scid, &scl, &token, &tkl,
-                       &length, &pn_off))
+  if (!quic_lhdr_parse(
+          pkt, len, 0, &dcid, &dcl, &scid, &scl, &token, &tkl, &length,
+          &pn_off))
     return;
   l->hs_rx_pn = quic_pnum_decode(
       pkt + pn_off, quic_lhdr_pn_len(pkt[0]), hs_largest_pn(l));

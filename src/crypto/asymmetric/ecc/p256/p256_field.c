@@ -178,7 +178,9 @@ void quic_fp_sqr(p256_fe r, const p256_fe a, const p256_fe m) {
  * Correctness is pinned by a differential test against the generic reducer. */
 
 /* The c-th 32-bit word of the 512-bit accumulator (c in 0..15). */
-static u64 w32(const u64 w[8], usz c) { return (w[c / 2] >> (32 * (c & 1))) & 0xffffffffULL; }
+static u64 w32(const u64 w[8], usz c) {
+  return (w[c / 2] >> (32 * (c & 1))) & 0xffffffffULL;
+}
 
 /* Assemble a 256-bit value from eight 32-bit words, e[0] least significant. */
 static void from_words(p256_fe t, const u64 e[8]) {
@@ -186,18 +188,19 @@ static void from_words(p256_fe t, const u64 e[8]) {
 }
 
 /* The nine Solinas terms s1..s9 as word-index tables into c0..c15; 0xff marks a
- * zero word. Rows 0..3 are added, rows 4..8 (s5..s9) are handled by the caller's
- * sign vector. Order of the eight entries is least-significant word first. */
+ * zero word. Rows 0..3 are added, rows 4..8 (s5..s9) are handled by the
+ * caller's sign vector. Order of the eight entries is least-significant word
+ * first. */
 static const u8 P256_TERMS[9][8] = {
-    {0, 1, 2, 3, 4, 5, 6, 7},                         /* s1 */
-    {0xff, 0xff, 0xff, 11, 12, 13, 14, 15},           /* s2 (doubled) */
-    {0xff, 0xff, 0xff, 12, 13, 14, 15, 0xff},         /* s3 (doubled) */
-    {8, 9, 10, 0xff, 0xff, 0xff, 14, 15},             /* s4 */
-    {9, 10, 11, 13, 14, 15, 13, 8},                   /* s5 */
-    {11, 12, 13, 0xff, 0xff, 0xff, 8, 10},            /* s6 (subtract) */
-    {12, 13, 14, 15, 0xff, 0xff, 9, 11},              /* s7 (subtract) */
-    {13, 14, 15, 8, 9, 10, 0xff, 12},                 /* s8 (subtract) */
-    {14, 15, 0xff, 9, 10, 11, 0xff, 13}};             /* s9 (subtract) */
+    {0, 1, 2, 3, 4, 5, 6, 7},                 /* s1 */
+    {0xff, 0xff, 0xff, 11, 12, 13, 14, 15},   /* s2 (doubled) */
+    {0xff, 0xff, 0xff, 12, 13, 14, 15, 0xff}, /* s3 (doubled) */
+    {8, 9, 10, 0xff, 0xff, 0xff, 14, 15},     /* s4 */
+    {9, 10, 11, 13, 14, 15, 13, 8},           /* s5 */
+    {11, 12, 13, 0xff, 0xff, 0xff, 8, 10},    /* s6 (subtract) */
+    {12, 13, 14, 15, 0xff, 0xff, 9, 11},      /* s7 (subtract) */
+    {13, 14, 15, 8, 9, 10, 0xff, 12},         /* s8 (subtract) */
+    {14, 15, 0xff, 9, 10, 11, 0xff, 13}};     /* s9 (subtract) */
 
 /* A 256-bit term is < 2^256 < 2p, so at most one subtraction of p brings it
  * below p (the precondition of quic_fp_add / quic_fp_sub). */
@@ -229,10 +232,16 @@ static void fp_sub_p(p256_fe r, const p256_fe t) {
 static void reduce_add_half(p256_fe r, const u64 w[8]) {
   p256_fe t;
   build_term(r, w, 0); /* s1 */
-  build_term(t, w, 1); fp_add_p(r, t); fp_add_p(r, t); /* 2*s2 */
-  build_term(t, w, 2); fp_add_p(r, t); fp_add_p(r, t); /* 2*s3 */
-  build_term(t, w, 3); fp_add_p(r, t);                 /* s4 */
-  build_term(t, w, 4); fp_add_p(r, t);                 /* s5 */
+  build_term(t, w, 1);
+  fp_add_p(r, t);
+  fp_add_p(r, t); /* 2*s2 */
+  build_term(t, w, 2);
+  fp_add_p(r, t);
+  fp_add_p(r, t); /* 2*s3 */
+  build_term(t, w, 3);
+  fp_add_p(r, t); /* s4 */
+  build_term(t, w, 4);
+  fp_add_p(r, t); /* s5 */
 }
 
 /* r -= s6 + s7 + s8 + s9 (the subtractive half). */
@@ -331,7 +340,8 @@ static int mont_needs_sub(const u64 t[6], const p256_fe m) {
   return t[4] != 0 || fe_ge(t, m);
 }
 
-/* Move the 4 low limbs of t into r, conditionally subtracting m once so r < m. */
+/* Move the 4 low limbs of t into r, conditionally subtracting m once so r < m.
+ */
 static void mont_finalize(p256_fe r, const u64 t[6], const p256_fe m) {
   int sub = mont_needs_sub(t, m);
   for (usz i = 0; i < 4; i++) r[i] = t[i];

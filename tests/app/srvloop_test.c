@@ -161,8 +161,8 @@ static usz client_seal_handshake(
 }
 
 /* Client role: seal a Handshake packet at an explicit packet number. curl does
- * not send its Finished at PN 0 — it leads with an ACK-only Handshake packet, so
- * the Finished lands at a later PN. */
+ * not send its Finished at PN 0 — it leads with an ACK-only Handshake packet,
+ * so the Finished lands at a later PN. */
 static usz client_seal_handshake_pn(
     struct lp_fix *f, u64 pn, const u8 *msg, usz mlen, u8 *pkt, usz cap) {
   const quic_initial_keys *k;
@@ -478,7 +478,8 @@ static void test_srvloop_handshake_ack_tracks_pn(void) {
   clen = client_seal_handshake_pn(
       &f, 3, f.cli_fin, f.cli_fin_len, cpkt, sizeof cpkt);
   CHECK(
-      quic_srvloop_step(&f.l, &f.s, cpkt, clen, out, sizeof out, &out_len) == 1);
+      quic_srvloop_step(&f.l, &f.s, cpkt, clen, out, sizeof out, &out_len) ==
+      1);
   np = quic_udploop_split(out, out_len, pkts, offs, lens, 4);
   CHECK(np == 2);
   CHECK((out[offs[0]] & 0x80) != 0); /* slice 0: long-header Handshake ACK */
