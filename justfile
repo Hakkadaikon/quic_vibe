@@ -8,7 +8,8 @@ testflags := "-Wall -Wextra -Werror -O2 -Isrc -Itests"
 # fmt normalizes sources, compile-all proves libc independence, lint runs the
 # CERT C / bug-finding checks. Run as one pipeline so a normal `just build`
 # keeps sources tidy and surfaces lint findings.
-build: fmt compile lint
+#build: fmt compile lint
+build: fmt ninja lint
 
 # compile every domain freestanding (proves libc independence) into one .o
 # sources are auto-discovered; adding a src/**.c file needs no edit here
