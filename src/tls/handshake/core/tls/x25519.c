@@ -149,17 +149,31 @@ static void x25519_carry_pass(fe r) {
   r[0] += c * 19;
 }
 
-/* Fully reduce h mod p and store 32 little-endian bytes. */
+/* Final carry after the conditional +19: propagate carries and DISCARD the
+ * 2^255 overflow bit (that bit is exactly the p we conditionally subtracted).
+ * Folding it back by 19 (as the weak pass does) would re-add p and leave the
+ * result 19 short — the bug that made r==p reduce to 19 instead of 0. */
+static void x25519_carry_final(fe r) {
+  u64 c = 0;
+  for (usz i = 0; i < 5; i++) {
+    r[i] += c;
+    c = r[i] >> 51;
+    r[i] &= MASK51;
+  }
+}
+
+/* Fully reduce h mod p and store 32 little-endian bytes. h's limbs come in
+ * below 2^52 (weak-reduced), so two weak passes bring r into [0, 2p). */
 static void x25519_fe_tobytes(u8 *s, const fe h) {
   fe  r;
   u64 q;
   x25519_fe_copy(r, h);
   x25519_carry_pass(r);
   x25519_carry_pass(r);
-  q = (r[0] + 19) >> 51; /* would carrying +19 overflow? */
+  q = (r[0] + 19) >> 51; /* q==1 iff r >= p (adding 19 overflows 2^255) */
   for (usz i = 1; i < 5; i++) q = (r[i] + q) >> 51;
-  r[0] += 19 * q; /* conditionally subtract p */
-  x25519_carry_pass(r);
+  r[0] += 19 * q;        /* if r >= p, +19 pushes past 2^255 = subtract p */
+  x25519_carry_final(r); /* drop the 2^255 carry instead of folding it */
   x25519_store_reduced(s, r);
 }
 
@@ -213,7 +227,15 @@ static void ladder(fe x2, fe z2, const u8 e[32], const fe x1) {
   fe_cswap(z2, z3, swap);
 }
 
-void quic_x25519(
+/* RFC 7748 6.1: a low-order point yields an all-zero shared secret. Detect it
+ * in constant time (OR-accumulate all bytes, branch only on the fold). */
+static int x25519_nonzero(const u8 out[32]) {
+  u8 d = 0;
+  for (usz i = 0; i < 32; i++) d |= out[i];
+  return d != 0;
+}
+
+int quic_x25519(
     u8       out[QUIC_X25519_LEN],
     const u8 scalar[QUIC_X25519_LEN],
     const u8 point[QUIC_X25519_LEN]) {
@@ -225,10 +247,11 @@ void quic_x25519(
   x25519_fe_invert(zinv, z2);
   x25519_fe_mul(x2, x2, zinv);
   x25519_fe_tobytes(out, x2);
+  return x25519_nonzero(out);
 }
 
-void quic_x25519_base(
+int quic_x25519_base(
     u8 out[QUIC_X25519_LEN], const u8 scalar[QUIC_X25519_LEN]) {
   u8 base[32] = {9};
-  quic_x25519(out, scalar, base);
+  return quic_x25519(out, scalar, base);
 }

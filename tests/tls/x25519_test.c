@@ -19,7 +19,7 @@ static void test_x25519_rfc_v1(void) {
       point);
   hb32(
       "c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552", want);
-  quic_x25519(out, scalar, point);
+  CHECK(quic_x25519(out, scalar, point) == 1);
   for (usz i = 0; i < 32; i++) CHECK(out[i] == want[i]);
 }
 
@@ -34,8 +34,22 @@ static void test_x25519_rfc_v2(void) {
       point);
   hb32(
       "95cbde9476e8907d7aade45cb4b873f88b595a68799fa152e6f8f7647aac7957", want);
-  quic_x25519(out, scalar, point);
+  CHECK(quic_x25519(out, scalar, point) == 1);
   for (usz i = 0; i < 32; i++) CHECK(out[i] == want[i]);
+}
+
+/* RFC 7748 6.1: a low-order point yields an all-zero shared secret, which must
+ * be rejected (a non-contributory key exchange). u=0 and u=1 are order-1/2
+ * points; an honest ladder sends them to zero, and quic_x25519 returns 0. */
+static void test_x25519_low_order_rejected(void) {
+  u8 scalar[32] = {0}, out[32], low_order[32] = {0};
+  scalar[0]  = 5;
+  scalar[31] = 0x40;
+  CHECK(quic_x25519(out, scalar, low_order) == 0); /* u = 0 */
+  for (usz i = 0; i < 32; i++) CHECK(out[i] == 0);
+  low_order[0] = 1;
+  CHECK(quic_x25519(out, scalar, low_order) == 0); /* u = 1 */
+  for (usz i = 0; i < 32; i++) CHECK(out[i] == 0);
 }
 
 /* An ECDHE exchange agrees: pub_a = a*G, pub_b = b*G, a*pub_b == b*pub_a. */
@@ -55,5 +69,6 @@ static void test_x25519_ecdhe(void) {
 void test_x25519(void) {
   test_x25519_rfc_v1();
   test_x25519_rfc_v2();
+  test_x25519_low_order_rejected();
   test_x25519_ecdhe();
 }
