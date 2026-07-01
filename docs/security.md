@@ -1,6 +1,6 @@
 # Security
 
-The security properties `quic_vibe` enforces, organized by subsystem. Each item
+The security properties `wired` enforces, organized by subsystem. Each item
 states a concrete guarantee and, where useful, the RFC clause and the source
 that implements it. This is a description of what the code checks — not a threat
 model or an operator hardening guide.

@@ -1,12 +1,12 @@
 # Development
 
-How to understand, navigate, and extend `quic_vibe`: the design philosophy, the
+How to understand, navigate, and extend `wired`: the design philosophy, the
 layered architecture, the build system, the constraints every change must hold,
 and the workflow for adding a domain.
 
 ## Philosophy
 
-`quic_vibe` is a QUIC + HTTP/3 stack built under three self-imposed disciplines:
+`wired` is a QUIC + HTTP/3 stack built under three self-imposed disciplines:
 
 - **libc-free, freestanding.** Every production source compiles under
   `-ffreestanding -nostdlib`. The only thing `src/` may include is

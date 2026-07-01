@@ -1,6 +1,6 @@
-# quic_vibe
+# wired
 
-quic_vibe is a libc-free SDK for QUIC / TLS 1.3 / HTTP/3.
+wired is a libc-free SDK for QUIC / TLS 1.3 / HTTP/3.
 It calls x86_64 Linux syscalls directly, supplies its own `_start`, and uses neither the standard library nor any external dependency.
 The only thing it leaves to the kernel is raw UDP I/O; packet framing, encryption, loss recovery, congestion control, streams, and HTTP/3 are all implemented in user space.
 

@@ -1,6 +1,6 @@
 # Usage
 
-How to build `quic_vibe`, run its tests, and use the library.
+How to build `wired`, run its tests, and use the library.
 
 ## Toolchain
 
@@ -32,7 +32,7 @@ just check   # ccn + test (use this before committing)
 
 ## What this SDK does
 
-`quic_vibe` is a libc-free QUIC / TLS 1.3 toolkit. The in-memory path derives
+`wired` is a libc-free QUIC / TLS 1.3 toolkit. The in-memory path derives
 keys, runs a real X25519 ECDHE TLS 1.3 handshake, protects and opens QUIC
 packets, and verifies the handshake transcript — without touching a socket. A
 separate socket-facing path (`connrunner`) binds the steady-state loop to a real

@@ -1,6 +1,6 @@
 # Architecture and Data Flow
 
-This chapter centers on how much quic_vibe does in user space and what it leaves to the kernel.
+This chapter centers on how much wired does in user space and what it leaves to the kernel.
 The goal is for someone reading QUIC for the first time to grasp why each layer sits in the order it does, and why it is placed where it is.
 
 ## The boundary between user space and the kernel
@@ -9,7 +9,7 @@ In TCP, the kernel owns retransmission, ordering, congestion control, and all of
 The application only touches the two ends of a byte stream, so a better congestion controller or a new loss-recovery scheme cannot reach it until the kernel itself is updated.
 QUIC removed that constraint by standing on top of UDP.
 Because UDP only carries datagrams — no reliability, no ordering, no encryption — all of those concerns can be pulled into the application.
-quic_vibe pushes this to the limit and shows the kernel nothing of QUIC's semantics.
+wired pushes this to the limit and shows the kernel nothing of QUIC's semantics.
 
 What remains in the kernel is only the carriage of already-encrypted bytes.
 The place that actually issues a syscall is concentrated in a single inline-assembly function called `syscall6`, and every other piece of code reaches the kernel only through that function.
@@ -21,7 +21,7 @@ The test path that merely round-trips bytes through memory (the memlink describe
 
 ```mermaid
 flowchart TB
-    subgraph US["User space (quic_vibe)"]
+    subgraph US["User space (wired)"]
         APP["app: HTTP/3 / QPACK"]
         TLS["tls: TLS 1.3 handshake / key schedule"]
         TRANSPORT["transport: packet protection / loss recovery / congestion control / streams"]
