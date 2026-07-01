@@ -45,7 +45,7 @@ int quic_hkdf_expand(
     usz       info_len,
     u8       *okm,
     usz       len) {
-  u8  t[QUIC_SHA256_DIGEST];
+  u8  t[QUIC_SHA256_DIGEST] = {0};
   usz off = 0, prev_len = 0;
   u8  counter = 1;
   if (!expand_ok(info_len, len)) return 0;
