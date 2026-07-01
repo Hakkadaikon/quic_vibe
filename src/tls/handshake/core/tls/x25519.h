@@ -18,7 +18,6 @@ int quic_x25519(
 
 /* out = scalar * base point (9). Produces an X25519 public key.
  * Returns 1 (a public key is never all-zero); typed int for a uniform API. */
-int quic_x25519_base(
-    u8 out[QUIC_X25519_LEN], const u8 scalar[QUIC_X25519_LEN]);
+int quic_x25519_base(u8 out[QUIC_X25519_LEN], const u8 scalar[QUIC_X25519_LEN]);
 
 #endif
