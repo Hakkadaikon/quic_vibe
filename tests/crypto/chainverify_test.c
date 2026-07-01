@@ -38,9 +38,25 @@ static void test_tampered_tbs_fails(void) {
           sizeof(quic_castore_root_der)) == 0);
 }
 
+/* RFC 5280 4.1.1.2: the inner tbsCertificate.signatureAlgorithm must equal the
+ * outer signatureAlgorithm. Flip one byte of the OUTER sigAlg OID only (index
+ * 331, the 0x2a of the final 30 0a 06 08 2a 86 48 ce 3d 04 03 02 block). That
+ * byte is outside the tbsCertificate, so the signature still verifies -- only
+ * the inner/outer mismatch can cause rejection. */
+static void test_sigalg_mismatch_fails(void) {
+  u8 leaf[sizeof(quic_castore_leaf_der)];
+  for (usz i = 0; i < sizeof(leaf); i++) leaf[i] = quic_castore_leaf_der[i];
+  leaf[331] ^= 0x01; /* outer sigAlg OID value byte */
+  CHECK(
+      quic_castore_verify_signed_by(
+          leaf, sizeof(leaf), quic_castore_root_der,
+          sizeof(quic_castore_root_der)) == 0);
+}
+
 void test_chainverify(void) {
   test_leaf_signed_by_root();
   test_root_self_signature();
   test_leaf_not_signed_by_leaf();
   test_tampered_tbs_fails();
+  test_sigalg_mismatch_fails();
 }

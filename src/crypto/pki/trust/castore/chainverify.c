@@ -2,6 +2,8 @@
 
 #include "crypto/asymmetric/ecc/p256/ecdsa_verify.h"
 #include "crypto/asymmetric/rsa/rsa_verify.h"
+#include "crypto/pki/cert/tbscert/fields.h"
+#include "crypto/pki/cert/tbscert/sigalg.h"
 #include "crypto/pki/encoding/asn1/der.h"
 #include "crypto/pki/encoding/asn1/derseq.h"
 #include "crypto/pki/encoding/x509/ec_pubkey.h"
@@ -129,9 +131,21 @@ static int verify_by_key(
   return 0;
 }
 
-/* The signed bytes of cert: its tbs hash and its raw signature. */
+/* RFC 5280 4.1.1.2. The inner tbsCertificate.signatureAlgorithm OID must equal
+ * the outer signatureAlgorithm OID, or the certificate is malformed. */
+static int sigalg_consistent(const u8 *cert, usz cert_len) {
+  quic_x509    c;
+  quic_tbscert t;
+  if (!quic_x509_parse(cert, cert_len, &c)) return 0;
+  if (!quic_tbscert_parse(c.tbs, c.tbs_len, &t)) return 0;
+  return quic_tbscert_sigalg_matches(&t, c.sig_alg_oid, c.sig_alg_len);
+}
+
+/* The signed bytes of cert: consistent sig algs, its tbs hash, and its raw
+ * signature. */
 static int cert_signed(
     const u8 *cert, usz cert_len, u8 hash[32], const u8 **sig, usz *sig_len) {
+  if (!sigalg_consistent(cert, cert_len)) return 0;
   if (!tbs_hash(cert, cert_len, hash)) return 0;
   return cert_sig(cert, cert_len, sig, sig_len);
 }
