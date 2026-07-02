@@ -8,9 +8,12 @@
 #include "crypto/pki/encoding/asn1/derseq.h"
 #include "crypto/pki/encoding/x509/ec_pubkey.h"
 #include "crypto/pki/encoding/x509/rsa_pubkey.h"
+#include "crypto/pki/encoding/x509/sigalgoid.h"
 #include "crypto/pki/encoding/x509/spki.h"
 #include "crypto/pki/encoding/x509/x509.h"
 #include "crypto/symmetric/hash/hash/sha256.h"
+#include "crypto/symmetric/hash/hash/sha384.h"
+#include "crypto/symmetric/hash/hash/sha512.h"
 
 /* View issuer_cert's subjectPublicKey BIT STRING value and its algorithm OID.
  */
@@ -26,11 +29,48 @@ static int issuer_key(
   return quic_x509_public_key(c.tbs, c.tbs_len, alg, alg_len, key, key_len);
 }
 
-/* RFC 5280 6.1.3. SHA-256 of cert's tbsCertificate (the signed bytes). */
-static int tbs_hash(const u8 *cert, usz cert_len, u8 hash[32]) {
-  quic_x509 c;
-  if (!quic_x509_parse(cert, cert_len, &c)) return 0;
-  quic_sha256(c.tbs, c.tbs_len, hash);
+/* Digest dispatch: hash kind -> length and function. */
+typedef void (*chv_hash_fn)(const u8 *, usz, u8 *);
+static const struct {
+  u8          kind;
+  usz         len;
+  chv_hash_fn fn;
+} chv_hashes[] = {
+    {QUIC_X509_HASH_SHA256, 32, quic_sha256},
+    {QUIC_X509_HASH_SHA384, 48, quic_sha384},
+    {QUIC_X509_HASH_SHA512, 64, quic_sha512},
+};
+
+static int chv_hash_select(u8 kind, usz *hlen, chv_hash_fn *fn) {
+  for (usz i = 0; i < sizeof(chv_hashes) / sizeof(chv_hashes[0]); i++)
+    if (chv_hashes[i].kind == kind) {
+      *hlen = chv_hashes[i].len;
+      *fn   = chv_hashes[i].fn;
+      return 1;
+    }
+  return 0;
+}
+
+/* Parse the cert and require its outer sigAlg to be allowlisted. */
+static int chv_sigalg(
+    const u8 *cert, usz cert_len, quic_x509 *c, quic_x509_sigalg *sa) {
+  if (!quic_x509_parse(cert, cert_len, c)) return 0;
+  return quic_x509_sigalg_lookup(c->sig_alg_oid, c->sig_alg_len, sa);
+}
+
+/* RFC 5280 6.1.3. Digest cert's tbsCertificate with the hash its own
+ * signatureAlgorithm names (fail closed on unlisted algorithms). */
+static int tbs_hash(
+    const u8         *cert,
+    usz               cert_len,
+    quic_x509_sigalg *sa,
+    u8                hash[64],
+    usz              *hash_len) {
+  quic_x509   c;
+  chv_hash_fn fn;
+  if (!chv_sigalg(cert, cert_len, &c, sa)) return 0;
+  if (!chv_hash_select(sa->hash_kind, hash_len, &fn)) return 0;
+  fn(c.tbs, c.tbs_len, hash);
   return 1;
 }
 
@@ -99,36 +139,78 @@ static int chv_ecdsa_split(const u8 *sig, usz sig_len, u8 r[32], u8 s[32]) {
   return chv_copy_int32(&c, s);
 }
 
+/* FIPS 186-4 6.4: a digest wider than the P-256 order uses its leftmost 32
+ * bytes (a 32-byte digest is copied whole). */
+static void chv_hash_to_scalar32(const u8 *hash, u8 h32[32]) {
+  for (usz i = 0; i < 32; i++) h32[i] = hash[i];
+}
+
 static int chv_verify_ecdsa(
-    const u8 *key, usz key_len, const u8 *sig, usz sig_len, const u8 hash[32]) {
-  u8 x[32], y[32], r[32], s[32];
+    const u8 *key, usz key_len, const u8 *sig, usz sig_len, const u8 *hash) {
+  u8 x[32], y[32], r[32], s[32], h32[32];
   if (!quic_x509_ec_pubkey(key, key_len, x, y)) return 0;
   if (!chv_ecdsa_split(sig, sig_len, r, s)) return 0;
-  return quic_ecdsa_p256_verify(x, y, r, s, hash);
+  chv_hash_to_scalar32(hash, h32);
+  return quic_ecdsa_p256_verify(x, y, r, s, h32);
 }
 
 static int chv_verify_rsa(
-    const u8 *key, usz key_len, const u8 *sig, usz sig_len, const u8 hash[32]) {
+    const u8 *key,
+    usz       key_len,
+    const u8 *sig,
+    usz       sig_len,
+    const u8 *hash,
+    usz       hash_len) {
   const u8 *n, *e;
   usz       n_len, e_len;
   if (!quic_x509_rsa_pubkey(key, key_len, &n, &n_len, &e, &e_len)) return 0;
-  return quic_rsa_pkcs1_verify(n, n_len, sig, sig_len, hash, 32);
+  return quic_rsa_pkcs1_verify(
+      n, n_len, e, e_len, sig, sig_len, hash, hash_len);
 }
 
-/* RFC 5280 6.1.3. Dispatch on the issuer key type. */
-static int verify_by_key(
+/* The issuer SPKI must be an EC key when the sigAlg says ECDSA. */
+static int verify_ecdsa_key(
     const u8 *alg,
     usz       alg_len,
     const u8 *key,
     usz       key_len,
     const u8 *sig,
     usz       sig_len,
-    const u8  hash[32]) {
-  if (quic_x509_is_ec(alg, alg_len))
-    return chv_verify_ecdsa(key, key_len, sig, sig_len, hash);
-  if (quic_x509_is_rsa(alg, alg_len))
-    return chv_verify_rsa(key, key_len, sig, sig_len, hash);
-  return 0;
+    const u8 *hash) {
+  return quic_x509_is_ec(alg, alg_len) &&
+         chv_verify_ecdsa(key, key_len, sig, sig_len, hash);
+}
+
+/* The issuer SPKI must be an RSA key when the sigAlg says PKCS#1. */
+static int verify_rsa_key(
+    const u8 *alg,
+    usz       alg_len,
+    const u8 *key,
+    usz       key_len,
+    const u8 *sig,
+    usz       sig_len,
+    const u8 *hash,
+    usz       hash_len) {
+  return quic_x509_is_rsa(alg, alg_len) &&
+         chv_verify_rsa(key, key_len, sig, sig_len, hash, hash_len);
+}
+
+/* RFC 5280 6.1.3. Dispatch on the sigAlg's key kind, cross-checked against
+ * the issuer's actual SPKI key type. */
+static int verify_by_key(
+    const quic_x509_sigalg *sa,
+    const u8               *alg,
+    usz                     alg_len,
+    const u8               *key,
+    usz                     key_len,
+    const u8               *sig,
+    usz                     sig_len,
+    const u8               *hash,
+    usz                     hash_len) {
+  if (sa->key_kind == QUIC_X509_SIG_ECDSA)
+    return verify_ecdsa_key(alg, alg_len, key, key_len, sig, sig_len, hash);
+  return verify_rsa_key(
+      alg, alg_len, key, key_len, sig, sig_len, hash, hash_len);
 }
 
 /* RFC 5280 4.1.1.2. The inner tbsCertificate.signatureAlgorithm OID must equal
@@ -141,22 +223,31 @@ static int sigalg_consistent(const u8 *cert, usz cert_len) {
   return quic_tbscert_sigalg_matches(&t, c.sig_alg_oid, c.sig_alg_len);
 }
 
-/* The signed bytes of cert: consistent sig algs, its tbs hash, and its raw
- * signature. */
+/* The signed bytes of cert: consistent sig algs, its tbs hash under the
+ * sigAlg's digest, and its raw signature. */
 static int cert_signed(
-    const u8 *cert, usz cert_len, u8 hash[32], const u8 **sig, usz *sig_len) {
+    const u8         *cert,
+    usz               cert_len,
+    quic_x509_sigalg *sa,
+    u8                hash[64],
+    usz              *hash_len,
+    const u8        **sig,
+    usz              *sig_len) {
   if (!sigalg_consistent(cert, cert_len)) return 0;
-  if (!tbs_hash(cert, cert_len, hash)) return 0;
+  if (!tbs_hash(cert, cert_len, sa, hash, hash_len)) return 0;
   return cert_sig(cert, cert_len, sig, sig_len);
 }
 
 int quic_castore_verify_signed_by(
     const u8 *cert, usz cert_len, const u8 *issuer_cert, usz issuer_len) {
-  const u8 *alg, *key, *sig;
-  usz       alg_len, key_len, sig_len;
-  u8        hash[32];
+  const u8        *alg, *key, *sig;
+  usz              alg_len, key_len, sig_len, hash_len;
+  u8               hash[64];
+  quic_x509_sigalg sa;
   if (!issuer_key(issuer_cert, issuer_len, &alg, &alg_len, &key, &key_len))
     return 0;
-  if (!cert_signed(cert, cert_len, hash, &sig, &sig_len)) return 0;
-  return verify_by_key(alg, alg_len, key, key_len, sig, sig_len, hash);
+  if (!cert_signed(cert, cert_len, &sa, hash, &hash_len, &sig, &sig_len))
+    return 0;
+  return verify_by_key(
+      &sa, alg, alg_len, key, key_len, sig, sig_len, hash, hash_len);
 }
