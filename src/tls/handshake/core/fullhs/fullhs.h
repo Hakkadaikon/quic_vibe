@@ -1,11 +1,15 @@
 #ifndef QUIC_FULLHS_FULLHS_H
 #define QUIC_FULLHS_FULLHS_H
 
+#include "crypto/pki/trust/castore/castore.h"
 #include "crypto/symmetric/hash/hash/sha256.h"
+#include "tls/handshake/core/tls/cert.h"
 #include "tls/handshake/core/tlsdriver/tlsdriver.h"
 
-/* Upper bound on the buffered handshake transcript (CH..our Finished). */
-#define QUIC_FULLHS_TRANSCRIPT_MAX 4096
+/* Upper bound on the buffered handshake transcript (CH..our Finished). Sized
+ * so a real-web certificate chain (leaf + intermediates, RSA included) plus
+ * the rest of the flight fits. */
+#define QUIC_FULLHS_TRANSCRIPT_MAX 8192
 
 /* RFC 8446 4.4 / RFC 9001 4.1: full handshake driver. Picks up where the
  * tlsdriver leaves off (handshake secret derived over ClientHello..ServerHello)
@@ -27,11 +31,15 @@ typedef struct {
   int is_server;
   u8  hs_traffic_peer[QUIC_HKDF_PRK]; /* peer-direction hs traffic secret */
   u8  hs_traffic_self[QUIC_HKDF_PRK]; /* own-direction hs traffic secret */
-  const u8 *peer_cert; /* end-entity cert from the Certificate msg */
+  const u8 *peer_cert; /* end-entity cert; points into tr (owned copy) */
   usz       peer_cert_len;
   u64       policy_now;      /* YYYYMMDDHHMMSS; 0 skips the validity check */
   const u8 *policy_host;     /* expected SAN dNSName, view (caller-owned) */
   usz       policy_host_len; /* 0 skips the hostname check */
+  usz cert_off[QUIC_TLS_CERT_CHAIN_MAX]; /* each wire cert, offset into tr */
+  usz cert_lens[QUIC_TLS_CERT_CHAIN_MAX];
+  usz cert_count;
+  const quic_castore *castore; /* NULL (init default) skips chain checks */
 } quic_fullhs;
 
 /* Seed the full handshake driver from a tlsdriver that has reached the
@@ -50,6 +58,12 @@ int quic_fullhs_init(
  * keeps the legacy signature-only behavior. */
 void quic_fullhs_set_policy(
     quic_fullhs *h, u64 now, const u8 *host, usz host_len);
+
+/* RFC 5280 6.1: set the trust store the peer's wire chain must validate to
+ * when the Certificate message arrives (every link verified, tail anchored
+ * to a store root). store is borrowed and must outlive the handshake. NULL
+ * (the init default) skips chain validation. */
+void quic_fullhs_set_castore(quic_fullhs *h, const quic_castore *store);
 
 /* RFC 8446 4.4.2: fold the peer's Certificate message into the transcript and
  * record its end-entity certificate, checking flight order and the acceptance

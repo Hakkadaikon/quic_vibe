@@ -5,6 +5,7 @@
 #include "crypto/pki/encoding/x509/san.h"
 #include "crypto/pki/encoding/x509/validity.h"
 #include "crypto/pki/encoding/x509/x509.h"
+#include "crypto/pki/trust/castore/pathvalidate.h"
 #include "tls/handshake/core/tls/cert.h"
 #include "tls/handshake/core/tls/certverify.h"
 #include "tls/handshake/core/tls/finished.h"
@@ -77,6 +78,8 @@ int quic_fullhs_init(
   h->policy_now      = 0;
   h->policy_host     = 0;
   h->policy_host_len = 0;
+  h->cert_count      = 0;
+  h->castore         = 0;
   seed_secrets(h, transcript_sh, sh_len);
   prime_order(h);
   return 1;
@@ -87,6 +90,10 @@ void quic_fullhs_set_policy(
   h->policy_now      = now;
   h->policy_host     = host;
   h->policy_host_len = host_len;
+}
+
+void quic_fullhs_set_castore(quic_fullhs *h, const quic_castore *store) {
+  h->castore = store;
 }
 
 /* RFC 8446 7.1: fold a Finished into the transcript and, if it is the first
@@ -128,27 +135,82 @@ static int fullhs_policy_ok(const quic_fullhs *h, const u8 *cert, usz n) {
   return fullhs_policy_checks(h, cert, n);
 }
 
-/* Parse the Certificate message, run the peer-cert policy gate, and record
- * the end-entity views. On a policy reject nothing is recorded, so the
- * CertificateVerify signature can never verify and cert_verified stays shut. */
+/* Every CertificateEntry of the wire chain, leaf first. */
+static int fullhs_chain_parse(
+    const u8 *cert_msg, usz len, quic_tls_cert_entry *e, usz *n) {
+  const u8 *ctx;
+  u32       ctx_len;
+  return quic_tls_cert_chain(
+      cert_msg + QUIC_HS_HEADER, len - QUIC_HS_HEADER, &ctx, &ctx_len, e,
+      QUIC_TLS_CERT_CHAIN_MAX, n);
+}
+
+/* RFC 5280 6.1: when a trust store is set, the whole wire chain must chain
+ * link-by-link to one of its anchors. NULL store skips. */
+static int fullhs_chain_ok(
+    const quic_fullhs *h, const quic_tls_cert_entry *e, usz n) {
+  const u8 *certs[QUIC_TLS_CERT_CHAIN_MAX];
+  usz       lens[QUIC_TLS_CERT_CHAIN_MAX];
+  if (h->castore == 0) return 1;
+  for (usz i = 0; i < n; i++) {
+    certs[i] = e[i].cert_data;
+    lens[i]  = e[i].cert_len;
+  }
+  return quic_castore_validate_chain(h->castore, certs, lens, n);
+}
+
+/* The leaf passes the acceptance policy and the chain anchors to the store. */
+static int fullhs_cert_checks(
+    const quic_fullhs *h, const quic_tls_cert_entry *e, usz n) {
+  if (n < 1) return 0;
+  if (!fullhs_policy_ok(h, e[0].cert_data, e[0].cert_len)) return 0;
+  return fullhs_chain_ok(h, e, n);
+}
+
+/* Parse and accept (or reject) the wire chain. */
+static int fullhs_chain_accept(
+    const quic_fullhs   *h,
+    const u8            *cert_msg,
+    usz                  len,
+    quic_tls_cert_entry *e,
+    usz                 *n) {
+  if (!fullhs_chain_parse(cert_msg, len, e, n)) return 0;
+  return fullhs_cert_checks(h, e, *n);
+}
+
+/* Record every cert as an offset into the transcript copy of cert_msg (the
+ * bytes tr_add appended at `base`), so the views outlive the caller's
+ * datagram buffer for the rest of the handshake. */
+static void fullhs_cert_record(
+    quic_fullhs               *h,
+    usz                        base,
+    const u8                  *cert_msg,
+    const quic_tls_cert_entry *e,
+    usz                        n) {
+  for (usz i = 0; i < n; i++) {
+    h->cert_off[i]  = base + (usz)(e[i].cert_data - cert_msg);
+    h->cert_lens[i] = e[i].cert_len;
+  }
+  h->cert_count    = n;
+  h->peer_cert     = h->tr + h->cert_off[0];
+  h->peer_cert_len = h->cert_lens[0];
+}
+
+/* On any reject nothing is recorded, so the CertificateVerify signature can
+ * never verify and cert_verified stays shut. */
 static int fullhs_cert_take(quic_fullhs *h, const u8 *cert_msg, usz len) {
-  const u8           *ctx;
-  u32                 ctx_len;
-  quic_tls_cert_entry first;
-  if (!quic_tls_cert_parse(
-          cert_msg + QUIC_HS_HEADER, len - QUIC_HS_HEADER, &ctx, &ctx_len,
-          &first))
-    return 0;
-  if (!fullhs_policy_ok(h, first.cert_data, first.cert_len)) return 0;
-  h->peer_cert     = first.cert_data;
-  h->peer_cert_len = first.cert_len;
+  quic_tls_cert_entry e[QUIC_TLS_CERT_CHAIN_MAX];
+  usz                 n, base;
+  if (!fullhs_chain_accept(h, cert_msg, len, e, &n)) return 0;
+  base = h->tr_len;
+  if (!tr_add(h, cert_msg, len)) return 0;
+  fullhs_cert_record(h, base, cert_msg, e, n);
   return 1;
 }
 
 int quic_fullhs_recv_cert(quic_fullhs *h, const u8 *cert_msg, usz len) {
   if (!order_ok(h, QUIC_HSD_CERTIFICATE)) return 0;
-  if (!fullhs_cert_take(h, cert_msg, len)) return 0;
-  return tr_add(h, cert_msg, len);
+  return fullhs_cert_take(h, cert_msg, len);
 }
 
 /* Verify the CertificateVerify signature over the transcript hash through the
