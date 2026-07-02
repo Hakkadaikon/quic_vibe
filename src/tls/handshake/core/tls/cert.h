@@ -26,6 +26,23 @@ int quic_tls_cert_parse(
     u32                 *context_len,
     quic_tls_cert_entry *first);
 
+/* Longest certificate_list this SDK walks (leaf + up to 3 issuers — public
+ * web chains are 2-3 entries). */
+#define QUIC_TLS_CERT_CHAIN_MAX 4
+
+/* Parse a Certificate message body (after the handshake header) and view
+ * EVERY CertificateEntry's cert_data into entries[0..cap-1], leaf first.
+ * Sets *count. Returns 1 on success; 0 on truncation, trailing garbage, or
+ * more than cap entries (fail closed). */
+int quic_tls_cert_chain(
+    const u8            *buf,
+    usz                  n,
+    const u8           **context,
+    u32                 *context_len,
+    quic_tls_cert_entry *entries,
+    usz                  cap,
+    usz                 *count);
+
 /* Parse a CertificateVerify body: a 2-byte SignatureScheme then a
  * 2-byte-length-prefixed signature. Returns 1 on success, 0 on truncation. */
 int quic_tls_certverify_parse(

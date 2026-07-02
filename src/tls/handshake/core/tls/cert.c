@@ -58,6 +58,40 @@ int quic_tls_cert_parse(
   return take_entry(&lc, first); /* first entry is the end-entity cert */
 }
 
+/* One more entry into e[*count], bounded by cap (fail closed on overflow). */
+static int take_next(cur *lc, quic_tls_cert_entry *e, usz cap, usz *count) {
+  if (*count >= cap) return 0;
+  if (!take_entry(lc, &e[*count])) return 0;
+  (*count)++;
+  return 1;
+}
+
+/* Every entry of the certificate_list, leaf first. */
+static int entries_loop(cur *lc, quic_tls_cert_entry *e, usz cap, usz *count) {
+  while (lc->off < lc->n)
+    if (!take_next(lc, e, cap, count)) return 0;
+  return 1;
+}
+
+int quic_tls_cert_chain(
+    const u8            *buf,
+    usz                  n,
+    const u8           **context,
+    u32                 *context_len,
+    quic_tls_cert_entry *entries,
+    usz                  cap,
+    usz                 *count) {
+  cur       c = {buf, n, 0};
+  const u8 *list;
+  u32       list_len;
+  cur       lc;
+  *count = 0;
+  if (!take_vec(&c, 1, context, context_len)) return 0;
+  if (!take_vec(&c, 3, &list, &list_len)) return 0;
+  lc = (cur){list, list_len, 0};
+  return entries_loop(&lc, entries, cap, count);
+}
+
 int quic_tls_certverify_parse(
     const u8 *buf, usz n, u16 *scheme, const u8 **sig, u16 *sig_len) {
   cur       c = {buf, n, 0};
