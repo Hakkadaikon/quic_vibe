@@ -1,5 +1,6 @@
 #include "tls/handshake/core/tls/certverify.h"
 
+#include "rsacv_golden.h"
 #include "test.h"
 #include "x509_golden.h"
 
@@ -43,8 +44,29 @@ static void test_certverify_ecdsa_malformed(void) {
           sizeof(quic_x509_golden), sig, sizeof(sig), th) == 0);
 }
 
+/* RFC 8446 9.1: an OpenSSL-generated RSASSA-PSS signature over the CV
+ * content verifies under scheme rsa_pss_rsae_sha256. */
+static void test_certverify_pss_ok(void) {
+  CHECK(
+      quic_tls_verify_cert_signature(
+          QUIC_TLS_SCHEME_RSA_PSS_SHA256, quic_rsacv_cert_der,
+          sizeof(quic_rsacv_cert_der), quic_rsacv_pss_sig,
+          sizeof(quic_rsacv_pss_sig), quic_rsacv_th) == 1);
+}
+
+/* A PKCS#1 v1.5 signature over the same content must NOT pass as PSS. */
+static void test_certverify_pss_rejects_pkcs1(void) {
+  CHECK(
+      quic_tls_verify_cert_signature(
+          QUIC_TLS_SCHEME_RSA_PSS_SHA256, quic_rsacv_cert_der,
+          sizeof(quic_rsacv_cert_der), quic_rsacv_pkcs1_sig,
+          sizeof(quic_rsacv_pkcs1_sig), quic_rsacv_th) == 0);
+}
+
 void test_certverify(void) {
   test_certverify_bad_scheme();
   test_certverify_ecdsa_bogus();
   test_certverify_ecdsa_malformed();
+  test_certverify_pss_ok();
+  test_certverify_pss_rejects_pkcs1();
 }

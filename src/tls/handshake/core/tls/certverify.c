@@ -136,9 +136,8 @@ static int verify_rsa(
   usz       key_len, n_len, e_len;
   if (!cert_spki_key(cert, cert_len, &key, &key_len)) return 0;
   if (!quic_x509_rsa_pubkey(key, key_len, &n, &n_len, &e, &e_len)) return 0;
-  /* ponytail: existing rsa_verify is PKCS1-v1.5; a real rsa_pss peer would
-   * need a separate PSS padding primitive. */
-  return quic_rsa_pkcs1_verify(n, n_len, sig, sig_len, hash, 32);
+  /* RFC 8446 9.1: rsa_pss_rsae_sha256 is RSASSA-PSS (never PKCS#1 v1.5). */
+  return quic_rsa_pss_verify(n, n_len, sig, sig_len, hash, 32);
 }
 
 /* RFC 5280 4.1.2.7: a 32-byte raw key wrapped in the BIT STRING's leading
