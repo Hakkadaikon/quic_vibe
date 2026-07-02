@@ -7,4 +7,10 @@
  * TRUE; 0 if absent, cA FALSE, or malformed. */
 int quic_x509_is_ca(const u8 *tbs, usz tbs_len);
 
+/* RFC 5280 6.1.4 (m). 1 if the cert's pathLenConstraint permits `depth`
+ * intermediate certificates below it (the leaf is not counted). An absent
+ * constraint is unconstrained; a present but malformed or negative INTEGER
+ * rejects. Meaningful only on a cert that passed quic_x509_is_ca. */
+int quic_x509_pathlen_allows(const u8 *tbs, usz tbs_len, usz depth);
+
 #endif

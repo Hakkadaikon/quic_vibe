@@ -144,10 +144,60 @@ static int bc_ca_true(const u8 *val, usz val_len) {
   return bc_is_true_boolean(tag, b, b_len);
 }
 
-int quic_x509_is_ca(const u8 *tbs, usz tbs_len) {
-  const u8 *ext, *val;
-  usz       elen, val_len;
+/* The basicConstraints extnValue, if the extension is present. */
+static int bc_locate(const u8 *tbs, usz tbs_len, const u8 **val, usz *val_len) {
+  const u8 *ext;
+  usz       elen;
   if (!bc_reach_extensions(tbs, tbs_len, &ext, &elen)) return 0;
-  if (!bc_find_ext(ext, elen, oid_bc, sizeof(oid_bc), &val, &val_len)) return 0;
+  return bc_find_ext(ext, elen, oid_bc, sizeof(oid_bc), val, val_len);
+}
+
+int quic_x509_is_ca(const u8 *tbs, usz tbs_len) {
+  const u8 *val;
+  usz       val_len;
+  if (!bc_locate(tbs, tbs_len, &val, &val_len)) return 0;
   return bc_ca_true(val, val_len);
+}
+
+/* RFC 5280 4.2.1.9. The element after cA inside BasicConstraints, i.e. the
+ * pathLenConstraint if present. Assumes cA is encoded (a CA cert must). */
+static int bc_pathlen_elem(
+    const u8 *val, usz val_len, u8 *tag, const u8 **b, usz *b_len) {
+  quic_derseq c;
+  u8          t;
+  const u8   *bc, *x;
+  usz         bc_len, x_len;
+  if (!bc_unwrap_seq(val, val_len, &bc, &bc_len)) return 0;
+  quic_derseq_init(&c, bc, bc_len);
+  if (!quic_derseq_next(&c, &t, &x, &x_len)) return 0;
+  return quic_derseq_next(&c, tag, b, b_len);
+}
+
+/* X.690 8.3. Content octets form a well-formed non-negative INTEGER that
+ * fits usz. */
+static int bc_uint_wf(const u8 *b, usz b_len) {
+  return b_len >= 1 && b_len <= sizeof(usz) && !(b[0] & 0x80);
+}
+
+/* Big-endian content octets as a usz. */
+static usz bc_uint(const u8 *b, usz b_len) {
+  usz v = 0;
+  for (usz i = 0; i < b_len; i++) v = (v << 8) | b[i];
+  return v;
+}
+
+/* pathLenConstraint INTEGER admits `depth`; a non-INTEGER trailing element or
+ * a malformed/negative value rejects (fail closed). */
+static int bc_pathlen_ok(u8 tag, const u8 *b, usz b_len, usz depth) {
+  if (tag != QUIC_DER_INTEGER || !bc_uint_wf(b, b_len)) return 0;
+  return bc_uint(b, b_len) >= depth;
+}
+
+int quic_x509_pathlen_allows(const u8 *tbs, usz tbs_len, usz depth) {
+  const u8 *val, *b;
+  usz       val_len, b_len;
+  u8        tag;
+  if (!bc_locate(tbs, tbs_len, &val, &val_len)) return 1;
+  if (!bc_pathlen_elem(val, val_len, &tag, &b, &b_len)) return 1;
+  return bc_pathlen_ok(tag, b, b_len, depth);
 }
