@@ -54,6 +54,8 @@ static const u8 pss_sig[256] = {
     0x4b, 0x01, 0xea, 0x6d, 0x81, 0xf7, 0x8f, 0x19, 0x42, 0xcf, 0x4e, 0xe8,
     0xa7, 0x0f, 0x1c, 0xc1,
 };
+static const u8 pvt_e[3] = {0x01, 0x00, 0x01};
+
 static const u8 pss_hash[32] = {
     0x79, 0xf9, 0x34, 0x04, 0x12, 0xf2, 0x3d, 0xfb, 0xb0, 0xdb, 0x5d,
     0xb8, 0xe2, 0x0c, 0x42, 0x6a, 0x16, 0x2f, 0xed, 0x43, 0x97, 0xcd,
@@ -61,7 +63,9 @@ static const u8 pss_hash[32] = {
 };
 
 static void test_rsa_pss_valid(void) {
-  CHECK(quic_rsa_pss_verify(pss_n, 256, pss_sig, 256, pss_hash, 32) == 1);
+  CHECK(
+      quic_rsa_pss_verify(pss_n, 256, pvt_e, 3, pss_sig, 256, pss_hash, 32) ==
+      1);
 }
 
 /* A flipped signature byte must fail. */
@@ -69,7 +73,7 @@ static void test_rsa_pss_tampered_sig(void) {
   u8 bad[256];
   for (usz i = 0; i < 256; i++) bad[i] = pss_sig[i];
   bad[128] ^= 0x01;
-  CHECK(quic_rsa_pss_verify(pss_n, 256, bad, 256, pss_hash, 32) == 0);
+  CHECK(quic_rsa_pss_verify(pss_n, 256, pvt_e, 3, bad, 256, pss_hash, 32) == 0);
 }
 
 /* A wrong message hash must fail. */
@@ -77,13 +81,17 @@ static void test_rsa_pss_wrong_hash(void) {
   u8 h[32];
   for (usz i = 0; i < 32; i++) h[i] = pss_hash[i];
   h[0] ^= 0xff;
-  CHECK(quic_rsa_pss_verify(pss_n, 256, pss_sig, 256, h, 32) == 0);
+  CHECK(quic_rsa_pss_verify(pss_n, 256, pvt_e, 3, pss_sig, 256, h, 32) == 0);
 }
 
 /* Size guards: bad lengths are rejected. */
 static void test_rsa_pss_sizes(void) {
-  CHECK(quic_rsa_pss_verify(pss_n, 256, pss_sig, 255, pss_hash, 32) == 0);
-  CHECK(quic_rsa_pss_verify(pss_n, 256, pss_sig, 256, pss_hash, 31) == 0);
+  CHECK(
+      quic_rsa_pss_verify(pss_n, 256, pvt_e, 3, pss_sig, 255, pss_hash, 32) ==
+      0);
+  CHECK(
+      quic_rsa_pss_verify(pss_n, 256, pvt_e, 3, pss_sig, 256, pss_hash, 31) ==
+      0);
 }
 
 void test_rsa_pss(void) {

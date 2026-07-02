@@ -2,8 +2,9 @@
 
 #include "crypto/asymmetric/bignum/modexp.h"
 #include "crypto/asymmetric/rsa/pss.h"
+#include "crypto/asymmetric/rsa/rsa_verify.h"
 
-#define RSA_PSS_MAX 256
+#define RSA_PSS_MAX ((usz)QUIC_BN_LIMBS * 8)
 
 /* Significant bits in a nonzero octet (1..8). */
 static usz rsa_byte_bits(u8 b) {
@@ -41,6 +42,13 @@ static int rsa_sizes_bad(usz n_len, usz sig_len, usz hash_len) {
   return sig_len != n_len;
 }
 
+/* Sizes acceptable and the exponent is the supported F4. */
+static int pss_inputs_ok(
+    usz n_len, const u8 *e, usz e_len, usz sig_len, usz hash_len) {
+  if (rsa_sizes_bad(n_len, sig_len, hash_len)) return 0;
+  return quic_rsa_e_is_f4(e, e_len);
+}
+
 /* RFC 8017 8.1.2 step 1 and steps 2-3: reject s >= n, else m = s^e mod n and
  * EM = I2OSP(m, emLen). Returns 1 on success, 0 if the signature is out of
  * range. */
@@ -65,11 +73,13 @@ static usz rsa_em_bits(const u8 *n, usz n_len) {
 int quic_rsa_pss_verify(
     const u8 *n,
     usz       n_len,
+    const u8 *e,
+    usz       e_len,
     const u8 *sig,
     usz       sig_len,
     const u8 *mhash,
     usz       hash_len) {
-  if (rsa_sizes_bad(n_len, sig_len, hash_len)) return 0;
+  if (!pss_inputs_ok(n_len, e, e_len, sig_len, hash_len)) return 0;
   usz em_bits = rsa_em_bits(n, n_len);
   usz em_len  = (em_bits + 7) / 8;
   u8  em[RSA_PSS_MAX];

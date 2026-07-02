@@ -53,6 +53,8 @@ static const u8 rsa_sig[256] = {
     0x00, 0x41, 0xd2, 0xc7, 0x0d, 0x79, 0x86, 0x63, 0xf8, 0x69, 0x7f, 0x2a,
     0xd3, 0x08, 0x80, 0x86,
 };
+static const u8 rvt_e[3] = {0x01, 0x00, 0x01};
+
 static const u8 rsa_hash[32] = {
     0x43, 0x3e, 0x50, 0x18, 0x11, 0xe9, 0x68, 0x34, 0x04, 0x0c, 0x35,
     0x2a, 0x90, 0xb1, 0x84, 0x6b, 0x4f, 0xb9, 0x8d, 0xec, 0xd3, 0x55,
@@ -60,7 +62,9 @@ static const u8 rsa_hash[32] = {
 };
 
 static void test_rsa_pkcs1_valid(void) {
-  CHECK(quic_rsa_pkcs1_verify(rsa_n, 256, rsa_sig, 256, rsa_hash, 32) == 1);
+  CHECK(
+      quic_rsa_pkcs1_verify(rsa_n, 256, rvt_e, 3, rsa_sig, 256, rsa_hash, 32) ==
+      1);
 }
 
 /* A flipped signature byte must fail. */
@@ -68,7 +72,8 @@ static void test_rsa_pkcs1_tampered_sig(void) {
   u8 bad[256];
   for (usz i = 0; i < 256; i++) bad[i] = rsa_sig[i];
   bad[100] ^= 0x01;
-  CHECK(quic_rsa_pkcs1_verify(rsa_n, 256, bad, 256, rsa_hash, 32) == 0);
+  CHECK(
+      quic_rsa_pkcs1_verify(rsa_n, 256, rvt_e, 3, bad, 256, rsa_hash, 32) == 0);
 }
 
 /* A wrong message hash must fail. */
@@ -76,17 +81,47 @@ static void test_rsa_pkcs1_wrong_hash(void) {
   u8 h[32];
   for (usz i = 0; i < 32; i++) h[i] = rsa_hash[i];
   h[0] ^= 0xff;
-  CHECK(quic_rsa_pkcs1_verify(rsa_n, 256, rsa_sig, 256, h, 32) == 0);
+  CHECK(quic_rsa_pkcs1_verify(rsa_n, 256, rvt_e, 3, rsa_sig, 256, h, 32) == 0);
 }
 
 /* Size guards: bad lengths and a too-small modulus are rejected. */
 static void test_rsa_pkcs1_sizes(void) {
-  CHECK(quic_rsa_pkcs1_verify(rsa_n, 256, rsa_sig, 255, rsa_hash, 32) == 0);
-  CHECK(quic_rsa_pkcs1_verify(rsa_n, 256, rsa_sig, 256, rsa_hash, 31) == 0);
-  CHECK(quic_rsa_pkcs1_verify(rsa_n, 40, rsa_sig, 40, rsa_hash, 32) == 0);
+  CHECK(
+      quic_rsa_pkcs1_verify(rsa_n, 256, rvt_e, 3, rsa_sig, 255, rsa_hash, 32) ==
+      0);
+  CHECK(
+      quic_rsa_pkcs1_verify(rsa_n, 256, rvt_e, 3, rsa_sig, 256, rsa_hash, 31) ==
+      0);
+  CHECK(
+      quic_rsa_pkcs1_verify(rsa_n, 40, rvt_e, 3, rsa_sig, 40, rsa_hash, 32) ==
+      0);
+}
+
+/* RFC 8017: the gate accepts exactly the 3-byte 01 00 01 and rejects other
+ * exponents and non-canonical widths (kills a fail-open e gate directly). */
+static void test_rsa_e_gate(void) {
+  static const u8 f4[3]     = {0x01, 0x00, 0x01};
+  static const u8 e3[1]     = {0x03};
+  static const u8 e17[1]    = {0x11};
+  static const u8 padded[4] = {0x00, 0x01, 0x00, 0x01};
+  CHECK(quic_rsa_e_is_f4(f4, 3) == 1);
+  CHECK(quic_rsa_e_is_f4(e3, 1) == 0);
+  CHECK(quic_rsa_e_is_f4(e17, 1) == 0);
+  CHECK(quic_rsa_e_is_f4(padded, 4) == 0);
+}
+
+/* An exponent other than F4 is rejected end to end even with a valid F4
+ * signature (the verify path consults the gate). */
+static void test_rsa_e3_rejected(void) {
+  static const u8 e3[1] = {0x03};
+  CHECK(
+      quic_rsa_pkcs1_verify(rsa_n, 256, e3, 1, rsa_sig, 256, rsa_hash, 32) ==
+      0);
 }
 
 void test_rsa_verify(void) {
+  test_rsa_e_gate();
+  test_rsa_e3_rejected();
   test_rsa_pkcs1_valid();
   test_rsa_pkcs1_tampered_sig();
   test_rsa_pkcs1_wrong_hash();
