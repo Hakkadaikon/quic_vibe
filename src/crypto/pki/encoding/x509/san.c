@@ -126,14 +126,19 @@ static int find_san(const u8 *tbs, usz tbs_len, const u8 **val, usz *val_len) {
   return find_ext_san(ext, elen, val, val_len);
 }
 
-/* 1 if the two byte spans of equal length differ nowhere. */
+/* ASCII lowercase of one octet (DNS labels are ASCII). */
+static u8 san_lower(u8 c) {
+  return (c >= 'A' && c <= 'Z') ? (u8)(c | 0x20) : c;
+}
+
+/* 1 if the two byte spans of equal length differ nowhere, ASCII-folded. */
 static int san_bytes_eq(const u8 *a, const u8 *b, usz n) {
   usz diff = 0;
-  for (usz i = 0; i < n; i++) diff |= (usz)(a[i] ^ b[i]);
+  for (usz i = 0; i < n; i++) diff |= (usz)(san_lower(a[i]) ^ san_lower(b[i]));
   return diff == 0;
 }
 
-/* Byte-equal hostname comparison (DNS labels are ASCII; no case folding). */
+/* RFC 6125 6.4.1: hostname comparison is ASCII case-insensitive. */
 static int dns_eq(const u8 *a, usz alen, const u8 *b, usz blen) {
   return alen == blen && san_bytes_eq(a, b, alen);
 }

@@ -49,10 +49,23 @@ static void test_no_san(void) {
   CHECK(quic_x509_san_matches(c.tbs, c.tbs_len, host, sizeof(host) - 1) == 0);
 }
 
+/* RFC 6125 6.4.1: comparison is ASCII case-insensitive — an upper/mixed-case
+ * hostname matches the lowercase SAN, exactly and through the wildcard. */
+static void test_san_case_fold(void) {
+  quic_x509 c;
+  const u8  upper[] = "EXAMPLE.com";
+  const u8  mixed[] = "WwW.Example.COM";
+  CHECK(
+      quic_x509_parse(quic_chain_golden1, sizeof(quic_chain_golden1), &c) == 1);
+  CHECK(quic_x509_san_matches(c.tbs, c.tbs_len, upper, sizeof(upper) - 1) == 1);
+  CHECK(quic_x509_san_matches(c.tbs, c.tbs_len, mixed, sizeof(mixed) - 1) == 1);
+}
+
 void test_san(void) {
   test_exact_match();
   test_wildcard_match();
   test_wildcard_no_nested();
   test_no_match();
   test_no_san();
+  test_san_case_fold();
 }
