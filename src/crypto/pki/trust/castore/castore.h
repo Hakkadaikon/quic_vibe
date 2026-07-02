@@ -3,10 +3,10 @@
 
 #include "common/platform/sys/syscall.h"
 
-/* RFC 5280 6.1. A trust anchor store: a fixed-size set of root CA
- * certificates (DER). Entries view the caller's buffers; nothing is copied. */
-
-#define QUIC_CASTORE_MAX 8
+/* RFC 5280 6.1. A trust anchor store over a caller-supplied entry array (a
+ * real trust store holds ~150 roots; the caller sizes it). Entries view the
+ * caller's DER buffers; nothing is copied — the array and every registered
+ * DER must outlive the store. */
 
 typedef struct {
   const u8 *cert;
@@ -14,12 +14,13 @@ typedef struct {
 } quic_castore_entry;
 
 typedef struct {
-  quic_castore_entry roots[QUIC_CASTORE_MAX];
-  usz                count;
+  quic_castore_entry *roots; /* caller-owned array of cap entries */
+  usz                 cap;
+  usz                 count;
 } quic_castore;
 
-/* Empty the store. */
-void quic_castore_init(quic_castore *s);
+/* Bind the store to the caller's entry array and empty it. */
+void quic_castore_init(quic_castore *s, quic_castore_entry *roots, usz cap);
 
 /* RFC 5280 6.1. Register one root CA certificate (DER, cert_der..+len).
  * Returns 1 on success, 0 if the store is full or the input is malformed. */

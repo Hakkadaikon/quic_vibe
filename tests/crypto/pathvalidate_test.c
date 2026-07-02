@@ -4,8 +4,10 @@
 #include "crypto/pki/trust/castore/castore.h"
 #include "test.h"
 
+static quic_castore_entry pv_roots[4];
+
 static void store_with_root(quic_castore *s) {
-  quic_castore_init(s);
+  quic_castore_init(s, pv_roots, 4);
   CHECK(
       quic_castore_add(
           s, quic_castore_root_der, sizeof(quic_castore_root_der)) == 1);
@@ -35,7 +37,7 @@ static void test_unregistered_root_fails(void) {
   quic_castore s;
   const u8    *certs[2] = {quic_castore_leaf_der, quic_castore_root_der};
   usz lens[2] = {sizeof(quic_castore_leaf_der), sizeof(quic_castore_root_der)};
-  quic_castore_init(&s);
+  quic_castore_init(&s, pv_roots, 4);
   CHECK(quic_castore_validate_chain(&s, certs, lens, 2) == 0);
 }
 
@@ -76,7 +78,7 @@ static void test_non_ca_intermediate_fails(void) {
   usz lens[3] = {
       sizeof(quic_castore_leaf2_der), sizeof(quic_castore_mid_der),
       sizeof(quic_castore_root2_der)};
-  quic_castore_init(&s);
+  quic_castore_init(&s, pv_roots, 4);
   CHECK(
       quic_castore_add(
           &s, quic_castore_root2_der, sizeof(quic_castore_root2_der)) == 1);
@@ -84,7 +86,7 @@ static void test_non_ca_intermediate_fails(void) {
 }
 
 static void store_with_root3(quic_castore *s) {
-  quic_castore_init(s);
+  quic_castore_init(s, pv_roots, 4);
   CHECK(
       quic_castore_add(
           s, quic_castore_root3_der, sizeof(quic_castore_root3_der)) == 1);
