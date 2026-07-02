@@ -29,6 +29,7 @@ int quic_client_init(
     usz          sni_len) {
   c->host     = server_name;
   c->host_len = sni_len;
+  c->castore  = 0;
   if (!client_setup(c)) return 0;
   quic_x25519_base(c->my_pub, c->my_priv);
   c->fd = quic_udp_socket();
@@ -43,6 +44,10 @@ int quic_client_init(
 }
 
 void quic_client_set_now(quic_client *c, u64 now) { c->now = now; }
+
+void quic_client_set_castore(quic_client *c, const quic_castore *store) {
+  c->castore = store;
+}
 
 /* RFC 9000 14.1: ClientHello CRYPTO frame(s) padded to 1200.
  * ponytail: carries the ClientHello as a CRYPTO-frame payload, not yet an
@@ -131,6 +136,7 @@ static int feed_initial(quic_client *c, const u8 *msg, usz len) {
   save_sh(c, msg, len);
   if (!quic_fullhs_init(&c->hs, &c->tls, c->sh_transcript, c->sh_len)) return 0;
   quic_fullhs_set_policy(&c->hs, c->now, c->host, c->host_len);
+  quic_fullhs_set_castore(&c->hs, c->castore);
   c->phase = QUIC_CLIENT_HS_AUTH;
   return 1;
 }

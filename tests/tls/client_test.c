@@ -1,6 +1,9 @@
 #include "tls/handshake/roles/client/client.h"
 
+#include "crypto/asymmetric/ecc/p256sign/sign.h"
+#include "crypto/symmetric/hash/hash/sha256.h"
 #include "fullhs_golden.h"
+#include "realchain_golden.h"
 #include "test.h"
 #include "tls/handshake/core/tls/certverify.h"
 #include "tls/handshake/core/tls/handshake.h"
@@ -105,6 +108,7 @@ static void test_client_feed_serverhello(void) {
   c.now      = 0; /* no cert policy: legacy behavior */
   c.host     = 0;
   c.host_len = 0;
+  c.castore  = 0;
   quic_tlsdriver_init(&svtls, sv_priv, sv_pub, 1);
   CHECK(quic_tlsdriver_client_hello(&c.tls, frame, sizeof(frame), &fl) == 1);
   CHECK(quic_tlsdriver_recv_crypto(&svtls, frame, fl) == 1);
@@ -187,6 +191,7 @@ static void policy_client(
   c->now      = now;
   c->host     = host;
   c->host_len = host_len;
+  c->castore  = 0;
   quic_tlsdriver_init(svtls, sv_priv, sv_pub, 1);
   CHECK(quic_tlsdriver_client_hello(&c->tls, frame, sizeof(frame), &fl) == 1);
   CHECK(quic_tlsdriver_recv_crypto(svtls, frame, fl) == 1);
@@ -259,6 +264,152 @@ static void test_client_policy_valid(void) {
   CHECK(quic_client_is_connected(&c) == 1);
 }
 
+/* A Certificate handshake message wrapping the realchain [leaf, int]. */
+static usz rc_cert_msg(u8 *out) {
+  const u8 *certs[2] = {quic_realchain_leaf_der, quic_realchain_int_der};
+  usz       lens[2]  = {
+      sizeof(quic_realchain_leaf_der), sizeof(quic_realchain_int_der)};
+  usz off = QUIC_HS_HEADER + 4, list, body;
+  for (usz i = 0; i < 2; i++) {
+    usz n        = lens[i];
+    out[off]     = (u8)(n >> 16);
+    out[off + 1] = (u8)(n >> 8);
+    out[off + 2] = (u8)n;
+    for (usz j = 0; j < n; j++) out[off + 3 + j] = certs[i][j];
+    out[off + 3 + n] = 0;
+    out[off + 4 + n] = 0;
+    off += n + 5;
+  }
+  list                    = off - QUIC_HS_HEADER - 4;
+  body                    = list + 4;
+  out[0]                  = 0x0b;
+  out[1]                  = (u8)(body >> 16);
+  out[2]                  = (u8)(body >> 8);
+  out[3]                  = (u8)body;
+  out[QUIC_HS_HEADER]     = 0;
+  out[QUIC_HS_HEADER + 1] = (u8)(list >> 16);
+  out[QUIC_HS_HEADER + 2] = (u8)(list >> 8);
+  out[QUIC_HS_HEADER + 3] = (u8)list;
+  return off;
+}
+
+/* One DER INTEGER from a 32-byte big-endian scalar. */
+static usz rc_der_int(u8 *out, const u8 v[32]) {
+  usz n = 32, pad;
+  while (n > 1 && v[32 - n] == 0) n--;
+  pad    = (v[32 - n] & 0x80) ? 1 : 0;
+  out[0] = 0x02;
+  out[1] = (u8)(n + pad);
+  if (pad) out[2] = 0;
+  for (usz i = 0; i < n; i++) out[2 + pad + i] = v[32 - n + i];
+  return 2 + pad + n;
+}
+
+static const char rc_cv_ctx[] = "TLS 1.3, server CertificateVerify";
+
+/* Sign a CertificateVerify as the realchain leaf over the client's current
+ * transcript (through Certificate) and frame it, scheme ecdsa_secp256r1. */
+static usz rc_sign_cv(const quic_fullhs *h, u8 *cv) {
+  u8  th[32], content[130], chash[32], r[32], s[32], der[80];
+  usz rn, sn, dn, body;
+  quic_sha256(h->tr, h->tr_len, th);
+  for (usz i = 0; i < 64; i++) content[i] = 0x20;
+  for (usz i = 0; i < 33; i++) content[64 + i] = (u8)rc_cv_ctx[i];
+  content[97] = 0x00;
+  for (usz i = 0; i < 32; i++) content[98 + i] = th[i];
+  quic_sha256(content, 130, chash);
+  CHECK(quic_p256sign_sign(quic_realchain_leaf_priv, chash, r, s) == 1);
+  rn     = rc_der_int(der + 2, r);
+  sn     = rc_der_int(der + 2 + rn, s);
+  der[0] = 0x30;
+  der[1] = (u8)(rn + sn);
+  dn     = 2 + rn + sn;
+  body   = 4 + dn;
+  cv[0]  = 0x0f;
+  cv[1]  = 0;
+  cv[2]  = (u8)(body >> 8);
+  cv[3]  = (u8)body;
+  cv[4]  = (u8)(QUIC_TLS_SCHEME_ECDSA_P256 >> 8);
+  cv[5]  = (u8)QUIC_TLS_SCHEME_ECDSA_P256;
+  cv[6]  = (u8)(dn >> 8);
+  cv[7]  = (u8)dn;
+  for (usz i = 0; i < dn; i++) cv[8 + i] = der[i];
+  return 4 + body;
+}
+
+/* RFC 5280 6.1 + RFC 6125: the real-web shape end to end. The wire carries
+ * [leaf, int]; the store holds the root; the leaf names example.com; the
+ * clock is in the window; the CV is ECDSA-signed by the leaf key. The client
+ * reaches connected with every check armed. */
+static void test_client_castore_confirmed(void) {
+  quic_client        c;
+  quic_fullhs        sv;
+  quic_tlsdriver     svtls;
+  quic_castore       store;
+  quic_castore_entry roots[2];
+  u8                 certmsg[1024], cv[256], svfin[64];
+  u8                 cl_priv[32], cl_pub[32], sv_priv[32], sv_pub[32];
+  usz                n, cv_len, fn;
+
+  for (usz i = 0; i < 32; i++) {
+    cl_priv[i] = (u8)(1 + i);
+    sv_priv[i] = (u8)(200 - i);
+  }
+  quic_x25519_base(cl_pub, cl_priv);
+  quic_x25519_base(sv_pub, sv_priv);
+  quic_tlsdriver_init(&c.tls, cl_priv, cl_pub, 0);
+  quic_tlsdriver_init(&svtls, sv_priv, sv_pub, 1);
+  client_reach_hs_secret(&c.tls, &svtls, sv_pub);
+  CHECK(quic_fullhs_init(&c.hs, &c.tls, fullhs_sh, sizeof(fullhs_sh)) == 1);
+  CHECK(quic_fullhs_init(&sv, &svtls, fullhs_sh, sizeof(fullhs_sh)) == 1);
+  c.phase = QUIC_CLIENT_HS_AUTH;
+  c.fd    = -1;
+  /* what feed_initial injects for a fully armed client */
+  quic_fullhs_set_policy(
+      &c.hs, 20270101000000ULL, (const u8 *)"example.com", 11);
+  quic_castore_init(&store, roots, 2);
+  CHECK(
+      quic_castore_add(
+          &store, quic_realchain_root_der, sizeof(quic_realchain_root_der)) ==
+      1);
+  quic_fullhs_set_castore(&c.hs, &store);
+
+  n = rc_cert_msg(certmsg);
+  CHECK(quic_client_feed(&c, certmsg, n) == 1);
+  cv_len = rc_sign_cv(&c.hs, cv);
+
+  /* mirror server advances its transcript with the same flight */
+  CHECK(quic_fullhs_recv_cert(&sv, certmsg, n) == 1);
+  CHECK(
+      quic_fullhs_recv_certverify(
+          &sv, cv, cv_len, QUIC_TLS_SCHEME_ECDSA_P256) == 1);
+  CHECK(quic_fullhs_send_finished(&sv, svfin, sizeof(svfin), &fn) == 1);
+
+  CHECK(quic_client_feed(&c, cv, cv_len) == 1);
+  CHECK(quic_client_feed(&c, svfin, fn) == 1);
+  CHECK(quic_client_is_connected(&c) == 1);
+}
+
+/* A store that cannot anchor the presented chain keeps the client from ever
+ * connecting (through the real feed path, set_castore plumbing included). */
+static void test_client_castore_wrong_root(void) {
+  quic_client        c;
+  quic_tlsdriver     svtls;
+  quic_castore       store;
+  quic_castore_entry roots[2];
+  quic_castore_init(&store, roots, 2);
+  CHECK(
+      quic_castore_add(
+          &store, quic_realchain_root_der, sizeof(quic_realchain_root_der)) ==
+      1);
+  policy_client(&c, &svtls, 0, 0, 0);
+  quic_client_set_castore(&c, &store);
+  quic_fullhs_set_castore(&c.hs, c.castore); /* as feed_initial would */
+  /* the golden self-signed cert cannot anchor to the realchain root */
+  CHECK(quic_client_feed(&c, fullhs_cert_msg, sizeof(fullhs_cert_msg)) == 0);
+  CHECK(quic_client_is_connected(&c) == 0);
+}
+
 void test_client(void) {
   test_client_initial_padded();
   test_client_feed_serverhello();
@@ -266,4 +417,6 @@ void test_client(void) {
   test_client_expired_now();
   test_client_wrong_host();
   test_client_policy_valid();
+  test_client_castore_confirmed();
+  test_client_castore_wrong_root();
 }

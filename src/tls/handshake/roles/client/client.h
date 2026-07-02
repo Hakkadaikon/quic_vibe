@@ -37,9 +37,10 @@ typedef struct {
   usz       sh_len;
   u8        my_priv[QUIC_ECDHE_LEN];
   u8        my_pub[QUIC_ECDHE_LEN];
-  const u8 *host;     /* expected server name, view (caller-owned) */
-  usz       host_len; /* 0 skips the SAN hostname check */
-  u64       now;      /* YYYYMMDDHHMMSS; 0 skips the validity check */
+  const u8 *host;              /* expected server name, view (caller-owned) */
+  usz       host_len;          /* 0 skips the SAN hostname check */
+  u64       now;               /* YYYYMMDDHHMMSS; 0 skips the validity check */
+  const quic_castore *castore; /* NULL skips chain validation */
 } quic_client;
 
 /* Open a UDP socket, connect to server_ip:port, generate our X25519 key pair
@@ -60,6 +61,13 @@ int quic_client_init(
  * decimal YYYYMMDDHHMMSS), e.g. for deterministic tests. Passing 0 DISABLES
  * the validity check — never do that with a real peer. */
 void quic_client_set_now(quic_client *c, u64 now);
+
+/* RFC 5280 6.1: set the trust store the server's certificate chain must
+ * anchor to. The SDK does no I/O, so the roots always come from the app;
+ * without a store (the default) the chain is NOT validated — only the
+ * end-entity policy (validity/SAN) and the CertificateVerify signature are.
+ * store is borrowed and must outlive the connection. */
+void quic_client_set_castore(quic_client *c, const quic_castore *store);
 
 /* RFC 9000 7: emit our real ClientHello, frame it, build the Initial datagram
  * (padded to 1200 per RFC 9000 14.1) and send it. Returns 1 on success. */
